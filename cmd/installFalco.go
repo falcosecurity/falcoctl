@@ -27,10 +27,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// installFalcoCmd represents the installFalco command
 var (
 	installFalcoCmd = &cobra.Command{
-		Use:   "installFalco",
+		Use:   "falco",
 		Short: "Install Falco in Kubernetes",
 		Long:  `Deploy Falco to Kubernetes`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -49,14 +48,11 @@ var (
 func InstallFalcoEntry(installer *kubernetesfalc.FalcoInstaller) (error, int) {
 	err := installer.Install()
 	if err != nil {
-		return fmt.Errorf("unable to install falco in Kubernetes"), 99
+		return fmt.Errorf("unable to install falco in Kubernetes: %v", err), 99
 	}
 	return nil, 0
 }
 
 func init() {
-	installCmd.AddCommand(installFalcoCmd)
-
 	installFalcoCmd.Flags().StringVarP(&i.KubeConfigPath, "kube-config-path", "k", cli.StrEnvDef("KUBECONFIG_PATH", fmt.Sprintf("%s/.kube/config", local.Home())), "Set the path to the Kube config")
-
 }

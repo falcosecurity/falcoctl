@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1f577c40-2334-45fa-92c3-c07e282baa3e" name="Default Changelist" comment="``">
-      <change afterPath="$PROJECT_DIR$/kubernetes/install-falco.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/install.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/install.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/installFalco.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/installFalco.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/installOutput.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/installOutput.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/installRule.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/installRule.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
