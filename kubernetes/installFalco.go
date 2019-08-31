@@ -2,9 +2,10 @@ package kubernetesfalc
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/kubicorn/kubicorn/pkg/logger"
+	"k8s.io/api/rbac/v1beta1"
+
+	"github.com/kris-nova/logger"
 
 	v1 "k8s.io/api/core/v1"
 
@@ -21,6 +22,10 @@ type FalcoInstaller struct {
 	DameonSetName string
 }
 
+// Install is an idempotent installer for Falco in Kubernetes. By design if a resource already exists, we log it
+// and move on with installing the others.
+// Right now, the methods to obtain the Kubernetes resources are hard-coded here, but I (@kris-nova) think we should
+// abstract the logic for how we acquire the description for our resources.
 func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	// Strong preference over keeping the Kubernetes client only available in this package, but still allowing an
 	// outside package to use this based on logic from the unexported kubernetesConfigClient
@@ -31,31 +36,112 @@ func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	// Namespace
 	err := i.iNamespace()
 	if err != nil {
-		return fmt.Errorf("namespace error: %v", err)
+		logger.Info("namespace error: %v", err)
+	} else {
+		logger.Success("Installed Falco Namespace [%s]", i.NamespaceName)
 	}
-	logger.Success("Installed Falco Namespace [%s]", i.NamespaceName)
+
+	// -----------------------------------------------------------------------------------------------------------------
+	//
+	// Auth
+	err = i.iFalcoRBAC()
+	if err != nil {
+		logger.Info("error install Falco RBAC: %v", err)
+	} else {
+		logger.Success("Installed Falco ConfigMap")
+	}
 
 	// -----------------------------------------------------------------------------------------------------------------
 	//
 	// ConfigMap
 	err = i.iConfigMap()
 	if err != nil {
-		return fmt.Errorf("error install Falco configuration: %v", err)
+		logger.Info("error install Falco configuration: %v", err)
+	} else {
+		logger.Success("Installed Falco ConfigMap")
 	}
+
 	// -----------------------------------------------------------------------------------------------------------------
 	//
 	// DaemonSet
 	err = i.iDaemonSet(false)
 	if err != nil {
-		return fmt.Errorf("unable to install Falco DaemonSet: %v", err)
+		logger.Info("unable to install Falco DaemonSet: %v", err)
+	} else {
+		logger.Success("Installed Falco DameonSet [%s]", i.DameonSetName)
 	}
-	logger.Success("Installed Falco DameonSet [%s]", i.DameonSetName)
 	return nil
+}
+
+func (i *FalcoInstaller) iFalcoRBAC() error {
+	sa := v1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "falco-account",
+			Labels: map[string]string{
+				"app":  "falco",
+				"role": "security",
+			},
+		},
+	}
+	_, err := i.k8s.client.CoreV1().ServiceAccounts(i.NamespaceName).Create(&sa)
+	if err != nil {
+		return fmt.Errorf("unable to create service account: %v", err)
+	}
+	cr := v1beta1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "falco-cluster-role",
+			Labels: map[string]string{
+				"app":  "falco",
+				"role": "security",
+			},
+		},
+		Rules: []v1beta1.PolicyRule{
+			{
+				APIGroups: []string{
+					"extensions",
+					"",
+				},
+				Resources: []string{
+					"nodes",
+					"namespaces",
+					"pods",
+					"replicationcontrollers",
+					"replicasets",
+					"services",
+					"daemonsets",
+					"deployments",
+					"events",
+					"configmaps",
+				},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+				NonResourceURLs: []string{
+					"/healthz",
+					"/healthz/",
+				},
+			},
+		},
+	}
+
+	_, err = i.k8s.client.RbacV1beta1().ClusterRoles().Create(&cr)
+	if err != nil {
+		return fmt.Errorf("unable to create cluster role: %v", err)
+	}
+	return nil
+
 }
 
 func (i *FalcoInstaller) iConfigMap() error {
 	cm := v1.ConfigMap{
-		// TODO build config map
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "falco-config",
+			Namespace: i.NamespaceName,
+		},
+		Data: defaultFalcoConfig, // see installFalcoDefaultConfig.go
 	}
 	_, err := i.k8s.client.CoreV1().ConfigMaps(i.NamespaceName).Create(&cm)
 	if err != nil {
@@ -71,9 +157,10 @@ func (i *FalcoInstaller) iNamespace() error {
 		},
 	}
 	_, err := i.k8s.client.CoreV1().Namespaces().Create(&ns)
-	if err != nil && !strings.Contains(err.Error(), "already exists") {
+	if err != nil {
 		return fmt.Errorf("unable to ensure namespace: %v", err)
 	}
+
 	return nil
 }
 
@@ -110,15 +197,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 						{
 							Name:            "falco",
 							Image:           "falcosecurity/falco:latest", // TODO use a specific version not `latest`
-							SecurityContext: &v1.SecurityContext{
-								//Capabilities:             nil,
-								//Privileged: &bool(true),
-								//SELinuxOptions:           nil,
-								//RunAsUser:                nil,
-								//RunAsNonRoot:             nil,
-								//ReadOnlyRootFilesystem:   nil,
-								//AllowPrivilegeEscalation: nil,
-							},
+							SecurityContext: &v1.SecurityContext{},
 							Env: []v1.EnvVar{
 								{
 									Name:  useBPFStr,
@@ -249,7 +328,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 							Name: "falco-config",
 							VolumeSource: v1.VolumeSource{
 								ConfigMap: &v1.ConfigMapVolumeSource{
-									LocalObjectReference: v1.LocalObjectReference{Name: "falco-conf"},
+									LocalObjectReference: v1.LocalObjectReference{Name: "falco-config"},
 								},
 							},
 						},
