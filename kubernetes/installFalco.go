@@ -2,51 +2,82 @@ package kubernetesfalc
 
 import (
 	"fmt"
+	"strings"
 
-	"k8s.io/client-go/kubernetes"
+	"github.com/kubicorn/kubicorn/pkg/logger"
 
 	v1 "k8s.io/api/core/v1"
 
 	"k8s.io/api/apps/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/client-go/rest"
-
-	"k8s.io/client-go/tools/clientcmd"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
+// FalcoInstaller is a data structure used to install Falco in Kubernetes
 type FalcoInstaller struct {
-	config         *rest.Config
-	client         *kubernetes.Clientset
-	Namespace      string
-	KubeConfigPath string
+	k8s           *kubernetesConfigClient
+	NamespaceName string
+	DameonSetName string
 }
 
-func (i *FalcoInstaller) Install() error {
+func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
+	// Strong preference over keeping the Kubernetes client only available in this package, but still allowing an
+	// outside package to use this based on logic from the unexported kubernetesConfigClient
+	i.k8s = k8s
 
-	// create kubernetes clientset. this clientset can be used to create,delete,patch,list etc for the kubernetes resources
-	config, err := clientcmd.BuildConfigFromFlags("", i.KubeConfigPath)
+	// -----------------------------------------------------------------------------------------------------------------
+	//
+	// Namespace
+	err := i.iNamespace()
 	if err != nil {
-		fmt.Errorf("unable to load kube config: %v", err)
+		return fmt.Errorf("namespace error: %v", err)
 	}
-	i.config = config
-	client, err := kubernetes.NewForConfig(i.config)
-	if err != nil {
-		return fmt.Errorf("unable to build Kubernetes client: %v", err)
-	}
-	i.client = client
+	logger.Success("Installed Falco Namespace [%s]", i.NamespaceName)
 
-	err = i.FalcoDaemonSet(false)
+	// -----------------------------------------------------------------------------------------------------------------
+	//
+	// ConfigMap
+	err = i.iConfigMap()
 	if err != nil {
-		return fmt.Errorf("unable to install Falco DaemonSet: %", err)
+		return fmt.Errorf("error install Falco configuration: %v", err)
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------
+	//
+	// DaemonSet
+	err = i.iDaemonSet(false)
+	if err != nil {
+		return fmt.Errorf("unable to install Falco DaemonSet: %v", err)
+	}
+	logger.Success("Installed Falco DameonSet [%s]", i.DameonSetName)
 	return nil
 }
 
-func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
+func (i *FalcoInstaller) iConfigMap() error {
+	cm := v1.ConfigMap{
+		// TODO build config map
+	}
+	_, err := i.k8s.client.CoreV1().ConfigMaps(i.NamespaceName).Create(&cm)
+	if err != nil {
+		return fmt.Errorf("error insalling configmap: %v", err)
+	}
+	return nil
+}
+
+func (i *FalcoInstaller) iNamespace() error {
+	ns := v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: i.NamespaceName,
+		},
+	}
+	_, err := i.k8s.client.CoreV1().Namespaces().Create(&ns)
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		return fmt.Errorf("unable to ensure namespace: %v", err)
+	}
+	return nil
+}
+
+func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 	useBPFStr := "PASS"
 	if useBPF == true {
 		useBPFStr = "SYSDIG_BPF_PROBE"
@@ -228,7 +259,7 @@ func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
 		},
 	}
 	//fmt.Printf("%+v\n", ds)
-	_, err := i.client.AppsV1beta2().DaemonSets(i.Namespace).Create(&ds)
+	_, err := i.k8s.client.AppsV1beta2().DaemonSets(i.NamespaceName).Create(&ds)
 	if err != nil {
 		return fmt.Errorf("error with client-go: %v", err)
 	}
