@@ -13,6 +13,8 @@ import (
 	"k8s.io/client-go/rest"
 
 	"k8s.io/client-go/tools/clientcmd"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 type FalcoInstaller struct {
@@ -27,32 +29,50 @@ func (i *FalcoInstaller) Install() error {
 	// create kubernetes clientset. this clientset can be used to create,delete,patch,list etc for the kubernetes resources
 	config, err := clientcmd.BuildConfigFromFlags("", i.KubeConfigPath)
 	if err != nil {
-		fmt.Errorf("unable to load kube config")
+		fmt.Errorf("unable to load kube config: %v", err)
 	}
 	i.config = config
 	client, err := kubernetes.NewForConfig(i.config)
 	if err != nil {
-		return fmt.Errorf("unable to build Kubernetes client")
+		return fmt.Errorf("unable to build Kubernetes client: %v", err)
 	}
 	i.client = client
+
+	err = i.FalcoDaemonSet(false)
+	if err != nil {
+		return fmt.Errorf("unable to install Falco DaemonSet: %", err)
+	}
+
 	return nil
 }
 
 func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
-	useBPFStr := ""
+	useBPFStr := "PASS"
 	if useBPF == true {
 		useBPFStr = "SYSDIG_BPF_PROBE"
 	}
 	ds := v1beta2.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "Falco",
+			Name: "falco-daemonset",
 			Labels: map[string]string{
 				"app":  "falco",
 				"role": "security",
 			},
 		},
 		Spec: v1beta2.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app":  "falco",
+					"role": "security",
+				},
+			},
 			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app":  "falco",
+						"role": "security",
+					},
+				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: "falco-account",
 					Containers: []v1.Container{
@@ -163,7 +183,7 @@ func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
 							},
 						},
 						{
-							Name: "boost-fs",
+							Name: "boot-fs",
 							VolumeSource: v1.VolumeSource{
 								HostPath: &v1.HostPathVolumeSource{
 									Path: "/boot",
@@ -175,14 +195,6 @@ func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
 							VolumeSource: v1.VolumeSource{
 								HostPath: &v1.HostPathVolumeSource{
 									Path: "/lib/modules",
-								},
-							},
-						},
-						{
-							Name: "docker-socket",
-							VolumeSource: v1.VolumeSource{
-								HostPath: &v1.HostPathVolumeSource{
-									Path: "/var/run/docker.sock",
 								},
 							},
 						},
@@ -203,7 +215,7 @@ func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
 							},
 						},
 						{
-							Name: "falco-conf",
+							Name: "falco-config",
 							VolumeSource: v1.VolumeSource{
 								ConfigMap: &v1.ConfigMapVolumeSource{
 									LocalObjectReference: v1.LocalObjectReference{Name: "falco-conf"},
@@ -215,7 +227,10 @@ func (i *FalcoInstaller) FalcoDaemonSet(useBPF bool) error {
 			},
 		},
 	}
-	fmt.Printf("%+v\n", ds)
-	//_, err := i.client.AppsV1beta2().DaemonSets(i.Namespace).Create(ds)
+	//fmt.Printf("%+v\n", ds)
+	_, err := i.client.AppsV1beta2().DaemonSets(i.Namespace).Create(&ds)
+	if err != nil {
+		return fmt.Errorf("error with client-go: %v", err)
+	}
 	return nil
 }

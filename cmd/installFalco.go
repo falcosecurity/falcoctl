@@ -54,5 +54,6 @@ func InstallFalcoEntry(installer *kubernetesfalc.FalcoInstaller) (error, int) {
 }
 
 func init() {
-	installFalcoCmd.Flags().StringVarP(&i.KubeConfigPath, "kube-config-path", "k", cli.StrEnvDef("KUBECONFIG_PATH", fmt.Sprintf("%s/.kube/config", local.Home())), "Set the path to the Kube config")
+	installFalcoCmd.Flags().StringVarP(&i.KubeConfigPath, "kube-config-path", "k", cli.StrEnvDef("FALCOCTL_KUBE_CONFIG_PATH", fmt.Sprintf("%s/.kube/config", local.Home())), "Set the path to the Kube config")
+	installFalcoCmd.Flags().StringVarP(&i.Namespace, "namespace", "n", cli.StrEnvDef("FALCOCTL_KUBE_NAMESPACE", "default"), "Set the namespace to install Falco in")
 }
