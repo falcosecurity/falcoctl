@@ -1,24 +1,40 @@
+/*
+Copyright © 2019 Kris Nova <kris@nivenly.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package kubernetesfalc
 
 import (
 	"fmt"
 
-	"k8s.io/api/rbac/v1beta1"
-
 	"github.com/kris-nova/logger"
-
-	v1 "k8s.io/api/core/v1"
-
 	"k8s.io/api/apps/v1beta2"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 // FalcoInstaller is a data structure used to install Falco in Kubernetes
 type FalcoInstaller struct {
-	k8s           *kubernetesConfigClient
+	k8s *kubernetesConfigClient
+
+	// NamespaceName is an example of a "Global" variable we certainly should have
 	NamespaceName string
+
+	// DaemonSetName is an example of a "Possible" variable we don't know if we wan't to expose
 	DameonSetName string
 }
 
@@ -88,6 +104,7 @@ func (i *FalcoInstaller) iFalcoRBAC() error {
 	if err != nil {
 		return fmt.Errorf("unable to create service account: %v", err)
 	}
+
 	cr := v1beta1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "falco-cluster-role",
@@ -126,10 +143,36 @@ func (i *FalcoInstaller) iFalcoRBAC() error {
 			},
 		},
 	}
-
 	_, err = i.k8s.client.RbacV1beta1().ClusterRoles().Create(&cr)
 	if err != nil {
 		return fmt.Errorf("unable to create cluster role: %v", err)
+	}
+	crb := v1beta1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "falco-cluster-role-binding",
+			Namespace: i.NamespaceName,
+			Labels: map[string]string{
+				"app":  "falco",
+				"role": "security",
+			},
+		},
+		Subjects: []v1beta1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "falco-account",
+				Namespace: i.NamespaceName,
+			},
+		},
+		RoleRef: v1beta1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     "falco-cluster-role",
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+	_, err = i.k8s.client.RbacV1beta1().ClusterRoleBindings().Create(&crb)
+	if err != nil {
+		return fmt.Errorf("unable to install cluster role binding: %v", err)
 	}
 	return nil
 
