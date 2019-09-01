@@ -17,6 +17,12 @@ limitations under the License.
 package kubernetesfalc
 
 var defaultFalcoConfig = map[string]string{
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	//
+	//
+	// falco.rules.local.yaml
 	"falco_rules.local.yanl": `#
 # Copyright (C) 2016-2018 Draios Inc dba Sysdig.
 #
@@ -49,6 +55,12 @@ var defaultFalcoConfig = map[string]string{
 
 # Or override/append to any rule, macro, or list from the Default Rules
 `,
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	//
+	//
+	// falco_rules.yaml
 	"falco_rules.yaml": `#
 # Copyright (C) 2016-2018 Draios Inc dba Sysdig.
 #
@@ -2633,6 +2645,12 @@ var defaultFalcoConfig = map[string]string{
 # falco_rules.local.yaml.
 
 `,
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	//
+	//
+	// falco.yaml
 	"falco.yaml": `#
 # Copyright (C) 2016-2018 Draios Inc dba Sysdig.
 #
@@ -2802,6 +2820,12 @@ program_output:
 http_output:
   enabled: false
   url: http://some.url`,
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	//
+	//
+	// k8s_audit.rules.yaml
 	"k8s_audit_rules.yaml": `#
 # Copyright (C) 2016-2018 Draios Inc dba Sysdig.
 #

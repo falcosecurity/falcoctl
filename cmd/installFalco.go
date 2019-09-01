@@ -38,7 +38,7 @@ var (
 				os.Exit(exitCode)
 			}
 			logger.Always("Success.")
-			os.Exit(1)
+			///	os.Exit(1)
 		},
 	}
 	i              = &kubernetesfalc.FalcoInstaller{}
