@@ -14,6 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+So this approach to defining Falco rules/config has pros and cons.
+
+Pros:
+
+ - We control the default ruleset
+ - We control the default config
+
+Cons:
+
+ - Changing any of these rules/config is hard
+ - We are defining config in a binary, which means we have to VERSION config in a binary
+
+*/
+
 package kubernetesfalc
 
 var defaultFalcoConfig = map[string]string{
