@@ -38,7 +38,7 @@ var defaultFalcoConfig = map[string]string{
 	//
 	//
 	// falco.rules.local.yaml
-	"falco_rules.local.yanl": `#
+	"falco_rules.local.yaml": `#
 # Copyright (C) 2016-2018 Draios Inc dba Sysdig.
 #
 # This file is part of falco.

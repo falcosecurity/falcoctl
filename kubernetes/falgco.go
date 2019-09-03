@@ -38,6 +38,23 @@ type FalcoInstaller struct {
 	DameonSetName string
 }
 
+// Delete is brute force method used to permanently destroy Falco resources in Kubernetes.
+func (i *FalcoInstaller) Delete(k8s *kubernetesConfigClient) error {
+	i.k8s = k8s
+
+	// -----------------------------------------------------------------------------------------------------------------
+	//
+	// Namespace
+	err := i.k8s.client.CoreV1().Namespaces().Delete(i.NamespaceName, &metav1.DeleteOptions{})
+	if err != nil {
+		logger.Info("Delete Namespace: %v", err)
+	} else {
+		logger.Success("Delete Falco Namespace [%s]", i.NamespaceName)
+	}
+
+	return nil
+}
+
 // Install is an idempotent installer for Falco in Kubernetes. By design if a resource already exists, we log it
 // and move on with installing the others.
 // Right now, the methods to obtain the Kubernetes resources are hard-coded here, but I (@kris-nova) think we should
@@ -52,7 +69,7 @@ func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	// Namespace
 	err := i.iNamespace()
 	if err != nil {
-		logger.Info("namespace error: %v", err)
+		logger.Info("Create Namespace: %v", err)
 	} else {
 		logger.Success("Installed Falco Namespace [%s]", i.NamespaceName)
 	}
@@ -62,9 +79,9 @@ func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	// Auth
 	err = i.iFalcoRBAC()
 	if err != nil {
-		logger.Info("error install Falco RBAC: %v", err)
+		logger.Info("Create RBAC: %v", err)
 	} else {
-		logger.Success("Installed Falco ConfigMap")
+		logger.Success("Installed Falco RBAC")
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -72,7 +89,7 @@ func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	// ConfigMap
 	err = i.iConfigMap()
 	if err != nil {
-		logger.Info("error install Falco configuration: %v", err)
+		logger.Info("Create ConfigMap: %v", err)
 	} else {
 		logger.Success("Installed Falco ConfigMap")
 	}
@@ -136,9 +153,14 @@ func (i *FalcoInstaller) iFalcoRBAC() error {
 					"list",
 					"watch",
 				},
+			},
+			{
 				NonResourceURLs: []string{
 					"/healthz",
 					"/healthz/",
+				},
+				Verbs: []string{
+					"get",
 				},
 			},
 		},
@@ -207,7 +229,12 @@ func (i *FalcoInstaller) iNamespace() error {
 	return nil
 }
 
+func iDaemonSetWithBPF() {
+
+}
+
 func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
+	t := true
 	useBPFStr := "PASS"
 	if useBPF == true {
 		useBPFStr = "SYSDIG_BPF_PROBE"
@@ -238,9 +265,11 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 					ServiceAccountName: "falco-account",
 					Containers: []v1.Container{
 						{
-							Name:            "falco",
-							Image:           "falcosecurity/falco:latest", // TODO use a specific version not `latest`
-							SecurityContext: &v1.SecurityContext{},
+							Name:  "falco",
+							Image: "falcosecurity/falco:latest", // TODO use a specific version not `latest`
+							SecurityContext: &v1.SecurityContext{
+								Privileged: &t,
+							},
 							Env: []v1.EnvVar{
 								{
 									Name:  useBPFStr,
@@ -283,7 +312,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 								{
 									Name:      "lib-modules",
 									MountPath: "/host/lib/modules",
-									ReadOnly:  true,
+									ReadOnly:  false,
 								},
 								{
 									Name:      "usr-fs",
@@ -302,6 +331,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 							},
 						},
 					},
+
 					Volumes: []v1.Volume{
 						{
 							Name: "docker-socket",
@@ -323,7 +353,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 							Name: "dev-fs",
 							VolumeSource: v1.VolumeSource{
 								HostPath: &v1.HostPathVolumeSource{
-									Path: "/proc",
+									Path: "/dev",
 								},
 							},
 						},
