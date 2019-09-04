@@ -20,8 +20,8 @@ import (
 	"os"
 
 	kubernetesfalc "github.com/kris-nova/falcoctl/kubernetes"
+	"github.com/kris-nova/logger"
 	"github.com/kubicorn/kubicorn/pkg/cli"
-	"github.com/kubicorn/kubicorn/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,7 @@ var (
 		Short: "Install Falco in Kubernetes",
 		Long:  `Deploy Falco to Kubernetes`,
 		Run: func(cmd *cobra.Command, args []string) {
+
 			err, exitCode := InstallFalcoEntry(i, kubeConfigPath)
 			if err != nil {
 				logger.Critical("Fatal error: %v", err)

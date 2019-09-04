@@ -103,6 +103,52 @@ func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	} else {
 		logger.Success("Installed Falco DameonSet [%s]", i.DameonSetName)
 	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+	//
+	// Service
+	err = i.iFalcoService()
+	if err != nil {
+		logger.Info("Create Falco Service: %v", err)
+	} else {
+		logger.Success("Installed Falco Service [%s]", "falco-service")
+	}
+
+	audit := AuditInstaller{
+		FalcoNamespace: i.NamespaceName,
+	}
+	return audit.Install(i.k8s)
+
+}
+
+func (i *FalcoInstaller) iFalcoService() error {
+	svc := v1.Service{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "falco-service",
+			Namespace: i.NamespaceName,
+			Labels: map[string]string{
+				"app":  "falco",
+				"role": "security",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Port:     8765,
+					Protocol: "TCP",
+				},
+			},
+			Selector: map[string]string{
+				"app": "falco",
+			},
+		},
+		Status: v1.ServiceStatus{},
+	}
+	_, err := i.k8s.client.CoreV1().Services(i.NamespaceName).Create(&svc)
+	if err != nil {
+		return fmt.Errorf("unable to create Falco service %v", err)
+	}
 	return nil
 }
 
@@ -266,7 +312,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 					Containers: []v1.Container{
 						{
 							Name:  "falco",
-							Image: "falcosecurity/falco:latest", // TODO use a specific version not `latest`
+							Image: "falcosecurity/falco-slim:0.17.0", // TODO use a specific version not `latest`
 							SecurityContext: &v1.SecurityContext{
 								Privileged: &t,
 							},

@@ -48,11 +48,15 @@ func Execute() {
 	}
 }
 
+var fabulous bool
+
 func init() {
 	rootCmd.Flags().IntVarP(&logger.Level, "verbose", "v", 4, "Verbosity for logs between 1(lowest) and 4(highest).")
-	installFalcoCmd.PersistentFlags().StringVarP(&kubeConfigPath, "kube-config-path", "k",
+	rootCmd.PersistentFlags().StringVarP(&kubeConfigPath, "kube-config-path", "k",
 		cli.StrEnvDef("FALCOCTL_KUBE_CONFIG_PATH", fmt.Sprintf("%s/.kube/config", local.Home())),
 		"Set the path to the Kube config")
-	installFalcoCmd.PersistentFlags().StringVarP(&i.NamespaceName, "namespace", "n",
+	rootCmd.PersistentFlags().StringVarP(&i.NamespaceName, "namespace", "n",
 		cli.StrEnvDef("FALCOCTL_KUBE_NAMESPACE", "falco"), "Set the namespace to install Falco in")
+	rootCmd.PersistentFlags().BoolVarP(&fabulous, "fab", "f",
+		cli.BoolEnvDef("FALCOCTL_FABULOUS", false), "Enable rainbow logs.")
 }
