@@ -33,6 +33,6 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 
 	installCmd.AddCommand(installFalcoCmd)
-	installCmd.AddCommand(installOutputCmd)
-	installCmd.AddCommand(installRuleCmd)
+	//installCmd.AddCommand(installOutputCmd)
+	//installCmd.AddCommand(installRuleCmd)
 }
