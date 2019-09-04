@@ -24,3 +24,8 @@ docker/event-generator/vipw
 .vscode/*
 
 .luacheckcache
+
+*.idea
+*.idea*
+.idea/*
+
