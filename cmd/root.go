@@ -33,8 +33,6 @@ var rootCmd = &cobra.Command{
 	Short: "The main control tool for running Falco in Kubernetes",
 	Long: `
 
-TODO: Add logic for commands here
-
 `,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
