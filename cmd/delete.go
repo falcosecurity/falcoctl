@@ -21,31 +21,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// installOutputCmd represents the installOutput command
-var installOutputCmd = &cobra.Command{
-	Use:   "installOutput",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+// deleteCmd represents the delete command
+var deleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete a resource",
+	Long: ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("installOutput called")
+		fmt.Println("delete called")
 	},
 }
 
 func init() {
-	installCmd.AddCommand(installOutputCmd)
+	rootCmd.AddCommand(deleteCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// installOutputCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// installOutputCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
