@@ -60,7 +60,6 @@ func (i *AuditInstaller) Install(k8s *kubernetesConfigClient) error {
 	//}
 
 	// TODO - Generate YAML and patch the server manifest
-	// TODO - Generate YAML and patch the server manifest
 	// We have to replace the YAML via SSH - we CANNOT update the static pod.
 	// The Kubelet is smart enough to restart the API server pod once the new configuration has been written.
 	//
@@ -109,7 +108,7 @@ func (i *AuditInstaller) Install(k8s *kubernetesConfigClient) error {
 
 	_, err = i.k8s.client.AuditregistrationV1alpha1().AuditSinks().Create(&as)
 	if err != nil {
-		return fmt.Errorf("unable to instlal AuditSink: %v", err)
+		logger.Info("unable to instlal AuditSink: %v", err)
 	}
 	logger.Success("Kubernetes AuditSink enabled with Falco.")
 	return nil
