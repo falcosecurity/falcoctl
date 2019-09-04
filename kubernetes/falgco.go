@@ -99,7 +99,7 @@ func (i *FalcoInstaller) Install(k8s *kubernetesConfigClient) error {
 	// DaemonSet
 	err = i.iDaemonSet(false)
 	if err != nil {
-		logger.Info("unable to install Falco DaemonSet: %v", err)
+		logger.Info("Create Falco DaemonSet: %v", err)
 	} else {
 		logger.Success("Installed Falco DameonSet [%s]", i.DameonSetName)
 	}
@@ -275,6 +275,14 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 									Name:  useBPFStr,
 									Value: "",
 								},
+								{
+									Name:  "KUBERNETES_SERVICE_HOST",
+									Value: "kubernetes.default.svc.cluster.local",
+								},
+								{
+									Name:  "KUBERNETES_SERVICE_PORT",
+									Value: "443",
+								},
 							},
 							Args: []string{
 								"/usr/bin/falco",
@@ -283,7 +291,7 @@ func (i *FalcoInstaller) iDaemonSet(useBPF bool) error {
 								"-K",
 								"/var/run/secrets/kubernetes.io/serviceaccount/token",
 								"-k",
-								"https://${KUBERNETES_SERVICE_HOST}",
+								"https://kubernetes.default.svc.cluster.local",
 								"-pk",
 							},
 							VolumeMounts: []v1.VolumeMount{
