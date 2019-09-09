@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	kubernetesfalc "github.com/kris-nova/falcoctl/kubernetes"
+	kubernetesfalc "github.com/falcosecurity/falcoctl/kubernetes"
 	"github.com/kubicorn/kubicorn/pkg/cli"
 	"github.com/kubicorn/kubicorn/pkg/local"
 	"github.com/kubicorn/kubicorn/pkg/logger"
