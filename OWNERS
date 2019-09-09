@@ -1,11 +1,15 @@
 approvers:
+  - kris-nova
+  - rajibmitra
+  - markyjackson-taulia
   - leodido
   - fntlnz
   - mstemm
 reviewers:
-  - leodido
+  - kris-nova
   - fntlnz
+  - leodido
   - mfdii
-  - kaizhe
+  - rajibmitra
+  - markyjackson-taulia
   - mstemm
-
