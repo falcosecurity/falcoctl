@@ -1,9 +1,9 @@
 <!--  Thanks for sending a pull request!  Here are some tips for you:
 
-1. If this is your first time, please read our contributor guidelines in the [CONTRIBUTING.md](CONTRIBUTING.md) file and learn how to compile Falco from source [here](https://falco.org/docs/source).
+1. If this is your first time, please read our contributor guidelines in the [CONTRIBUTING.md](https://github.com/falcosecurity/falco/blob/dev/CONTRIBUTING.md) file in the Falco repository.
 2. Please label this pull request according to what type of issue you are addressing.
-5. Please add a release note!
-6. If the PR is unfinished while opening it specify a wip in the title before the actual title, for example, "wip: my awesome feature"
+3. Please add a release note!
+4. If the PR is unfinished while opening it specify a wip in the title before the actual title, for example, "wip: my awesome feature"
 -->
 
 **What type of PR is this?**
@@ -24,23 +24,15 @@
 
 > /kind flaky-test
 
-> If contributing rules or changes to rules, please make sure to also uncomment one of the following line:
-
-> /kind rule-update
-
-> /kind rule-create
-
 **Any specific area of the project related to this PR?**
 
 > Uncomment one (or more) `/area <>` lines:
 
-> /area engine
+> /area library
 
-> /area rules
+> /area cli
 
-> /area deployment
-
-> /area integrations
+> /area tests
 
 > /area examples
 

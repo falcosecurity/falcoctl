@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug encountered while operating Falco
+about: Report a bug encountered while using the falcoctl
 labels: kind/bug
 
 ---
@@ -17,12 +17,3 @@ If the matter is security related, please disclose it privately via https://falc
 **How to reproduce it (as minimally and precisely as possible)**:
 
 **Anything else we need to know?**:
-
-**Environment**:
-- Falco version (use `falco --version`):
-- System info <!-- Falco has a built-in support command you can use  "falco --support | jq .system_info" -->
-- Cloud provider or hardware configuration:
-- OS (e.g: `cat /etc/os-release`):
-- Kernel (e.g. `uname -a`):
-- Install tools (e.g. in kubernetes, rpm, deb, from source):
-- Others:
