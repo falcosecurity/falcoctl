@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/kris-nova/falcoctl/cmd"
+import "github.com/falcosecurity/falcoctl/cmd"
 
 func main() {
   cmd.Execute()
