@@ -60,6 +60,13 @@ func (i *AuditInstaller) Install(k8s *kubernetesConfigClient) error {
 	//}
 
 	// TODO - Generate YAML and patch the server manifest
+	// TODO - Generate YAML and patch the server manifest
+	// We have to replace the YAML via SSH - we CANNOT update the static pod.
+	// The Kubelet is smart enough to restart the API server pod once the new configuration has been written.
+	//
+	// - Generate YAML from struct
+	// - SSH / SCP the file to /etc/kubernetes
+	// - Validate the AuditSink resource is available
 
 	logger.Success("Successfully updated API server...")
 	_, err = i, k8s.client.CoreV1().Pods(APIServerNamespace).Delete(apiServer.Name, &metav1.DeleteOptions{})
