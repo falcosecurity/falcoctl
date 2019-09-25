@@ -108,7 +108,7 @@ func (i *AuditInstaller) Install(k8s *kubernetesConfigClient) error {
 
 	_, err = i.k8s.client.AuditregistrationV1alpha1().AuditSinks().Create(&as)
 	if err != nil {
-		logger.Info("unable to instlal AuditSink: %v", err)
+		logger.Info("unable to install AuditSink: %v", err)
 	}
 	logger.Success("Kubernetes AuditSink enabled with Falco.")
 	return nil
