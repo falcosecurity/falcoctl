@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Kris Nova <kris@nivenly.com>
+Copyright © 2019 The Falco Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,8 +15,22 @@ limitations under the License.
 */
 package main
 
-import "github.com/falcosecurity/falcoctl/cmd"
+import (
+	"os"
+
+	"github.com/falcosecurity/falcoctl/cmd"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+)
 
 func main() {
-  cmd.Execute()
+	root := cmd.NewRootCommand(genericclioptions.IOStreams{
+		In:     os.Stdin,
+		Out:    os.Stdout,
+		ErrOut: os.Stderr,
+	})
+	if err := root.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
