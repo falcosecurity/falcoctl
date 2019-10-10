@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"os"
 
+	"path"
+
 	kubernetesfalc "github.com/falcosecurity/falcoctl/kubernetes"
-	"github.com/kubicorn/kubicorn/pkg/cli"
-	"github.com/kubicorn/kubicorn/pkg/local"
-	"github.com/kubicorn/kubicorn/pkg/logger"
+	"github.com/falcosecurity/falcoctl/pkg/cli"
+	"github.com/kris-nova/logger"
+	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/spf13/cobra"
 )
@@ -45,19 +47,18 @@ var (
 	}
 )
 
-var (
-	// Global for all install methods
-	i              = &kubernetesfalc.FalcoInstaller{}
-	kubeConfigPath string
-)
-
 func init() {
+	home, err := homedir.Dir()
+	if err != nil {
+		logger.Critical("Fatal error: %v", err)
+		os.Exit(1)
+	}
 	deleteCmd.AddCommand(deleteFalcoCmd)
 	installFalcoCmd.Flags().StringVarP(&kubeConfigPath, "kube-config-path", "k",
-		cli.StrEnvDef("FALCOCTL_KUBE_CONFIG_PATH", fmt.Sprintf("%s/.kube/config", local.Home())),
+		cli.GetEnvWithDefault("FALCOCTL_KUBE_CONFIG_PATH", path.Join(home, ".kube/config")),
 		"Set the path to the Kube config")
 	installFalcoCmd.Flags().StringVarP(&i.NamespaceName, "namespace", "n",
-		cli.StrEnvDef("FALCOCTL_KUBE_NAMESPACE", "falco"), "Set the namespace to install Falco in")
+		cli.GetEnvWithDefault("FALCOCTL_KUBE_NAMESPACE", "falco"), "Set the namespace to install Falco in")
 }
 
 func DeleteFalcoEntry(installer *kubernetesfalc.FalcoInstaller, kubeConfigPath string) (error, int) {

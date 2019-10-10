@@ -20,8 +20,8 @@ import (
 	"os"
 
 	kubernetesfalc "github.com/falcosecurity/falcoctl/kubernetes"
+	"github.com/falcosecurity/falcoctl/pkg/cli"
 	"github.com/kris-nova/logger"
-	"github.com/kubicorn/kubicorn/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -59,6 +59,6 @@ func InstallFalcoEntry(installer *kubernetesfalc.FalcoInstaller, kubeConfigPath 
 
 func init() {
 	installFalcoCmd.Flags().StringVarP(&i.DameonSetName, "ds-name", "N",
-		cli.StrEnvDef("FALCOCTL_KUBE_DS_NAME", "falco"), "Set the name to use with the Falco DS")
+		cli.GetEnvWithDefault("FALCOCTL_KUBE_DS_NAME", "falco"), "Set the name to use with the Falco DS")
 
 }
