@@ -18,13 +18,23 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
-	"github.com/kubicorn/kubicorn/pkg/cli"
-	"github.com/kubicorn/kubicorn/pkg/local"
+	"github.com/falcosecurity/falcoctl/pkg/cli"
+	kubernetesfalc "github.com/falcosecurity/falcoctl/kubernetes"
+	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/kris-nova/logger"
 
 	"github.com/spf13/cobra"
+)
+
+var fabulous bool
+
+var (
+	// Global for all install methods
+	i              = &kubernetesfalc.FalcoInstaller{}
+	kubeConfigPath string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -48,15 +58,18 @@ func Execute() {
 	}
 }
 
-var fabulous bool
-
 func init() {
+	home, err := homedir.Dir()
+	if err != nil {
+		logger.Critical("Fatal error: %v", err)
+		os.Exit(1)
+	}
 	rootCmd.Flags().IntVarP(&logger.Level, "verbose", "v", 4, "Verbosity for logs between 1(lowest) and 4(highest).")
 	rootCmd.PersistentFlags().StringVarP(&kubeConfigPath, "kube-config-path", "k",
-		cli.StrEnvDef("FALCOCTL_KUBE_CONFIG_PATH", fmt.Sprintf("%s/.kube/config", local.Home())),
+		cli.GetEnvWithDefault("FALCOCTL_KUBE_CONFIG_PATH", path.Join(home, ".kube/config")),
 		"Set the path to the Kube config")
 	rootCmd.PersistentFlags().StringVarP(&i.NamespaceName, "namespace", "n",
-		cli.StrEnvDef("FALCOCTL_KUBE_NAMESPACE", "falco"), "Set the namespace to install Falco in")
+		cli.GetEnvWithDefault("FALCOCTL_KUBE_NAMESPACE", "falco"), "Set the namespace to install Falco in")
 	rootCmd.PersistentFlags().BoolVarP(&fabulous, "fab", "f",
-		cli.BoolEnvDef("FALCOCTL_FABULOUS", false), "Enable rainbow logs.")
+		cli.GetBoolEnvWithDefault("FALCOCTL_FABULOUS", false), "Enable rainbow logs.")
 }
