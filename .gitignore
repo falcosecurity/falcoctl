@@ -29,3 +29,5 @@ docker/event-generator/vipw
 *.idea*
 .idea/*
 
+falcoctl
+
