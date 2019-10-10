@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Kris Nova <kris@nivenly.com>
+Copyright © 2019 The Falco Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,63 +13,71 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/falcosecurity/falcoctl/pkg/cli"
-	kubernetesfalc "github.com/falcosecurity/falcoctl/kubernetes"
-	homedir "github.com/mitchellh/go-homedir"
-
+	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
-
 	"github.com/spf13/cobra"
 )
 
-var fabulous bool
+// RootOptions represents the base command options
+type RootOptions struct {
+	configFlags *genericclioptions.ConfigFlags
 
-var (
-	// Global for all install methods
-	i              = &kubernetesfalc.FalcoInstaller{}
-	kubeConfigPath string
-)
+	genericclioptions.IOStreams
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "falcoctl",
-	Short: "The main control tool for running Falco in Kubernetes",
-	Long: `
-
-`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	fabulous bool
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+// Validate validates the base command options
+func (o RootOptions) Validate(c *cobra.Command, args []string) error {
+	return nil
+}
+
+// NewRootOptions instantiates the base command options
+func NewRootOptions(streams genericclioptions.IOStreams) CommandOptions {
+	return &RootOptions{
+		configFlags: genericclioptions.NewConfigFlags(false),
+		IOStreams:   streams,
 	}
 }
 
-func init() {
-	home, err := homedir.Dir()
-	if err != nil {
-		logger.Critical("Fatal error: %v", err)
-		os.Exit(1)
+// NewRootCommand creates the command
+func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
+	o := NewRootOptions(streams).(*RootOptions)
+
+	cmd := &cobra.Command{
+		Use:                   "falcoctl",
+		DisableFlagsInUseLine: true,
+		Short:                 "The main control tool for Falco",
+		Long:                  `The main control tool for running Falco in Kubernetes, ...`,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			if o.fabulous {
+				logger.Fabulous = true
+				logger.Color = false
+			}
+		},
+		Run: func(c *cobra.Command, args []string) {
+			cobra.NoArgs(c, args)
+			c.Help()
+		},
 	}
-	rootCmd.Flags().IntVarP(&logger.Level, "verbose", "v", 4, "Verbosity for logs between 1(lowest) and 4(highest).")
-	rootCmd.PersistentFlags().StringVarP(&kubeConfigPath, "kube-config-path", "k",
-		cli.GetEnvWithDefault("FALCOCTL_KUBE_CONFIG_PATH", path.Join(home, ".kube/config")),
-		"Set the path to the Kube config")
-	rootCmd.PersistentFlags().StringVarP(&i.NamespaceName, "namespace", "n",
-		cli.GetEnvWithDefault("FALCOCTL_KUBE_NAMESPACE", "falco"), "Set the namespace to install Falco in")
-	rootCmd.PersistentFlags().BoolVarP(&fabulous, "fab", "f",
-		cli.GetBoolEnvWithDefault("FALCOCTL_FABULOUS", false), "Enable rainbow logs.")
+
+	cmd.PersistentFlags().BoolVarP(&o.fabulous, "fab", "f", o.fabulous, "Enable rainbow logs")
+
+	flags := cmd.PersistentFlags()
+	o.configFlags.AddFlags(flags)
+
+	matchVersionFlags := factory.NewMatchVersionFlags(o.configFlags)
+	matchVersionFlags.AddFlags(flags)
+	f := factory.NewFactory(matchVersionFlags)
+
+	cmd.AddCommand(NewInstallCommand(streams, f))
+	cmd.AddCommand(NewDeleteCommand(streams, f))
+
+	return cmd
 }
