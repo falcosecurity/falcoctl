@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Kris Nova <kris@nivenly.com>
+Copyright © 2019 The Falco Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,34 +13,44 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// deleteCmd represents the delete command
-var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete a resource",
-	Long: ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delete called")
-	},
+// DeleteOptions represents the `delete` command options
+type DeleteOptions struct {
+	genericclioptions.IOStreams
 }
 
-func init() {
-	rootCmd.AddCommand(deleteCmd)
+// Validate validates the `delete` command options
+func (o DeleteOptions) Validate(c *cobra.Command, args []string) error {
+	return nil
+}
 
-	// Here you will define your flags and configuration settings.
+// NewDeleteOptions instantiates the `delete` command options
+func NewDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
+	return &DeleteOptions{
+		IOStreams: streams,
+	}
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
+// NewDeleteCommand creates the `delete` command
+func NewDeleteCommand(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+	// o := NewDeleteOptions(streams).(*DeleteOptions)
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	cmd := &cobra.Command{
+		Use:                   "delete",
+		DisableFlagsInUseLine: true,
+		Short:                 "Delete a component wih falcoctl",
+		Long:                  `Delete a component wih falcoctl`,
+	}
+
+	cmd.AddCommand(NewFalcoDeleteCommand(streams, f))
+
+	return cmd
 }
