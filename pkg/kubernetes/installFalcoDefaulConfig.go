@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Kris Nova <kris@nivenly.com>
+Copyright © 2019 The Falco Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ Cons:
 
  - Changing any of these rules/config is hard
  - We are defining config in a binary, which means we have to VERSION config in a binary
-
 */
 
 package kubernetesfalc
@@ -39,7 +38,7 @@ var defaultFalcoConfig = map[string]string{
 	//
 	// falco.rules.local.yaml
 	"falco_rules.local.yaml": `#
-# Copyright (C) 2016-2018 Draios Inc dba Sysdig.
+# Copyright (C) 2019 The Falco Authors.
 #
 # This file is part of falco.
 #
