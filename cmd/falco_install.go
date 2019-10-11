@@ -51,6 +51,7 @@ func NewFalcoInstallCommand(streams genericclioptions.IOStreams, f factory.Facto
 
 	cmd := &cobra.Command{
 		Use:                   "falco",
+		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
 		Short:                 "Install Falco in Kubernetes",
 		Long:                  `Deploy Falco to Kubernetes`,

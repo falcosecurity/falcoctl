@@ -45,12 +45,14 @@ func NewInstallCommand(streams genericclioptions.IOStreams, f factory.Factory) *
 
 	cmd := &cobra.Command{
 		Use:                   "install",
+		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
 		Short:                 "Install a component wih falcoctl",
 		Long:                  `Install a component wih falcoctl`,
 	}
 
 	cmd.AddCommand(NewFalcoInstallCommand(streams, f))
+	cmd.AddCommand(NewProbeInstallCommand(streams))
 
 	return cmd
 }
