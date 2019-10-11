@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"path"
 
 	"github.com/falcosecurity/falcoctl/pkg/probeloader"
@@ -107,14 +106,14 @@ func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command 
 			// fetch module
 			err = probeloader.FetchModule(o.falcoProbeURL, falcoProbeFullpath)
 			if err != nil {
-				log.Fatalf("Error fetching module: %s", err)
+				logger.Critical("Error fetching module: %s", err)
 			}
 
 			// load module
 			// TODO(ducy): Need to implement removal of module, retry loop, and timeout
 			err = probeloader.LoadModule(falcoProbeFullpath)
 			if err != nil {
-				log.Fatalf("Error loading module: %s", err)
+				logger.Critical("Error loading module: %s", err)
 			}
 
 			return nil
