@@ -132,7 +132,7 @@ func LoadModule(path string) error {
 		return err
 	}
 
-	logger.Always("Opened probe: ", path)
+	logger.Always("Opened probe: %s", path)
 
 	p0, err := unix.BytePtrFromString("")
 
