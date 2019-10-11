@@ -17,11 +17,14 @@ limitations under the License.
 package cmd
 
 import (
+	"strings"
+
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
 	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // RootOptions represents the base command options
@@ -69,12 +72,16 @@ func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.PersistentFlags().BoolVarP(&o.fabulous, "fab", "f", o.fabulous, "Enable rainbow logs")
 
-	flags := cmd.PersistentFlags()
+	flags := cmd.Flags()
 	o.configFlags.AddFlags(flags)
 
 	matchVersionFlags := factory.NewMatchVersionFlags(o.configFlags)
 	matchVersionFlags.AddFlags(flags)
 	f := factory.NewFactory(matchVersionFlags)
+
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("falcoctl")
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	cmd.AddCommand(NewInstallCommand(streams, f))
 	cmd.AddCommand(NewDeleteCommand(streams, f))
