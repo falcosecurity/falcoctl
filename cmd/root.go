@@ -85,6 +85,7 @@ func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.AddCommand(NewInstallCommand(streams, f))
 	cmd.AddCommand(NewDeleteCommand(streams, f))
+	cmd.AddCommand(NewPspRulesConvCommand(streams, f))
 
 	return cmd
 }
