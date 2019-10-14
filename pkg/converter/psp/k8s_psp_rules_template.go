@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package converter
+package psp
 
 var (
 	K8sPspRulesTemplate string = `
