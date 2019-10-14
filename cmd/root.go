@@ -59,6 +59,9 @@ func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
 		Short:                 "The main control tool for Falco",
 		Long:                  `The main control tool for running Falco in Kubernetes, ...`,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
+			// Set destination for usage and error messages
+			c.SetOutput(streams.ErrOut)
+			// Be fabulous
 			if o.fabulous {
 				logger.Fabulous = true
 				logger.Color = false
@@ -85,7 +88,7 @@ func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.AddCommand(NewInstallCommand(streams, f))
 	cmd.AddCommand(NewDeleteCommand(streams, f))
-	cmd.AddCommand(NewPspRulesConvCommand(streams, f))
+	cmd.AddCommand(NewConvertCommand(streams))
 
 	return cmd
 }
