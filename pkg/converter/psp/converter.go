@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package converter
+package psp
 
 import (
 	"bytes"
@@ -35,17 +35,17 @@ import (
 
 type LogFunc func(format string, args ...interface{})
 
-type Converter struct{
-	pspTmpl *template.Template
+type Converter struct {
+	pspTmpl  *template.Template
 	debugLog LogFunc
-	infoLog LogFunc
+	infoLog  LogFunc
 	errorLog LogFunc
 }
 
 func joinProcMountTypes(procMountTypes []v1.ProcMountType) string {
 	var sb strings.Builder
 
-	for  idx, procMountType := range procMountTypes {
+	for idx, procMountType := range procMountTypes {
 		if idx > 0 {
 			sb.WriteString(",")
 		}
@@ -58,7 +58,7 @@ func joinProcMountTypes(procMountTypes []v1.ProcMountType) string {
 func joinCapabilities(capabilities []v1.Capability) string {
 	var sb strings.Builder
 
-	for  idx, cap := range capabilities {
+	for idx, cap := range capabilities {
 		if idx > 0 {
 			sb.WriteString(",")
 		}
@@ -71,7 +71,7 @@ func joinCapabilities(capabilities []v1.Capability) string {
 func joinFSTypes(fsTypes []v1beta1.FSType) string {
 	var sb strings.Builder
 
-	for  idx, fsType := range fsTypes {
+	for idx, fsType := range fsTypes {
 		if idx > 0 {
 			sb.WriteString(",")
 		}
@@ -103,7 +103,7 @@ func joinHostPortRanges(ranges []v1beta1.HostPortRange) string {
 
 	var sb strings.Builder
 
-	for  idx, portRange := range ranges {
+	for idx, portRange := range ranges {
 		if idx > 0 {
 			sb.WriteString(",")
 		}
@@ -121,7 +121,7 @@ func joinHostPaths(ranges []v1beta1.AllowedHostPath) string {
 
 	var sb strings.Builder
 
-	for  idx, path := range ranges {
+	for idx, path := range ranges {
 		if idx > 0 {
 			sb.WriteString(",")
 		}
@@ -135,7 +135,7 @@ func joinFlexvolumes(ranges []v1beta1.AllowedFlexVolume) string {
 
 	var sb strings.Builder
 
-	for  idx, path := range ranges {
+	for idx, path := range ranges {
 		if idx > 0 {
 			sb.WriteString(",")
 		}
@@ -158,13 +158,13 @@ func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Convert
 	tmpl := template.New("pspRules")
 
 	tmpl = tmpl.Funcs(template.FuncMap{
-		"JoinProcMountTypes": joinProcMountTypes,
-		"JoinCapabilities": joinCapabilities,
-		"JoinFSTypes": joinFSTypes,
-		"JoinIDRanges": joinIDRanges,
-		"JoinHostPortRanges": joinHostPortRanges,
-		"JoinHostPaths": joinHostPaths,
-		"JoinFlexvolumes": joinFlexvolumes,
+		"JoinProcMountTypes":       joinProcMountTypes,
+		"JoinCapabilities":         joinCapabilities,
+		"JoinFSTypes":              joinFSTypes,
+		"JoinIDRanges":             joinIDRanges,
+		"JoinHostPortRanges":       joinHostPortRanges,
+		"JoinHostPaths":            joinHostPaths,
+		"JoinFlexvolumes":          joinFlexvolumes,
 		"AllowPrivilegeEscalation": allowPrivilegeEscalation,
 	})
 
@@ -175,9 +175,9 @@ func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Convert
 	}
 
 	return &Converter{
-		pspTmpl: tmpl,
+		pspTmpl:  tmpl,
 		debugLog: debugLog,
-		infoLog: infoLog,
+		infoLog:  infoLog,
 		errorLog: errorLog,
 	}, nil
 }
@@ -188,11 +188,12 @@ func (c *Converter) GenerateRules(pspString string) (string, error) {
 
 	c.debugLog("GenerateRules() pspString=%s", pspString)
 
-	pspJson, err := yaml.YAMLToJSON([]byte(pspString)); if err != nil {
+	pspJSON, err := yaml.YAMLToJSON([]byte(pspString))
+	if err != nil {
 		return "", fmt.Errorf("Could not convert generic yaml document to json: %v", err)
 	}
 
-	err = json.Unmarshal(pspJson, &psp)
+	err = json.Unmarshal(pspJSON, &psp)
 
 	if err != nil {
 		return "", fmt.Errorf("Could not unmarshal json document: %v", err)
@@ -204,7 +205,7 @@ func (c *Converter) GenerateRules(pspString string) (string, error) {
 	// to scope the rules. A annotation with the key
 	// "falco-rules-psp-images" provides the list of images.
 	if _, ok := psp.Annotations["falco-rules-psp-images"]; !ok {
-		return "", fmt.Errorf("PSP Yaml Document does not have an annotation \"falco-rules-psp-images\" that lists the images for which the generated rules should apply");
+		return "", fmt.Errorf("PSP YAML document does not have an annotation \"falco-rules-psp-images\" that lists the images for which the generated rules should apply")
 	}
 
 	c.debugLog("Images %v", psp.Annotations["falco-rules-psp-images"])
