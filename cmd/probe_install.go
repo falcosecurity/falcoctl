@@ -47,25 +47,22 @@ func NewProbeInstallOptions(streams genericclioptions.IOStreams) CommandOptions 
 	o := &ProbeInstallOptions{
 		IOStreams: streams,
 	}
-	o.falcoVersion = viper.GetString("falco-version")
+	o.falcoVersion = viper.GetString("falco-version") // FALCOCTL_FALCO_VERSION env var
 	if len(o.falcoVersion) == 0 {
-		o.falcoVersion = "0.17.1"
+		o.falcoVersion = "0.17.1" // default
 	}
-	o.falcoProbePath = viper.GetString("falco-probe-path")
+	o.falcoProbePath = viper.GetString("falco-probe-path") // FALCOCTL_FALCO_PROBE_PATH env var
 	if len(o.falcoProbePath) == 0 {
-		o.falcoProbePath = "/"
+		o.falcoProbePath = "/" // default
 	}
-	o.falcoProbeFile = viper.GetString("falco-probe-file")
+	o.falcoProbeFile = viper.GetString("falco-probe-file") // FALCOCTL_FALCO_PROBE_FILE env var
 	if len(o.falcoProbeFile) == 0 {
-		o.falcoProbeFile = "falco-probe.ko"
+		o.falcoProbeFile = "falco-probe.ko" // default
 	}
-	o.falcoProbeURL = viper.GetString("falco-probe-url")
-	if len(o.falcoProbeURL) == 0 {
-		o.falcoProbeURL = ""
-	}
-	o.falcoProbeRepo = viper.GetString("falco-probe-repo")
+	o.falcoProbeURL = viper.GetString("falco-probe-url")   // FALCOCTL_FALCO_PROBE_URL env var
+	o.falcoProbeRepo = viper.GetString("falco-probe-repo") // FALCOCTL_FALCO_PROBE_REPO env var
 	if len(o.falcoProbeRepo) == 0 {
-		o.falcoProbeRepo = "https://s3.amazonaws.com/download.draios.com/stable/sysdig-probe-binaries/"
+		o.falcoProbeRepo = "https://s3.amazonaws.com/download.draios.com/stable/sysdig-probe-binaries/" // default
 	}
 	return o
 }
@@ -107,6 +104,7 @@ func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command 
 			err = probeloader.FetchModule(o.falcoProbeURL, falcoProbeFullpath)
 			if err != nil {
 				logger.Critical("Error fetching module: %s", err)
+				return err
 			}
 
 			// load module
@@ -114,6 +112,7 @@ func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command 
 			err = probeloader.LoadModule(falcoProbeFullpath)
 			if err != nil {
 				logger.Critical("Error loading module: %s", err)
+				return err
 			}
 
 			return nil

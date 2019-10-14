@@ -32,14 +32,14 @@ func (o InstallOptions) Validate(c *cobra.Command, args []string) error {
 	return nil
 }
 
-// NewInstallOptions instantiates the install command options
+// NewInstallOptions instantiates the `install` command options
 func NewInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 	return &InstallOptions{
 		IOStreams: streams,
 	}
 }
 
-// NewInstallCommand creates the install command
+// NewInstallCommand creates the `install` command
 func NewInstallCommand(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
 	// o := NewInstallOptions(streams).(*InstallOptions)
 
