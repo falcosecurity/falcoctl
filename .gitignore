@@ -31,3 +31,5 @@ docker/event-generator/vipw
 
 falcoctl
 
+*vendor*
+
