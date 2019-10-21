@@ -85,7 +85,7 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 
 	psp, err := ioutil.ReadAll(pspFile)
 
-	conv, err := converter.NewConverter(debugLog, infoLog, errorLog)
+	conv, err := converter.NewConverter("", debugLog, infoLog, errorLog)
 	if err != nil {
 		return fmt.Errorf("Could not create converter: %v", err)
 	}
