@@ -36,10 +36,16 @@ import (
 type LogFunc func(format string, args ...interface{})
 
 type Converter struct {
+	namePrefix string
 	pspTmpl  *template.Template
 	debugLog LogFunc
 	infoLog  LogFunc
 	errorLog LogFunc
+}
+
+type PspTemplate struct {
+	NamePrefix string
+	v1beta1.PodSecurityPolicy
 }
 
 func joinProcMountTypes(procMountTypes []v1.ProcMountType) string {
@@ -153,7 +159,7 @@ func allowPrivilegeEscalation(spec v1beta1.PodSecurityPolicySpec) bool {
 	return true
 }
 
-func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Converter, error) {
+func NewConverter(namePrefix string, debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Converter, error) {
 
 	tmpl := template.New("pspRules")
 
@@ -175,6 +181,7 @@ func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Convert
 	}
 
 	return &Converter{
+		namePrefix: namePrefix,
 		pspTmpl:  tmpl,
 		debugLog: debugLog,
 		infoLog:  infoLog,
@@ -184,7 +191,7 @@ func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Convert
 
 func (c *Converter) GenerateRules(pspString string) (string, error) {
 
-	psp := v1beta1.PodSecurityPolicy{}
+	pspTemplateArgs := PspTemplate{}
 
 	c.debugLog("GenerateRules() pspString=%s", pspString)
 
@@ -193,26 +200,38 @@ func (c *Converter) GenerateRules(pspString string) (string, error) {
 		return "", fmt.Errorf("Could not convert generic yaml document to json: %v", err)
 	}
 
-	err = json.Unmarshal(pspJSON, &psp)
+	err = json.Unmarshal(pspJSON, &pspTemplateArgs)
 
 	if err != nil {
 		return "", fmt.Errorf("Could not unmarshal json document: %v", err)
 	}
 
-	c.debugLog("PSP Object: %v", psp)
+	// If namePrefix is empty, use the psp name as the prefix. If
+	// that is missing, use "psp".
+	if c.namePrefix == "" {
+		if pspTemplateArgs.Name == "" {
+			pspTemplateArgs.NamePrefix = "psp"
+		} else {
+			pspTemplateArgs.NamePrefix = pspTemplateArgs.Name
+		}
+	} else {
+		pspTemplateArgs.NamePrefix = c.namePrefix
+	}
+
+	c.debugLog("PSP Object: %v", pspTemplateArgs)
 
 	// The generated rules need a set of images for which
 	// to scope the rules. A annotation with the key
 	// "falco-rules-psp-images" provides the list of images.
-	if _, ok := psp.Annotations["falco-rules-psp-images"]; !ok {
+	if _, ok := pspTemplateArgs.Annotations["falco-rules-psp-images"]; !ok {
 		return "", fmt.Errorf("PSP YAML document does not have an annotation \"falco-rules-psp-images\" that lists the images for which the generated rules should apply")
 	}
 
-	c.debugLog("Images %v", psp.Annotations["falco-rules-psp-images"])
+	c.debugLog("Images %v", pspTemplateArgs.Annotations["falco-rules-psp-images"])
 
 	var rulesB bytes.Buffer
 
-	err = c.pspTmpl.Execute(&rulesB, psp)
+	err = c.pspTmpl.Execute(&rulesB, pspTemplateArgs)
 
 	if err != nil {
 		return "", fmt.Errorf("Could not convert PSP to Falco Rules: %v", err)
