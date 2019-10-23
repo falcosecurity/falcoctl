@@ -45,6 +45,7 @@ type Converter struct {
 
 type PspTemplate struct {
 	NamePrefix string
+	PSPImages string
 	v1beta1.PodSecurityPolicy
 }
 
@@ -220,14 +221,14 @@ func (c *Converter) GenerateRules(pspString string) (string, error) {
 
 	c.debugLog("PSP Object: %v", pspTemplateArgs)
 
-	// The generated rules need a set of images for which
+	// The generated rules can have a set of images for which
 	// to scope the rules. A annotation with the key
 	// "falco-rules-psp-images" provides the list of images.
-	if _, ok := pspTemplateArgs.Annotations["falco-rules-psp-images"]; !ok {
-		return "", fmt.Errorf("PSP YAML document does not have an annotation \"falco-rules-psp-images\" that lists the images for which the generated rules should apply")
+	if _, ok := pspTemplateArgs.Annotations["falco-rules-psp-images"]; ok {
+		pspTemplateArgs.PSPImages = pspTemplateArgs.Annotations["falco-rules-psp-images"]
 	}
 
-	c.debugLog("Images %v", pspTemplateArgs.Annotations["falco-rules-psp-images"])
+	c.debugLog("Images %v", pspTemplateArgs.PSPImages)
 
 	var rulesB bytes.Buffer
 

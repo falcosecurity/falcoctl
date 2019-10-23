@@ -20,10 +20,11 @@ var (
 	K8sPspRulesTemplate string = `
 - required_engine_version: 5
 
+{{ if ne .PSPImages "" }}
 - list: {{ .NamePrefix }}_psp_images
-  items: {{index .Annotations "falco-rules-psp-images"}}
+  items: {{ .PSPImages }}
 
-# K8s audit specific macros here
+{{end}}# K8s audit specific macros here
 - macro: {{ .NamePrefix }}_psp_ka_always_true
   condition: (jevt.rawtime exists)
 
@@ -39,8 +40,16 @@ var (
 - macro: {{ .NamePrefix }}_psp_ka_pod
   condition: (ka.target.resource=pods and not ka.target.subresource exists)
 
+{{ if ne .PSPImages "" }}
+- macro: {{ .NamePrefix }}_psp_ka_match_image
+  condition: ka.req.pod.containers.image.repository in ({{ .NamePrefix }}_psp_images))
+{{else}}
+- macro: {{ .NamePrefix }}_psp_ka_match_image
+  condition: {{ .NamePrefix }}_psp_ka_always_true
+{{end}}
+
 - macro: {{ .NamePrefix }}_psp_ka_container
-  condition: ({{ .NamePrefix }}_psp_ka_enabled and {{ .NamePrefix }}_psp_kevt and {{ .NamePrefix }}_psp_ka_pod and ka.verb=create and ka.req.pod.containers.image.repository in ({{ .NamePrefix }}_psp_images))
+  condition: ({{ .NamePrefix }}_psp_ka_enabled and {{ .NamePrefix }}_psp_kevt and {{ .NamePrefix }}_psp_ka_pod and ka.verb=create and {{ .NamePrefix }}_psp_ka_match_image
 
 # syscall audit specific macros here
 - macro: {{ .NamePrefix }}_psp_always_true
@@ -52,8 +61,16 @@ var (
 - macro: {{ .NamePrefix }}_psp_enabled
   condition: ({{ .NamePrefix }}_psp_always_true)
 
+{{ if ne .PSPImages "" }}
+- macro: {{ .NamePrefix }}_psp_match_image
+  condition: ka.req.pod.containers.image.repository in ({{ .NamePrefix }}_psp_images))
+{{else}}
+- macro: {{ .NamePrefix }}_psp_match_image
+  condition: {{ .NamePrefix }}_psp_always_true
+{{end}}
+
 - macro: {{ .NamePrefix }}_psp_container
-  condition: ({{ .NamePrefix }}_psp_enabled and container.image.repository in ({{ .NamePrefix }}_psp_images))
+  condition: ({{ .NamePrefix }}_psp_enabled and  {{ .NamePrefix }}_psp_match_image
 
 - macro: {{ .NamePrefix }}_psp_open_write
   condition: (evt.type=open or evt.type=openat) and evt.is_open_write=true and fd.typechar='f' and fd.num>=0
