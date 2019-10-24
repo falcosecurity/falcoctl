@@ -36,7 +36,6 @@ import (
 type LogFunc func(format string, args ...interface{})
 
 type Converter struct {
-	namePrefix string
 	pspTmpl  *template.Template
 	debugLog LogFunc
 	infoLog  LogFunc
@@ -160,7 +159,7 @@ func allowPrivilegeEscalation(spec v1beta1.PodSecurityPolicySpec) bool {
 	return true
 }
 
-func NewConverter(namePrefix string, debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Converter, error) {
+func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Converter, error) {
 
 	tmpl := template.New("pspRules")
 
@@ -182,7 +181,6 @@ func NewConverter(namePrefix string, debugLog LogFunc, infoLog LogFunc, errorLog
 	}
 
 	return &Converter{
-		namePrefix: namePrefix,
 		pspTmpl:  tmpl,
 		debugLog: debugLog,
 		infoLog:  infoLog,
@@ -190,11 +188,11 @@ func NewConverter(namePrefix string, debugLog LogFunc, infoLog LogFunc, errorLog
 	}, nil
 }
 
-func (c *Converter) GenerateRules(pspString string) (string, error) {
+func (c *Converter) GenerateRules(namePrefix string, pspString string) (string, error) {
 
 	pspTemplateArgs := PspTemplate{}
 
-	c.debugLog("GenerateRules() pspString=%s", pspString)
+	c.debugLog("GenerateRules() namePrefix=%s, pspString=%s", pspString)
 
 	pspJSON, err := yaml.YAMLToJSON([]byte(pspString))
 	if err != nil {
@@ -209,15 +207,20 @@ func (c *Converter) GenerateRules(pspString string) (string, error) {
 
 	// If namePrefix is empty, use the psp name as the prefix. If
 	// that is missing, use "psp".
-	if c.namePrefix == "" {
+	if namePrefix == "" {
 		if pspTemplateArgs.Name == "" {
 			pspTemplateArgs.NamePrefix = "psp"
 		} else {
 			pspTemplateArgs.NamePrefix = pspTemplateArgs.Name
 		}
 	} else {
-		pspTemplateArgs.NamePrefix = c.namePrefix
+		pspTemplateArgs.NamePrefix = namePrefix
 	}
+
+	// The Name prefix can not contain spaces or dashes. Replace
+	// all spaces and dashes with underscore
+	pspTemplateArgs.NamePrefix = strings.Replace(pspTemplateArgs.NamePrefix, " ", "_", -1)
+	pspTemplateArgs.NamePrefix = strings.Replace(pspTemplateArgs.NamePrefix, "-", "_", -1)
 
 	c.debugLog("PSP Object: %v", pspTemplateArgs)
 

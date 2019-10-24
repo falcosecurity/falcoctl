@@ -85,12 +85,12 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 
 	psp, err := ioutil.ReadAll(pspFile)
 
-	conv, err := converter.NewConverter("", debugLog, infoLog, errorLog)
+	conv, err := converter.NewConverter(debugLog, infoLog, errorLog)
 	if err != nil {
 		return fmt.Errorf("Could not create converter: %v", err)
 	}
 
-	rules, err := conv.GenerateRules(string(psp))
+	rules, err := conv.GenerateRules("", string(psp))
 	if err != nil {
 		return fmt.Errorf("Could not convert psp file to falco rules: %v", err)
 	}
