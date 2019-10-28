@@ -1,0 +1,30 @@
+project_name: falcoctl
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: "falcoctl"
+    goos:
+    - linux
+    - darwin
+    - windows
+    goarch:
+    - amd64
+    - 386
+    main: .
+    env:
+      - GO111MODULE=on
+      - CGO_ENABLED=0
+    binary: falcoctl
+archives:
+  - id: windows
+    format_overrides:
+      - goos: windows
+        format: zip
+
+snapshot:
+  name_template: 'master'
+
+release:
+  github:
+  prerelease: auto
