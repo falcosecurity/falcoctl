@@ -2,3 +2,4 @@
 *.idea*
 .idea/*
 falcoctl
+dist/
