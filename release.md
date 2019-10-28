@@ -8,7 +8,6 @@ When we release we do the following process:
 2. A person with repository rights does the tag
 3. The same person runs goreleaser in their machine following the "Release commands" section below
 4. The tag is live on Github with the artifacts
-5. Travis builds the tag and push the related docker images
 
 ## Release commands
 
