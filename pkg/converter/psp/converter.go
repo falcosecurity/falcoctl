@@ -199,9 +199,10 @@ func (c *Converter) GenerateRules(namePrefix string, pspString string) (string, 
 		return "", fmt.Errorf("Could not convert generic yaml document to json: %v", err)
 	}
 
-	err = json.Unmarshal(pspJSON, &pspTemplateArgs)
+	decoder := json.NewDecoder(bytes.NewReader(pspJSON))
+	decoder.DisallowUnknownFields()
 
-	if err != nil {
+	if err := decoder.Decode(&pspTemplateArgs); err != nil {
 		return "", fmt.Errorf("Could not unmarshal json document: %v", err)
 	}
 
