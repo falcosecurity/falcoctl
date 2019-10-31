@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path"
 
 	"github.com/falcosecurity/falcoctl/pkg/probeloader"
@@ -76,8 +77,11 @@ func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command 
 		DisableFlagsInUseLine: true,
 		Short:                 "Install the Falco probe locally",
 		Long:                  `Download and install the Falco module locally`,
-		PreRunE: func(cmd *cobra.Command, args []string) {
-			return o.Validate(cmd, args)
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := o.Validate(cmd, args); err != nil {
+				logger.Critical("%s", err)
+				os.Exit(1)
+			}
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			falcoProbeFullpath := path.Join(o.falcoProbePath, o.falcoProbeFile)
