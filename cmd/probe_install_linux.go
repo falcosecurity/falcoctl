@@ -39,6 +39,9 @@ type ProbeInstallOptions struct {
 
 // Validate validates the `install probe` command options
 func (o ProbeInstallOptions) Validate(c *cobra.Command, args []string) error {
+	if len(o.falcoVersion) == 0 {
+		return fmt.Errorf("missing Falco version: specify it via FALCOCTL_FALCO_VERSION env variable or via --falco-version flag")
+	}
 	return nil
 }
 
@@ -47,10 +50,7 @@ func NewProbeInstallOptions(streams genericclioptions.IOStreams) CommandOptions 
 	o := &ProbeInstallOptions{
 		IOStreams: streams,
 	}
-	o.falcoVersion = viper.GetString("falco-version") // FALCOCTL_FALCO_VERSION env var
-	if len(o.falcoVersion) == 0 {
-		o.falcoVersion = "0.17.1" // default
-	}
+	o.falcoVersion = viper.GetString("falco-version")      // FALCOCTL_FALCO_VERSION env var
 	o.falcoProbePath = viper.GetString("falco-probe-path") // FALCOCTL_FALCO_PROBE_PATH env var
 	if len(o.falcoProbePath) == 0 {
 		o.falcoProbePath = "/" // default
@@ -76,6 +76,9 @@ func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command 
 		DisableFlagsInUseLine: true,
 		Short:                 "Install the Falco probe locally",
 		Long:                  `Download and install the Falco module locally`,
+		PreRunE: func(cmd *cobra.Command, args []string) {
+			return o.Validate(cmd, args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			falcoProbeFullpath := path.Join(o.falcoProbePath, o.falcoProbeFile)
 			falcoConfigHash, err := probeloader.GetKernelConfigHash()
