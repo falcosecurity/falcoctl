@@ -66,7 +66,7 @@ var (
   condition: (container.image.repository in ({{ .NamePrefix }}_psp_images))
 {{else}}
 - macro: {{ .NamePrefix }}_psp_match_image
-  condition: {{ .NamePrefix }}_psp_always_true
+  condition: (container.id != host)
 {{end}}
 
 - macro: {{ .NamePrefix }}_psp_container
@@ -90,7 +90,7 @@ var (
 
 - rule: PSP {{ .NamePrefix }} Violation (privileged) System Activity
   desc: Detect a psp validation failure for a privileged pod using syscalls
-  condition: {{ .NamePrefix }}_psp_container and evt.type=container and container.privileged intersects (true)
+  condition: evt.type=container and {{ .NamePrefix }}_psp_container and container.privileged intersects (true)
   output: Pod Security Policy {{ .Name }} validation failure--container with privileged=true created (user=%user.name command=%proc.cmdline %container.info images=%container.image.repository:%container.image.tag)
   priority: WARNING
   source: syscall
@@ -219,7 +219,7 @@ var (
 - rule: PSP {{ .NamePrefix }} Violation (readOnlyRootFilesystem) System Activity
   desc: >
     Detect a psp validation failure for a readOnlyRootFilesystem pod using syscalls
-  condition: {{ .NamePrefix }}_psp_container and {{ .NamePrefix }}_psp_open_write
+  condition: {{ .NamePrefix }}_psp_open_write and {{ .NamePrefix }}_psp_container
   output: >
     Pod Security Policy {{ .Name }} validation failure--write in container with readOnlyRootFilesystem=true
     (user=%user.name command=%proc.cmdline file=%fd.name parent=%proc.pname container_id=%container.id images=%container.image.repository)
@@ -248,7 +248,7 @@ var (
 - rule: PSP {{ .NamePrefix }} Violation (runAsUser=MustRunAs) System Activity
   desc: >
     Detect a psp validation failure for a runAsUser outside of the allowed set using syscalls
-  condition: {{ .NamePrefix }}_psp_container and evt.type in (execve, setuid) and evt.dir=< and not {{ .NamePrefix }}_psp_allowed_uids
+  condition: evt.type in (execve, setuid) and evt.dir=< and {{ .NamePrefix }}_psp_container and not {{ .NamePrefix }}_psp_allowed_uids
   output: Pod Security Policy {{ .Name }} validation failure--runAsUser outside of allowed set. runAsUser set=({{ JoinIDRanges .Spec.RunAsUser.Ranges }}) (command=%proc.cmdline uid=%user.uid container_id=%container.id images=%container.image.repository)
   priority: WARNING
   source: syscall
@@ -269,7 +269,7 @@ var (
 - rule: PSP {{ .NamePrefix }} Violation (runAsUser=MustRunAsNonRoot) System Activity
   desc: >
     Detect a psp validation failure for a uid=0 user when MustRunAsNonRoot is set using syscalls
-  condition: {{ .NamePrefix }}_psp_container and evt.type in (execve, setuid) and evt.dir=< and user.uid=0
+  condition: evt.type in (execve, setuid) and evt.dir=< and {{ .NamePrefix }}_psp_container and user.uid=0
   output: Pod Security Policy {{ .Name }} validation failure--root user when MustRunAsNonRoot is set (command=%proc.cmdline uid=%user.uid container_id=%container.id images=%container.image.repository)
   priority: WARNING
   source: syscall
@@ -296,7 +296,7 @@ var (
 - rule: PSP {{ .NamePrefix }} Violation (runAsGroup=MustRunAs) System Activity
   desc: >
     Detect a psp validation failure for a runAsGroup outside of the allowed set using syscalls
-  condition: {{ .NamePrefix }}_psp_container and evt.type in (execve, setgid) and evt.dir=< and not {{ .NamePrefix }}_psp_allowed_gids
+  condition: evt.type in (execve, setgid) and evt.dir=< and {{ .NamePrefix }}_psp_container and not {{ .NamePrefix }}_psp_allowed_gids
   output: Pod Security Policy {{ .Name }} validation failure--runAsGroup outside of allowed set. runAsGroup set=({{ JoinIDRanges .Spec.RunAsGroup.Ranges }}) (command=%proc.cmdline user=%user.uid gid=%group.gid container_id=%container.id images=%container.image.repository)
   priority: WARNING
   source: syscall
