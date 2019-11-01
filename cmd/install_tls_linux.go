@@ -45,7 +45,7 @@ func NewTLSInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 	return o
 }
 
-// NewTLSInstallCommand creates the `install probe` command
+// NewTLSInstallCommand creates the `install tls` command
 func NewTLSInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewTLSInstallOptions(streams).(*TLSInstallOptions)
 
