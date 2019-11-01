@@ -53,6 +53,7 @@ func NewInstallCommand(streams genericclioptions.IOStreams, f factory.Factory) *
 
 	cmd.AddCommand(NewFalcoInstallCommand(streams, f))
 	cmd.AddCommand(NewProbeInstallCommand(streams))
+	cmd.AddCommand(NewTLSInstallCommand(streams))
 
 	return cmd
 }
