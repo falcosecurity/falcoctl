@@ -45,6 +45,7 @@ type Converter struct {
 type PspTemplate struct {
 	NamePrefix string
 	PSPImages string
+	PSPNamespaces string
 	v1beta1.PodSecurityPolicy
 }
 
@@ -188,11 +189,11 @@ func NewConverter(debugLog LogFunc, infoLog LogFunc, errorLog LogFunc) (*Convert
 	}, nil
 }
 
-func (c *Converter) GenerateRules(namePrefix string, pspString string) (string, error) {
+func (c *Converter) GenerateRules(namePrefix string, pspString string, namespaces []string) (string, error) {
 
 	pspTemplateArgs := PspTemplate{}
 
-	c.debugLog("GenerateRules() namePrefix=%s, pspString=%s", pspString)
+	c.debugLog("GenerateRules() namePrefix=%s, pspString=%s, namespaces=%v", namePrefix, pspString, namespaces)
 
 	pspJSON, err := yaml.YAMLToJSON([]byte(pspString))
 	if err != nil {
@@ -230,6 +231,12 @@ func (c *Converter) GenerateRules(namePrefix string, pspString string) (string, 
 	// "falco-rules-psp-images" provides the list of images.
 	if _, ok := pspTemplateArgs.Annotations["falco-rules-psp-images"]; ok {
 		pspTemplateArgs.PSPImages = pspTemplateArgs.Annotations["falco-rules-psp-images"]
+	}
+
+	if _, ok := pspTemplateArgs.Annotations["falco-rules-psp-namespaces"]; ok {
+		pspTemplateArgs.PSPNamespaces = pspTemplateArgs.Annotations["falco-rules-psp-namespaces"]
+	} else if len(namespaces) > 0 {
+		pspTemplateArgs.PSPNamespaces = "[" + strings.Join(namespaces, ",") + "]"
 	}
 
 	c.debugLog("Images %v", pspTemplateArgs.PSPImages)
