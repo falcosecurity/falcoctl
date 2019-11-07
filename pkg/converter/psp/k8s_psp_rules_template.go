@@ -24,6 +24,10 @@ var (
 - list: {{ .NamePrefix }}_psp_images
   items: {{ .PSPImages }}
 
+{{end}}{{ if ne .PSPNamespaces "" }}
+- list: {{ .NamePrefix }}_psp_namespaces
+  items: {{ .PSPNamespaces }}
+
 {{end}}# K8s audit specific macros here
 - macro: {{ .NamePrefix }}_psp_ka_always_true
   condition: (jevt.rawtime exists)
@@ -40,6 +44,14 @@ var (
 - macro: {{ .NamePrefix }}_psp_ka_pod
   condition: (ka.target.resource=pods and not ka.target.subresource exists)
 
+{{ if ne .PSPNamespaces "" }}
+- macro: {{ .NamePrefix}}_psp_match_namespace
+  condition: ka.target.namespace in ({{ .NamePrefix }}_psp_namespaces)
+{{else}}
+- macro: {{ .NamePrefix}}_psp_match_namespace
+  condition: {{ .NamePrefix }}_psp_ka_always_true
+{{end}}
+
 {{ if ne .PSPImages "" }}
 - macro: {{ .NamePrefix }}_psp_ka_match_image
   condition: (ka.req.pod.containers.image.repository in ({{ .NamePrefix }}_psp_images))
@@ -49,7 +61,7 @@ var (
 {{end}}
 
 - macro: {{ .NamePrefix }}_psp_ka_container
-  condition: ({{ .NamePrefix }}_psp_ka_enabled and {{ .NamePrefix }}_psp_kevt and {{ .NamePrefix }}_psp_ka_pod and ka.verb=create and {{ .NamePrefix }}_psp_ka_match_image)
+  condition: ({{ .NamePrefix }}_psp_ka_enabled and {{ .NamePrefix }}_psp_kevt and {{ .NamePrefix }}_psp_ka_pod and ka.verb=create and {{ .NamePrefix }}_psp_ka_match_image and {{ .NamePrefix}}_psp_match_namespace)
 
 # syscall audit specific macros here
 - macro: {{ .NamePrefix }}_psp_always_true

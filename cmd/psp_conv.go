@@ -90,7 +90,7 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 		return fmt.Errorf("Could not create converter: %v", err)
 	}
 
-	rules, err := conv.GenerateRules("", string(psp))
+	rules, err := conv.GenerateRules("", string(psp), []string{})
 	if err != nil {
 		return fmt.Errorf("Could not convert psp file to falco rules: %v", err)
 	}
