@@ -74,6 +74,7 @@ func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().BoolVarP(&o.fabulous, "fab", "f", o.fabulous, "Enable rainbow logs")
+	cmd.PersistentFlags().IntVarP(&logger.Level, "verbose", "v", 3, "Verbosity 0 (off) 4 (most)")
 
 	flags := cmd.Flags()
 	o.configFlags.AddFlags(flags)

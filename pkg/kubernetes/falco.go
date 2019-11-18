@@ -17,6 +17,8 @@ limitations under the License.
 package kubernetesfalc
 
 import (
+	"strings"
+
 	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
 	"k8s.io/api/apps/v1beta2"
@@ -73,7 +75,7 @@ func NewFalcoInstaller(f factory.Factory) (FalcoInstaller, error) {
 		logger.Critical("Fatal error: %v", err)
 		return nil, err
 	}
-	i.namespace = "falco-ns" // todo > inject
+	i.namespace = "falco" // todo > inject
 
 	return i, nil
 }
@@ -99,47 +101,64 @@ func (i *falcoInstaller) Install() error {
 	// Namespace
 	err := createNamespace(i.coreClient.Namespaces(), i.namespace)
 	if err != nil {
-		logger.Critical("Error creating namespace: %v", err)
-		return err
+		if !strings.Contains(err.Error(), "already exists") {
+			logger.Critical("Error creating namespace: %v", err)
+		} else {
+			logger.Info("Namespace already exists: %v", i.namespace)
+		}
+	} else {
+		logger.Always("Falco namespace created: %s", i.namespace)
 	}
-	logger.Always("Falco namespace created: %s", i.namespace)
 
 	// RBAC
 	serviceAccountName := "falco-sa" // todo > inject
 	err = createRBAC(i.coreClient.ServiceAccounts(i.namespace), i.rbacClient.ClusterRoles(), i.rbacClient.ClusterRoleBindings(), serviceAccountName, i.namespace)
 	if err != nil {
-		logger.Critical("Error creating service account: %v", err)
-		return err
+		if !strings.Contains(err.Error(), "already exists") {
+			logger.Critical("Error creating RBAC: %v", err)
+		} else {
+			logger.Info("RBAC already exists: %v", i.namespace)
+		}
+	} else {
+		logger.Always("RBAC created: %s", i.namespace)
 	}
-	logger.Always("Falco service accounts created: %s", i.namespace)
 
 	// ConfigMap
 	configMapName := "falco-cm" // todo > inject
 	err = createConfigMap(i.coreClient.ConfigMaps(i.namespace), configMapName, i.namespace)
 	if err != nil {
-		logger.Critical("Error creating config map: %v", err)
-		return err
+		if !strings.Contains(err.Error(), "already exists") {
+			logger.Critical("Error creating ConfigMap: %v", err)
+		} else {
+			logger.Info("ConfigMap already exists: %v", i.namespace)
+		}
+	} else {
+		logger.Always("ConfigMap created: %s", i.namespace)
 	}
-	logger.Always("Falco config map created: %s", i.namespace)
-
 	// DaemonSet
 	daemonSetName := "falco-ds" // todo > inject
 	err = createDaemonSet(i.appsv1beta2Client.DaemonSets(i.namespace), serviceAccountName, configMapName, daemonSetName, false)
 	if err != nil {
-		logger.Critical("Error creating daemon set: %v", err)
-		return err
+		if !strings.Contains(err.Error(), "already exists") {
+			logger.Critical("Error creating DaemonSet: %v", err)
+		} else {
+			logger.Info("DaemonSet already exists: %v", i.namespace)
+		}
+	} else {
+		logger.Always("DaemonSet created: %s", i.namespace)
 	}
-	logger.Always("Falco daemon set created: %s", i.namespace)
-
 	// Service
 	serviceName := "falco-svc" // todo > inject
 	err = createService(i.coreClient.Services(i.namespace), serviceName, i.namespace)
 	if err != nil {
-		logger.Critical("Error creating service: %v", err)
-		return err
+		if !strings.Contains(err.Error(), "already exists") {
+			logger.Critical("Error creating Service: %v", err)
+		} else {
+			logger.Info("Service already exists: %v", i.namespace)
+		}
+	} else {
+		logger.Always("Service created: %s", i.namespace)
 	}
-	logger.Always("Falco service created: %s", i.namespace)
-
 	return NewAuditInstaller(i.coreClient, i.auditClient, i.namespace, serviceAccountName).Install()
 }
 
