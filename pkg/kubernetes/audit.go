@@ -43,9 +43,12 @@ type auditInstaller struct {
 
 // NewAuditInstaller ...
 func NewAuditInstaller(coreClient corev1.CoreV1Interface, auditClient auditregistrationv1alpha1.AuditregistrationV1alpha1Interface, namespace string, serviceAccountName string) *auditInstaller {
+	logger.Info("New installer in namespace: %s", namespace)
 	return &auditInstaller{
-		coreClient:  coreClient,
-		auditClient: auditClient,
+		coreClient:         coreClient,
+		namespace:          namespace,
+		serviceAccountName: serviceAccountName,
+		auditClient:        auditClient,
 	}
 }
 
@@ -71,25 +74,25 @@ func (i *auditInstaller) Install() error {
 		return fmt.Errorf("Unable to find kube-apiserver")
 	}
 
-	// Enable audit flags
-	logger.Always("Setting new API server flags...")
-	apiServer.Spec.Containers[0].Command = append(
-		apiServer.Spec.Containers[0].Command,
-		"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
-	)
-	apiServer.Spec.Containers[0].Command = append(
-		apiServer.Spec.Containers[0].Command,
-		"--feature-gates=DynamicAuditing=true",
-	)
-	apiServer.Spec.Containers[0].Command = append(
-		apiServer.Spec.Containers[0].Command,
-		"--runtime-config=auditregistration.k8s.io/v1alpha1=true",
-	)
-
-	_, err = i.coreClient.Pods(APIServerNamespace).Update(&apiServer)
-	if err != nil {
-		return fmt.Errorf("unable to update API server: %v", err)
-	}
+	//// Enable audit flags
+	//logger.Always("Setting new API server flags...")
+	//apiServer.Spec.Containers[0].Command = append(
+	//	apiServer.Spec.Containers[0].Command,
+	//	"--tls-private-key-file=/etc/kubernetes/pki/apiserver.key",
+	//)
+	//apiServer.Spec.Containers[0].Command = append(
+	//	apiServer.Spec.Containers[0].Command,
+	//	"--feature-gates=DynamicAuditing=true",
+	//)
+	//apiServer.Spec.Containers[0].Command = append(
+	//	apiServer.Spec.Containers[0].Command,
+	//	"--runtime-config=auditregistration.k8s.io/v1alpha1=true",
+	//)
+	//
+	//_, err = i.coreClient.Pods(APIServerNamespace).Update(&apiServer)
+	//if err != nil {
+	//	return fmt.Errorf("unable to update API server: %v", err)
+	//}
 
 	// TODO - Generate YAML and patch the server manifest
 	// We have to replace the YAML via SSH - we CANNOT update the static pod.
@@ -107,9 +110,9 @@ func (i *auditInstaller) Install() error {
 	logger.Always("Audit logging enabled")
 	logger.Always("Configuring Falco as an audit endpoint")
 
-	svc, err := i.coreClient.Services(i.namespace).Get(i.serviceAccountName, metav1.GetOptions{})
+	svc, err := i.coreClient.Services(i.namespace).Get("falco-svc", metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("Unable to find Falco service")
+		return fmt.Errorf("Unable to find Falco service: %s", i.namespace)
 	}
 	ip := svc.Spec.ClusterIP
 	endpoint := fmt.Sprintf("http://%s:8765/k8s_audit", ip)
