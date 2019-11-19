@@ -25,10 +25,6 @@ import (
 // RuleInstallOptions represents the `install tls` command options
 type RuleInstallOptions struct {
 	genericclioptions.IOStreams
-	country string
-	org     string
-	name    string
-	path    string
 }
 
 // Validate validates the `install probe` command options
@@ -46,24 +42,16 @@ func NewRuleInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 
 // NewRuleInstallCommand creates the `install rule` command
 func NewRuleInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewRuleInstallOptions(streams).(*RuleInstallOptions)
+	// todo > uncomment me when implementing this command
+	// o := NewRuleInstallOptions(streams).(*RuleInstallOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "rule",
 		DisableFlagsInUseLine: true,
 		Short:                 "Install Falco rules.",
-		Long: `Install Falco rules`,
+		Long:                  `Install Falco rules`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-
-			logger.Debug(o.name)
+			logger.Info("to be implemented")
 
 			return nil
 		},
