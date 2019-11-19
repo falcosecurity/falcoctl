@@ -61,10 +61,12 @@ This command is a convenience to not only generate the TLS material, but also dr
 			err := g.Generate()
 			if err != nil {
 				logger.Critical(err.Error())
+				return err
 			}
 			err = g.FlushToDisk(o.path)
 			if err != nil {
 				logger.Critical(err.Error())
+				return err
 			}
 
 			return nil
@@ -72,7 +74,7 @@ This command is a convenience to not only generate the TLS material, but also dr
 	}
 
 	cmd.Flags().StringVarP(&o.country, "country", "c", "US", "The country to self sign the TLS cert with")
-	cmd.Flags().StringVarP(&o.org, "org", "o", "SysDig", "The org to self sign the TLS cert with")
+	cmd.Flags().StringVarP(&o.org, "org", "o", "sysdig", "The org to self sign the TLS cert with")
 	cmd.Flags().StringVarP(&o.name, "name", "n", "Default", "The name to self sign the TLS cert with")
 	cmd.Flags().StringVarP(&o.path, "path", "p", "/etc/falco/certs/", "The path to write the TLS cert to")
 
