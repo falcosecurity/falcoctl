@@ -29,12 +29,12 @@ import (
 )
 
 const (
-	DefaultRSABytes int = 4096
-	DefaultServerKey  = "server.key"
-	DefaultCAKey      = "ca.key"
-	DefaultServerCSR  = "server.csr"
-	DefaultCACert     = "ca.crt"
-	DefaultServerCert = "server.crt"
+	DefaultRSABytes   int = 4096
+	DefaultServerKey      = "server.key"
+	DefaultCAKey          = "ca.key"
+	DefaultServerCSR      = "server.csr"
+	DefaultCACert         = "ca.crt"
+	DefaultServerCert     = "server.crt"
 )
 
 var (
@@ -176,7 +176,7 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 		return fmt.Errorf("unable to marshal PEM data for serverCRT: %v", err)
 	}
 	f := filepath.Join(path, DefaultServerCert)
-	logger.Always("Writting: %s", f)
+	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, serverCert, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
@@ -188,7 +188,7 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 		return fmt.Errorf("unable to marshal PEM data for caCert: %v", err)
 	}
 	f = filepath.Join(path, DefaultCACert)
-	logger.Always("Writting: %s", f)
+	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, caCert, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
@@ -199,7 +199,7 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 		return fmt.Errorf("unable to marshal PEM data for serverCSR: %v", err)
 	}
 	f = filepath.Join(path, DefaultServerCSR)
-	logger.Always("Writting: %s", f)
+	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, serverCSR, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
@@ -211,7 +211,7 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 		return fmt.Errorf("unable to marshal PEM data for caKey: %v", err)
 	}
 	f = filepath.Join(path, DefaultCAKey)
-	logger.Always("Writting: %s", f)
+	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, caKey, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
@@ -223,7 +223,7 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 		return fmt.Errorf("unable to marshal PEM data for serverKey: %v", err)
 	}
 	f = filepath.Join(path, DefaultServerKey)
-	logger.Always("Writting: %s", f)
+	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, serverKey, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
