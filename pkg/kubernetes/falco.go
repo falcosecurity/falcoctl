@@ -21,11 +21,11 @@ import (
 
 	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
-	"k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appsv1beta2 "k8s.io/client-go/kubernetes/typed/apps/v1beta2"
+	appsv1cli "k8s.io/client-go/kubernetes/typed/apps/v1"
 	auditregistrationv1alpha1 "k8s.io/client-go/kubernetes/typed/auditregistration/v1alpha1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	rbacv1beta1 "k8s.io/client-go/kubernetes/typed/rbac/v1beta1"
@@ -34,11 +34,11 @@ import (
 
 // falcoInstaller is a data structure used to install Falco in Kubernetes
 type falcoInstaller struct {
-	coreClient        corev1.CoreV1Interface
-	auditClient       auditregistrationv1alpha1.AuditregistrationV1alpha1Interface
-	rbacClient        rbacv1beta1.RbacV1beta1Interface
-	appsv1beta2Client appsv1beta2.AppsV1beta2Interface
-	namespace         string
+	coreClient   corev1.CoreV1Interface
+	auditClient  auditregistrationv1alpha1.AuditregistrationV1alpha1Interface
+	rbacClient   rbacv1beta1.RbacV1beta1Interface
+	appsv1Client appsv1cli.AppsV1Interface
+	namespace    string
 }
 
 // FalcoInstaller ...
@@ -65,7 +65,7 @@ func NewFalcoInstaller(f factory.Factory) (FalcoInstaller, error) {
 		logger.Critical("Fatal error: %v", err)
 		return nil, err
 	}
-	i.appsv1beta2Client, err = appsv1beta2.NewForConfig(restConfig)
+	i.appsv1Client, err = appsv1cli.NewForConfig(restConfig)
 	if err != nil {
 		logger.Critical("Fatal error: %v", err)
 		return nil, err
@@ -137,7 +137,7 @@ func (i *falcoInstaller) Install() error {
 	}
 	// DaemonSet
 	daemonSetName := "falco-ds" // todo > inject
-	err = createDaemonSet(i.appsv1beta2Client.DaemonSets(i.namespace), serviceAccountName, configMapName, daemonSetName, false)
+	err = createDaemonSet(i.appsv1Client.DaemonSets(i.namespace), serviceAccountName, configMapName, daemonSetName, false)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
 			logger.Critical("Error creating DaemonSet: %v", err)
@@ -313,12 +313,12 @@ func createNamespace(namespaceClient corev1.NamespaceInterface, name string) err
 	return err
 }
 
-func createDaemonSet(daemonSetClient appsv1beta2.DaemonSetInterface, serviceAccountName string, configMapName string, daemonSetName string, bpf bool) error {
+func createDaemonSet(daemonSetClient appsv1cli.DaemonSetInterface, serviceAccountName string, configMapName string, daemonSetName string, bpf bool) error {
 	useBPF := "PASS"
 	if bpf == true {
 		useBPF = "SYSDIG_BPF_PROBE"
 	}
-	ds := &v1beta2.DaemonSet{
+	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: daemonSetName,
 			Labels: map[string]string{
@@ -326,7 +326,7 @@ func createDaemonSet(daemonSetClient appsv1beta2.DaemonSetInterface, serviceAcco
 				"role": "security",
 			},
 		},
-		Spec: v1beta2.DaemonSetSpec{
+		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app":  "falco",
@@ -345,7 +345,7 @@ func createDaemonSet(daemonSetClient appsv1beta2.DaemonSetInterface, serviceAcco
 					Containers: []v1.Container{
 						{
 							Name:  "falco",
-							Image: "falcosecurity/falco-slim:0.17.0", // TODO use a specific version not `latest`
+							Image: "falcosecurity/falco:0.18.0-slim", // TODO use a specific version not `latest`
 							SecurityContext: &v1.SecurityContext{
 								Privileged: pointer.BoolPtr(true),
 							},
