@@ -90,6 +90,24 @@ func (i *falcoInstaller) Delete() error {
 	} else {
 		logger.Always("Falco namespace deleted: %s", i.namespace)
 	}
+       err = i.rbacClient.ClusterRoles().Delete("falco-cluster-role", &metav1.DeleteOptions{})
+        if err != nil {
+                logger.Critical("Error deleting clusterrole: %v", err)
+        } else {
+                logger.Always("Falco clusterrole deleted: %s", "falco-cluster-role")
+        }
+        err = i.rbacClient.ClusterRoleBindings().Delete("falco-cluster-role-binding", &metav1.DeleteOptions{})
+        if err != nil {
+                logger.Critical("Error deleting clusterrolebinding: %v", "falco-cluster-role-binding")
+        } else {
+                logger.Always("Falco clusterrolebinding deleted: %s", "falco-cluster-role-binding")
+        }
+        err = i.auditClient.AuditSinks().Delete("falco-audit-sink", &metav1.DeleteOptions{})
+        if err != nil {
+                logger.Critical("Error deleting auditsink: %v", "falco-audit-sink")
+        } else {
+                logger.Always("Falco auditsink deleted: %s", "falco-audit-sink")
+        }
 	return nil
 }
 
