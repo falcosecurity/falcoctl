@@ -20,7 +20,15 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/tls"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+)
+
+const (
+	DefaultCertsCountry = "US"
+	DefaultCertsOrg     = "falcosecurity"
+	DefaultCertsName    = "Default"
+	DefaultCertsPath    = "/etc/falco/certs"
 )
 
 // TLSInstallOptions represents the `install tls` command options
@@ -34,6 +42,7 @@ type TLSInstallOptions struct {
 
 // Validate validates the `install probe` command options
 func (o TLSInstallOptions) Validate(c *cobra.Command, args []string) error {
+	// todo > validate path exists and is writable here
 	return nil
 }
 
@@ -42,6 +51,29 @@ func NewTLSInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 	o := &TLSInstallOptions{
 		IOStreams: streams,
 	}
+
+	// Fallback to default only when also env variable is missing
+	// FALCOCTL_COUNTRY env var
+	o.country = viper.GetString("country")
+	if len(o.country) == 0 {
+		o.country = DefaultCertsCountry
+	}
+	// FALCOCTL_ORG env var
+	o.org = viper.GetString("org")
+	if len(o.org) == 0 {
+		o.org = DefaultCertsOrg
+	}
+	// FALCOCTL_NAME env var
+	o.name = viper.GetString("name")
+	if len(o.name) == 0 {
+		o.name = DefaultCertsName
+	}
+	// FALCOCTL_PATH env var
+	o.path = viper.GetString("path")
+	if len(o.path) == 0 {
+		o.path = DefaultCertsPath
+	}
+
 	return o
 }
 
@@ -53,7 +85,7 @@ func NewTLSInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
 		Use:                   "tls",
 		DisableFlagsInUseLine: true,
 		Short:                 "Generate and install TLS material to be used with the Falco gRPC server",
-		Long: `Falco gRPC server runs with mutually encrypted TLS by default. 
+		Long: `Falco gRPC server runs with mutually encrypted TLS by default.
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,10 +105,10 @@ This command is a convenience to not only generate the TLS material, but also dr
 		},
 	}
 
-	cmd.Flags().StringVarP(&o.country, "country", "c", "US", "The country to self sign the TLS cert with")
-	cmd.Flags().StringVarP(&o.org, "org", "o", "sysdig", "The org to self sign the TLS cert with")
-	cmd.Flags().StringVarP(&o.name, "name", "n", "Default", "The name to self sign the TLS cert with")
-	cmd.Flags().StringVarP(&o.path, "path", "p", "/etc/falco/certs/", "The path to write the TLS cert to")
+	cmd.Flags().StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
+	cmd.Flags().StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
+	cmd.Flags().StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
+	cmd.Flags().StringVarP(&o.path, "path", "p", o.path, "The path to write the TLS cert to")
 
 	return cmd
 }
