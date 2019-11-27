@@ -163,7 +163,6 @@ func (g *GRPCTLSGenerator) Generate() error {
 
 // FlushToDisk is used to persist the cert material from a GRPCTLSGenerator to disk given a path.
 func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
-
 	p, err := satisfyDir(path)
 	if err != nil {
 		return fmt.Errorf("invalid path: %v", err)
@@ -236,11 +235,9 @@ func satisfyDir(dirName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to calculate absolute path: %v", err)
 	}
-	validDir := filepath.Dir(abs)
-	err = os.MkdirAll(validDir, 0644)
+	err = os.MkdirAll(abs, 0644)
 	if err == nil || os.IsExist(err) {
-		return validDir, nil
-	} else {
-		return "", fmt.Errorf("unable to ensure dir: %v", err)
+		return abs, nil
 	}
+	return "", fmt.Errorf("unable to ensure dir: %v", err)
 }
