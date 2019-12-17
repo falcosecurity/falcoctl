@@ -137,14 +137,15 @@ func (g *GRPCTLSGenerator) Generate() error {
 		Organization: g.Organization,
 		CommonName:   g.CommonName,
 	}
-	serverCert, err := openssl.NewCertificate(serverCASigningInfo, caKey)
+	serverCert, err := openssl.NewCertificate(serverCASigningInfo, serverKey)
 	if err != nil {
 		return fmt.Errorf("unable to create new server cert: %v", err)
 	}
 	serverCert.SetIssuer(caCert)
-	err = caCert.Sign(caKey, openssl.EVP_SHA256)
+
+	err = serverCert.Sign(serverKey, openssl.EVP_SHA256)
 	if err != nil {
-		return fmt.Errorf("unable to sign caCert: %v", err)
+		return fmt.Errorf("unable to sign serverCert: %v", err)
 	}
 	err = serverCert.Sign(caKey, openssl.EVP_SHA256)
 	if err != nil {
