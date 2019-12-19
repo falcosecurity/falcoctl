@@ -27,7 +27,7 @@ import (
 const (
 	DefaultCertsCountry = "US"
 	DefaultCertsOrg     = "falcosecurity"
-	DefaultCertsName    = "Default"
+	DefaultCertsName    = "localhost"
 	DefaultCertsPath    = "/etc/falco/certs"
 )
 
