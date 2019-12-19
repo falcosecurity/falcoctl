@@ -29,6 +29,7 @@ const (
 	DefaultCertsOrg     = "falcosecurity"
 	DefaultCertsName    = "localhost"
 	DefaultCertsPath    = "/etc/falco/certs"
+	DefaultCertsDays    = 365
 )
 
 // TLSInstallOptions represents the `install tls` command options
@@ -38,6 +39,7 @@ type TLSInstallOptions struct {
 	org     string
 	name    string
 	path    string
+	days    int
 }
 
 // Validate validates the `install probe` command options
@@ -68,6 +70,11 @@ func NewTLSInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 	if len(o.name) == 0 {
 		o.name = DefaultCertsName
 	}
+	// FALCOCTL_DAYS env var
+	o.path = viper.GetString("days")
+	if len(o.path) == 0 {
+		o.days = DefaultCertsDays
+	}
 	// FALCOCTL_PATH env var
 	o.path = viper.GetString("path")
 	if len(o.path) == 0 {
@@ -89,7 +96,7 @@ func NewTLSInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			g := tls.NewGRPCTLSGenerator(o.country, o.org, o.name)
+			g := tls.NewGRPCTLSGenerator(o.country, o.org, o.name, o.days)
 			err := g.Generate()
 			if err != nil {
 				logger.Critical(err.Error())
@@ -108,6 +115,7 @@ This command is a convenience to not only generate the TLS material, but also dr
 	cmd.Flags().StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
 	cmd.Flags().StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
 	cmd.Flags().StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
+	cmd.Flags().IntVarP(&o.days, "days", "d", o.days, "The number of days to make self signed TLS cert valid for")
 	cmd.Flags().StringVarP(&o.path, "path", "p", o.path, "The path to write the TLS cert to")
 
 	return cmd
