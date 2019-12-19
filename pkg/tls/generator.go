@@ -39,12 +39,9 @@ const (
 
 var (
 	DefaultX509SubjectFields = map[string]string{
-		"C":  "SP",
 		"ST": "US",
 		"L":  "San Francisco",
-		"O":  "Default",
 		"OU": "Default",
-		"CN": "Root CA",
 	}
 )
 
@@ -87,7 +84,7 @@ func (g *GRPCTLSGenerator) Generate() error {
 		Expires:      0,
 		Country:      g.Country,
 		Organization: g.Organization,
-		CommonName:   g.CommonName,
+		CommonName:   "Root CA",
 	}
 	caCert, err := openssl.NewCertificate(certificateSigningInfo, caKey)
 	if err != nil {
@@ -97,6 +94,14 @@ func (g *GRPCTLSGenerator) Generate() error {
 	name.AddTextEntries(g.SubjectFields)
 	caCert.SetSubjectName(name)
 	caCert.SetVersion(openssl.X509_V3)
+	if err := caCert.AddExtensions(map[openssl.NID]string{
+		openssl.NID_basic_constraints:      "critical,CA:TRUE",
+		openssl.NID_key_usage:              "critical,keyCertSign,cRLSign",
+		openssl.NID_subject_key_identifier: "hash",
+		openssl.NID_netscape_cert_type:     "sslCA",
+	}); err != nil {
+		return fmt.Errorf("unable to add caCert extensions: %v", err)
+	}
 	err = caCert.Sign(caKey, openssl.EVP_SHA256)
 	if err != nil {
 		return fmt.Errorf("unable to sign caCert: %v", err)
@@ -123,7 +128,7 @@ func (g *GRPCTLSGenerator) Generate() error {
 	}
 	serverName := &openssl.Name{}
 	serverName.AddTextEntries(g.SubjectFields)
-	serverCSR.SetSubjectName(name)
+	serverCSR.SetSubjectName(serverName)
 	serverCSR.SetVersion(openssl.X509_V3)
 	err = serverCSR.Sign(serverKey, openssl.EVP_SHA256)
 	if err != nil {
