@@ -32,10 +32,13 @@ import (
 const (
 	DefaultRSABytes   int = 4096
 	DefaultServerKey      = "server.key"
+	DefaultClientKey      = "client.key"
 	DefaultCAKey          = "ca.key"
 	DefaultServerCSR      = "server.csr"
+	DefaultClientCSR      = "client.csr"
 	DefaultCACert         = "ca.crt"
 	DefaultServerCert     = "server.crt"
+	DefaultClientCert     = "client.crt"
 )
 
 var (
@@ -56,8 +59,11 @@ type GRPCTLSGenerator struct {
 	CACert        *openssl.Certificate
 	ServerCert    *openssl.Certificate
 	ServerCSR     *openssl.Certificate
+	ClientCert    *openssl.Certificate
+	ClientCSR     *openssl.Certificate
 	CAKey         openssl.PrivateKey
 	ServerKey     openssl.PrivateKey
+	ClientKey     openssl.PrivateKey
 }
 
 // NewGRPCTLSGenerator is used to init a new TLS Generator for Falco
@@ -76,11 +82,13 @@ func NewGRPCTLSGenerator(country, organization, name string, days int) *GRPCTLSG
 func (g *GRPCTLSGenerator) Generate() error {
 	i64 := &big.Int{}
 	i64.SetInt64(01)
+
+	//$ openssl genrsa -passout pass:1234 -des3 -out ca.key 4096
 	caKey, err := openssl.GenerateRSAKey(g.RSABytes)
 	if err != nil {
 		return fmt.Errorf("unable to generate RSA key: %v", err)
 	}
-
+	//$ openssl req -passin pass:1234 -new -x509 -days 365 -key ca.key -out ca.crt -subj  "/C=SP/ST=Italy/L=Ornavasso/O=Test/OU=Test/CN=Root CA"
 	certificateSigningInfo := &openssl.CertificateInfo{
 		Serial:       i64,
 		Issued:       0,
@@ -115,7 +123,6 @@ func (g *GRPCTLSGenerator) Generate() error {
 	if err != nil {
 		return fmt.Errorf("unable to generate server RSA key: %v", err)
 	}
-
 	//$ openssl req -passin pass:1234 -new -key server.key -out server.csr -subj  "/C=SP/ST=Italy/L=Ornavasso/O=Test/OU=Server/CN=localhost"
 	serverCertificateSigningInfo := &openssl.CertificateInfo{
 		Serial:       i64,
@@ -145,12 +152,12 @@ func (g *GRPCTLSGenerator) Generate() error {
 		Organization: g.Organization,
 		CommonName:   g.CommonName,
 	}
+	//$ openssl x509 -req -passin pass:1234 -days 365 -in server.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out server.crt
 	serverCert, err := openssl.NewCertificate(serverCASigningInfo, serverKey)
 	if err != nil {
 		return fmt.Errorf("unable to create new server cert: %v", err)
 	}
 	serverCert.SetIssuer(caCert)
-
 	err = serverCert.Sign(serverKey, openssl.EVP_SHA256)
 	if err != nil {
 		return fmt.Errorf("unable to sign serverCert: %v", err)
@@ -160,12 +167,64 @@ func (g *GRPCTLSGenerator) Generate() error {
 		return fmt.Errorf("unable to sign serverCert: %v", err)
 	}
 
+	//$ openssl genrsa -passout pass:1234 -des3 -out client.key 4096
+	clientKey, err := openssl.GenerateRSAKey(g.RSABytes)
+	if err != nil {
+		return fmt.Errorf("unable to generate client RSA key: %v", err)
+	}
+	// $ openssl req -passin pass:1234 -new -key client.key -out client.csr -subj  "/C=SP/ST=Italy/L=Ornavasso/O=Test/OU=Client/CN=localhost"
+	clientCertificateSigningInfo := &openssl.CertificateInfo{
+		Serial:       i64,
+		Issued:       0,
+		Expires:      g.Expiration,
+		Country:      g.Country,
+		Organization: g.Organization,
+		CommonName:   g.CommonName,
+	}
+	clientCSR, err := openssl.NewCertificate(clientCertificateSigningInfo, clientKey)
+	if err != nil {
+		return fmt.Errorf("unable to generate new signing certificate: %v", err)
+	}
+	clientName := &openssl.Name{}
+	clientName.AddTextEntries(g.SubjectFields)
+	clientCSR.SetSubjectName(clientName)
+	clientCSR.SetVersion(openssl.X509_V3)
+	err = clientCSR.Sign(clientKey, openssl.EVP_SHA256)
+	if err != nil {
+		return fmt.Errorf("unable to sign clientCSR: %v", err)
+	}
+	clientCASigningInfo := &openssl.CertificateInfo{
+		Serial:       i64,
+		Issued:       0,
+		Expires:      g.Expiration,
+		Country:      g.Country,
+		Organization: g.Organization,
+		CommonName:   g.CommonName,
+	}
+	// $ openssl x509 -passin pass:1234 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out client.crt
+	clientCert, err := openssl.NewCertificate(clientCASigningInfo, clientKey)
+	if err != nil {
+		return fmt.Errorf("unable to create new client cert: %v", err)
+	}
+	clientCert.SetIssuer(caCert)
+	err = clientCert.Sign(clientKey, openssl.EVP_SHA256)
+	if err != nil {
+		return fmt.Errorf("unable to sign clientCert: %v", err)
+	}
+	err = clientCert.Sign(caKey, openssl.EVP_SHA256)
+	if err != nil {
+		return fmt.Errorf("unable to sign clientCert: %v", err)
+	}
+
 	// Cache TLS Cert material
 	g.CACert = caCert
 	g.ServerCert = serverCert
 	g.ServerCSR = serverCSR
+	g.ClientCert = clientCert
+	g.ClientCSR = clientCSR
 	g.CAKey = caKey
 	g.ServerKey = serverKey
+	g.ClientKey = clientKey
 
 	return nil
 }
@@ -190,6 +249,18 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
 	}
 
+	// --- Write client.crt
+	clientCert, err := g.ClientCert.MarshalPEM()
+	if err != nil {
+		return fmt.Errorf("unable to marshal PEM data for serverCRT: %v", err)
+	}
+	f = filepath.Join(path, DefaultClientCert)
+	logger.Always("Writing: %s", f)
+	err = ioutil.WriteFile(f, clientCert, 0600)
+	if err != nil {
+		return fmt.Errorf("error writing [%s]: %v", f, err)
+	}
+
 	// --- Write ca.crt
 	caCert, err := g.CACert.MarshalPEM()
 	if err != nil {
@@ -201,6 +272,7 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
 	}
+
 	// --- Write server.csr
 	serverCSR, err := g.ServerCSR.MarshalPEM()
 	if err != nil {
@@ -209,6 +281,18 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 	f = filepath.Join(path, DefaultServerCSR)
 	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, serverCSR, 0600)
+	if err != nil {
+		return fmt.Errorf("error writing [%s]: %v", f, err)
+	}
+
+	// --- Write client.csr
+	clientCSR, err := g.ClientCSR.MarshalPEM()
+	if err != nil {
+		return fmt.Errorf("unable to marshal PEM data for clientCSR: %v", err)
+	}
+	f = filepath.Join(path, DefaultClientCSR)
+	logger.Always("Writing: %s", f)
+	err = ioutil.WriteFile(f, clientCSR, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
 	}
@@ -233,6 +317,18 @@ func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
 	f = filepath.Join(path, DefaultServerKey)
 	logger.Always("Writing: %s", f)
 	err = ioutil.WriteFile(f, serverKey, 0600)
+	if err != nil {
+		return fmt.Errorf("error writing [%s]: %v", f, err)
+	}
+
+	// --- Write client.key
+	clientKey, err := g.ClientKey.MarshalPKCS1PrivateKeyPEM()
+	if err != nil {
+		return fmt.Errorf("unable to marshal PEM data for clientKey: %v", err)
+	}
+	f = filepath.Join(path, DefaultClientKey)
+	logger.Always("Writing: %s", f)
+	err = ioutil.WriteFile(f, clientKey, 0600)
 	if err != nil {
 		return fmt.Errorf("error writing [%s]: %v", f, err)
 	}
