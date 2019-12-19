@@ -22,6 +22,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/kris-nova/logger"
 
@@ -50,6 +51,7 @@ type GRPCTLSGenerator struct {
 	Country       string
 	Organization  string
 	CommonName    string
+	Expiration    time.Duration
 	SubjectFields map[string]string
 	CACert        *openssl.Certificate
 	ServerCert    *openssl.Certificate
@@ -59,12 +61,13 @@ type GRPCTLSGenerator struct {
 }
 
 // NewGRPCTLSGenerator is used to init a new TLS Generator for Falco
-func NewGRPCTLSGenerator(country, organization, name string) *GRPCTLSGenerator {
+func NewGRPCTLSGenerator(country, organization, name string, days int) *GRPCTLSGenerator {
 	return &GRPCTLSGenerator{
 		RSABytes:      DefaultRSABytes,
 		Country:       country,
 		Organization:  organization,
 		CommonName:    name,
+		Expiration:    time.Duration(days) * 24 * time.Hour,
 		SubjectFields: DefaultX509SubjectFields,
 	}
 }
@@ -81,7 +84,7 @@ func (g *GRPCTLSGenerator) Generate() error {
 	certificateSigningInfo := &openssl.CertificateInfo{
 		Serial:       i64,
 		Issued:       0,
-		Expires:      0,
+		Expires:      g.Expiration,
 		Country:      g.Country,
 		Organization: g.Organization,
 		CommonName:   "Root CA",
@@ -117,7 +120,7 @@ func (g *GRPCTLSGenerator) Generate() error {
 	serverCertificateSigningInfo := &openssl.CertificateInfo{
 		Serial:       i64,
 		Issued:       0,
-		Expires:      0,
+		Expires:      g.Expiration,
 		Country:      g.Country,
 		Organization: g.Organization,
 		CommonName:   g.CommonName,
@@ -137,7 +140,7 @@ func (g *GRPCTLSGenerator) Generate() error {
 	serverCASigningInfo := &openssl.CertificateInfo{
 		Serial:       i64,
 		Issued:       0,
-		Expires:      0,
+		Expires:      g.Expiration,
 		Country:      g.Country,
 		Organization: g.Organization,
 		CommonName:   g.CommonName,
