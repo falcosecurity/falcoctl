@@ -30,7 +30,7 @@ func NewTLSInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
 		Use:                   "tls",
 		DisableFlagsInUseLine: true,
 		Short:                 "Generate and install TLS material to be used with the Falco gRPC server",
-		Long:                  `Falco gRPC server runs with mutually encrypted TLS by default. 
+		Long:                  `Falco gRPC server runs with mutually encrypted TLS by default.
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -42,4 +42,3 @@ This command is a convenience to not only generate the TLS material, but also dr
 
 	return cmd
 }
-package cmd
