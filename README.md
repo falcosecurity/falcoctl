@@ -1,3 +1,8 @@
+<p align="center"><img src="logo/primary-logo.png" width="360"></p>
+<p align="center"><b>Cloud Native Runtime Security.</b></p>
+
+<hr>
+
 # Falcoctl
 
 A Go CLI tool to interface with Falco, and perform useful tasks in the Falco Runtime Security ecosystem. 
