@@ -39,8 +39,8 @@ func NewInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 	}
 }
 
-// NewInstallCommand creates the `install` command
-func NewInstallCommand(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+// Install creates the `install` command
+func Install(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
 	// o := NewInstallOptions(streams).(*InstallOptions)
 
 	cmd := &cobra.Command{
@@ -51,10 +51,10 @@ func NewInstallCommand(streams genericclioptions.IOStreams, f factory.Factory) *
 		Long:                  `Install a component wih falcoctl`,
 	}
 
-	cmd.AddCommand(NewFalcoInstallCommand(streams, f))
-	cmd.AddCommand(NewProbeInstallCommand(streams))
-	cmd.AddCommand(NewTLSInstallCommand(streams))
-	cmd.AddCommand(NewRuleInstallCommand(streams))
+	cmd.AddCommand(InstallFalco(streams, f))
+	cmd.AddCommand(InstallProbe(streams))
+	cmd.AddCommand(InstallTLS(streams))
+	cmd.AddCommand(InstallRule(streams))
 
 	return cmd
 }

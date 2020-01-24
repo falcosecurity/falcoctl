@@ -26,28 +26,28 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// FalcoInstallOptions represents the `install falco` command options
-type FalcoInstallOptions struct {
+// FalcoOptions represents the `install falco` command options
+type FalcoOptions struct {
 	genericclioptions.IOStreams
 
 	daemonSetName string
 }
 
 // Validate validates the `install falco` command options
-func (o FalcoInstallOptions) Validate(c *cobra.Command, args []string) error {
+func (o FalcoOptions) Validate(c *cobra.Command, args []string) error {
 	return nil
 }
 
-// NewFalcoInstallOptions instantiates the `install falco` command options
-func NewFalcoInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &FalcoInstallOptions{
+// NewFalcoOptions instantiates the `install falco` command options
+func NewFalcoOptions(streams genericclioptions.IOStreams) CommandOptions {
+	return &FalcoOptions{
 		IOStreams: streams,
 	}
 }
 
-// NewFalcoInstallCommand creates the `install falco` command
-func NewFalcoInstallCommand(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
-	o := NewFalcoInstallOptions(streams).(*FalcoInstallOptions)
+// InstallFalco creates the `install falco` command
+func InstallFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+	o := NewFalcoOptions(streams).(*FalcoOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "falco",

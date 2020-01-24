@@ -39,8 +39,8 @@ func NewDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
 	}
 }
 
-// NewDeleteCommand creates the `delete` command
-func NewDeleteCommand(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+// Delete creates the `delete` command
+func Delete(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
 	// o := NewDeleteOptions(streams).(*DeleteOptions)
 
 	cmd := &cobra.Command{
@@ -50,7 +50,7 @@ func NewDeleteCommand(streams genericclioptions.IOStreams, f factory.Factory) *c
 		Long:                  `Delete a component wih falcoctl`,
 	}
 
-	cmd.AddCommand(NewFalcoDeleteCommand(streams, f))
+	cmd.AddCommand(DeleteFalco(streams, f))
 
 	return cmd
 }
