@@ -24,8 +24,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// NewProbeInstallCommand creates the `install probe` command
-func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
+// InstallProbe creates the `install probe` command
+func InstallProbe(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "probe",
 		DisableFlagsInUseLine: true,

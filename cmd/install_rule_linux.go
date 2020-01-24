@@ -22,28 +22,28 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// RuleInstallOptions represents the `install tls` command options
-type RuleInstallOptions struct {
+// RuleOptions represents the `install tls` command options
+type RuleOptions struct {
 	genericclioptions.IOStreams
 }
 
 // Validate validates the `install probe` command options
-func (o RuleInstallOptions) Validate(c *cobra.Command, args []string) error {
+func (o RuleOptions) Validate(c *cobra.Command, args []string) error {
 	return nil
 }
 
-// NewRuleInstallOptions instantiates the `install rule` command options
-func NewRuleInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &RuleInstallOptions{
+// NewRuleOptions instantiates the `install rule` command options
+func NewRuleOptions(streams genericclioptions.IOStreams) CommandOptions {
+	o := &RuleOptions{
 		IOStreams: streams,
 	}
 	return o
 }
 
-// NewRuleInstallCommand creates the `install rule` command
-func NewRuleInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
+// InstallRule creates the `install rule` command
+func InstallRule(streams genericclioptions.IOStreams) *cobra.Command {
 	// todo > uncomment me when implementing this command
-	// o := NewRuleInstallOptions(streams).(*RuleInstallOptions)
+	// o := NewRuleOptions(streams).(*RuleOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "rule",
