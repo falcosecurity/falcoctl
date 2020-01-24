@@ -24,8 +24,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// NewRuleInstallCommand creates the `install tls` command
-func NewRuleInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
+// InstallRule creates the `install rule` command
+func InstallRule(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "rule",
 		DisableFlagsInUseLine: true,

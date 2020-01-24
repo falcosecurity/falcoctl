@@ -24,8 +24,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// NewTLSInstallCommand creates the `install tls` command
-func NewTLSInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
+// InstallTLS creates the `install tls` command
+func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "tls",
 		DisableFlagsInUseLine: true,

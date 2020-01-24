@@ -49,8 +49,8 @@ func NewRootOptions(streams genericclioptions.IOStreams) CommandOptions {
 	}
 }
 
-// NewRootCommand creates the command
-func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
+// New creates the command
+func New(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewRootOptions(streams).(*RootOptions)
 
 	cmd := &cobra.Command{
@@ -87,9 +87,9 @@ func NewRootCommand(streams genericclioptions.IOStreams) *cobra.Command {
 	viper.SetEnvPrefix("falcoctl")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	cmd.AddCommand(NewInstallCommand(streams, f))
-	cmd.AddCommand(NewDeleteCommand(streams, f))
-	cmd.AddCommand(NewConvertCommand(streams))
+	cmd.AddCommand(Install(streams, f))
+	cmd.AddCommand(Delete(streams, f))
+	cmd.AddCommand(Convert(streams))
 
 	return cmd
 }

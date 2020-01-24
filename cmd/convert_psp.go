@@ -28,8 +28,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// PspRulesConvOptions represents options for PSP to Falco rules conversion
-type PspRulesConvOptions struct {
+// PspConvertOptions represents options for PSP to Falco rules conversion
+type PspConvertOptions struct {
 	genericclioptions.IOStreams
 
 	pspPath   string
@@ -37,7 +37,7 @@ type PspRulesConvOptions struct {
 }
 
 // Validate options to psp_conv command
-func (o PspRulesConvOptions) Validate(c *cobra.Command, args []string) error {
+func (o PspConvertOptions) Validate(c *cobra.Command, args []string) error {
 	if o.pspPath == "" {
 		return fmt.Errorf("--psp-path must be provided")
 	}
@@ -49,9 +49,9 @@ func (o PspRulesConvOptions) Validate(c *cobra.Command, args []string) error {
 	return nil
 }
 
-// NewPspRulesConvOptions instantiates PspRulesConvOptions
-func NewPspRulesConvOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &PspRulesConvOptions{
+// NewPspConvertOptions instantiates PspConvertOptions
+func NewPspConvertOptions(streams genericclioptions.IOStreams) CommandOptions {
+	o := &PspConvertOptions{
 		IOStreams: streams,
 	}
 	o.pspPath = viper.GetString("psp-path")     // FALCOCTL_PSP_PATH env var
@@ -102,9 +102,9 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 	return nil
 }
 
-// NewPspRulesConvCommand instantiates the `convert psp` command
-func NewPspRulesConvCommand(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewPspRulesConvOptions(streams).(*PspRulesConvOptions)
+// PspConvert instantiates the `convert psp` command
+func PspConvert(streams genericclioptions.IOStreams) *cobra.Command {
+	o := NewPspConvertOptions(streams).(*PspConvertOptions)
 
 	cmd := &cobra.Command{
 		Use:   "psp",

@@ -28,8 +28,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// ProbeInstallOptions represents the `install probe` command options
-type ProbeInstallOptions struct {
+// ProbeOptions represents the `install probe` command options
+type ProbeOptions struct {
 	genericclioptions.IOStreams
 	falcoVersion   string
 	falcoProbePath string
@@ -39,16 +39,16 @@ type ProbeInstallOptions struct {
 }
 
 // Validate validates the `install probe` command options
-func (o ProbeInstallOptions) Validate(c *cobra.Command, args []string) error {
+func (o ProbeOptions) Validate(c *cobra.Command, args []string) error {
 	if len(o.falcoVersion) == 0 {
 		return fmt.Errorf("missing Falco version: specify it via FALCOCTL_FALCO_VERSION env variable or via --falco-version flag")
 	}
 	return nil
 }
 
-// NewProbeInstallOptions instantiates the `install probe` command options
-func NewProbeInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &ProbeInstallOptions{
+// NewProbeOptions instantiates the `install probe` command options
+func NewProbeOptions(streams genericclioptions.IOStreams) CommandOptions {
+	o := &ProbeOptions{
 		IOStreams: streams,
 	}
 	o.falcoVersion = viper.GetString("falco-version")      // FALCOCTL_FALCO_VERSION env var
@@ -68,9 +68,9 @@ func NewProbeInstallOptions(streams genericclioptions.IOStreams) CommandOptions 
 	return o
 }
 
-// NewProbeInstallCommand creates the `install probe` command
-func NewProbeInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewProbeInstallOptions(streams).(*ProbeInstallOptions)
+// InstallProbe creates the `install probe` command
+func InstallProbe(streams genericclioptions.IOStreams) *cobra.Command {
+	o := NewProbeOptions(streams).(*ProbeOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "probe",

@@ -32,8 +32,8 @@ const (
 	DefaultCertsDays    = 365
 )
 
-// TLSInstallOptions represents the `install tls` command options
-type TLSInstallOptions struct {
+// TLSOptions represents the `install tls` command options
+type TLSOptions struct {
 	genericclioptions.IOStreams
 	country string
 	org     string
@@ -43,14 +43,14 @@ type TLSInstallOptions struct {
 }
 
 // Validate validates the `install probe` command options
-func (o TLSInstallOptions) Validate(c *cobra.Command, args []string) error {
+func (o TLSOptions) Validate(c *cobra.Command, args []string) error {
 	// todo > validate path exists and is writable here
 	return nil
 }
 
-// NewTLSInstallOptions instantiates the `install tls` command options
-func NewTLSInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &TLSInstallOptions{
+// NewTLSOptions instantiates the `install tls` command options
+func NewTLSOptions(streams genericclioptions.IOStreams) CommandOptions {
+	o := &TLSOptions{
 		IOStreams: streams,
 	}
 
@@ -84,9 +84,9 @@ func NewTLSInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 	return o
 }
 
-// NewTLSInstallCommand creates the `install tls` command
-func NewTLSInstallCommand(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewTLSInstallOptions(streams).(*TLSInstallOptions)
+// InstallTLS creates the `install tls` command
+func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
+	o := NewTLSOptions(streams).(*TLSOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "tls",

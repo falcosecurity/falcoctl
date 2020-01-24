@@ -28,7 +28,7 @@ import (
 func main() {
 	flags := pflag.NewFlagSet("falcoctl", pflag.ExitOnError)
 	pflag.CommandLine = flags
-	root := cmd.NewRootCommand(genericclioptions.IOStreams{
+	root := cmd.New(genericclioptions.IOStreams{
 		In:     os.Stdin,
 		Out:    os.Stdout,
 		ErrOut: os.Stderr,
