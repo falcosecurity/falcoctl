@@ -46,8 +46,8 @@ func NewFalcoDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
 	}
 }
 
-// NewFalcoDeleteCommand creates the `delete falco` command
-func NewFalcoDeleteCommand(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+// DeleteFalco creates the `delete falco` command
+func DeleteFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
 	o := NewFalcoDeleteOptions(streams).(*FalcoDeleteOptions)
 
 	cmd := &cobra.Command{

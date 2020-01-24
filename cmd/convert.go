@@ -38,8 +38,8 @@ func NewConvertOptions(streams genericclioptions.IOStreams) CommandOptions {
 	}
 }
 
-// NewConvertCommand creates the `convert` command
-func NewConvertCommand(streams genericclioptions.IOStreams) *cobra.Command {
+// Convert creates the `convert` command
+func Convert(streams genericclioptions.IOStreams) *cobra.Command {
 	// o := NewConvertOptions(streams).(*ConvertOptions)
 
 	cmd := &cobra.Command{
@@ -50,7 +50,7 @@ func NewConvertCommand(streams genericclioptions.IOStreams) *cobra.Command {
 		Long:                  `Various conversion helpers`,
 	}
 
-	cmd.AddCommand(NewPspRulesConvCommand(streams))
+	cmd.AddCommand(PspConvert(streams))
 
 	return cmd
 }
