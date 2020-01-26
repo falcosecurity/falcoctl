@@ -30,8 +30,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// GetKernelRelease gets the current kernel release
-func GetKernelRelease() (release string, err error) {
+// KernelRelease gets the current kernel release
+func KernelRelease() (release string, err error) {
 	name := &unix.Utsname{}
 	err = unix.Uname(name)
 	if err != nil {
@@ -41,8 +41,8 @@ func GetKernelRelease() (release string, err error) {
 	return release, err
 }
 
-// GetKernelConfigHash gets the hash of the current kernel's configuration
-func GetKernelConfigHash() (string, error) {
+// KernelConfigHash gets the hash of the current kernel's configuration
+func KernelConfigHash() (string, error) {
 	var hash string
 	kernelConfigPath, err := getKernelConfigPath()
 	if err != nil {
@@ -59,7 +59,7 @@ func getKernelConfigPath() (string, error) {
 	var err error
 	kernelConfigPath := ""
 
-	version, _ := GetKernelRelease()
+	version, _ := KernelRelease()
 	paths := []string{
 		"/proc/config.gz",
 		"/boot/config-" + version,

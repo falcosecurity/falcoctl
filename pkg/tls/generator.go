@@ -49,7 +49,7 @@ var (
 	}
 )
 
-type GRPCTLSGenerator struct {
+type GRPCTLS struct {
 	RSABytes      int
 	Country       string
 	Organization  string
@@ -66,9 +66,9 @@ type GRPCTLSGenerator struct {
 	ClientKey     openssl.PrivateKey
 }
 
-// NewGRPCTLSGenerator is used to init a new TLS Generator for Falco
-func NewGRPCTLSGenerator(country, organization, name string, days int) *GRPCTLSGenerator {
-	return &GRPCTLSGenerator{
+// GRPCTLSGenerator is used to init a new TLS Generator for Falco
+func GRPCTLSGenerator(country, organization, name string, days int) *GRPCTLS {
+	return &GRPCTLS{
 		RSABytes:      DefaultRSABytes,
 		Country:       country,
 		Organization:  organization,
@@ -79,7 +79,7 @@ func NewGRPCTLSGenerator(country, organization, name string, days int) *GRPCTLSG
 }
 
 // Generate is used to first generate TLS material in memory.
-func (g *GRPCTLSGenerator) Generate() error {
+func (g *GRPCTLS Generate() error {
 	i64 := &big.Int{}
 	i64.SetInt64(01)
 
@@ -229,8 +229,8 @@ func (g *GRPCTLSGenerator) Generate() error {
 	return nil
 }
 
-// FlushToDisk is used to persist the cert material from a GRPCTLSGenerator to disk given a path.
-func (g *GRPCTLSGenerator) FlushToDisk(path string) error {
+// FlushToDisk is used to persist the cert material from a GRPCTLS to disk given a path.
+func (g *GRPCTLS) FlushToDisk(path string) error {
 	p, err := satisfyDir(path)
 	if err != nil {
 		return fmt.Errorf("invalid path: %v", err)

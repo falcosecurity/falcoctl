@@ -85,12 +85,12 @@ func InstallProbe(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			falcoProbeFullpath := path.Join(o.falcoProbePath, o.falcoProbeFile)
-			falcoConfigHash, err := probeloader.GetKernelConfigHash()
+			falcoConfigHash, err := probeloader.KernelConfigHash()
 			if err != nil {
 				logger.Critical("Error getting Kernel Config Hash: %s", err)
 				return err
 			}
-			falcoKernelRelease, err := probeloader.GetKernelRelease()
+			falcoKernelRelease, err := probeloader.KernelRelease()
 			if err != nil {
 				logger.Critical("Error getting Kernel Version: %s", err)
 				return err

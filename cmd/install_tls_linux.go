@@ -96,7 +96,7 @@ func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			g := tls.NewGRPCTLSGenerator(o.country, o.org, o.name, o.days)
+			g := tls.GRPCTLSGenerator(o.country, o.org, o.name, o.days)
 			err := g.Generate()
 			if err != nil {
 				logger.Critical(err.Error())

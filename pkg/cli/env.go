@@ -21,8 +21,8 @@ import (
 	"strconv"
 )
 
-// GetEnvWithDefault get environment variable with fallback on a default value
-func GetEnvWithDefault(env string, def string) string {
+// Env get environment variable with fallback on a default value
+func Env(env string, def string) string {
 	val := os.Getenv(env)
 	if val == "" {
 		return def
@@ -30,8 +30,8 @@ func GetEnvWithDefault(env string, def string) string {
 	return val
 }
 
-// GetBoolEnvWithDefault get a bool environment variable with a bool fallback on a default value
-func GetBoolEnvWithDefault(env string, def bool) bool {
+// BoolEnv get a bool environment variable with a bool fallback on a default value
+func BoolEnv(env string, def bool) bool {
 	val := os.Getenv(env)
 	if val == "" {
 		return def

@@ -100,7 +100,7 @@ func (f *MatchVersionFlags) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&f.RequireMatchedServerVersion, flagMatchBinaryVersion, f.RequireMatchedServerVersion, "Require server version to match client version")
 }
 
-func NewMatchVersionFlags(delegate genericclioptions.RESTClientGetter) *MatchVersionFlags {
+func MatchVersion(delegate genericclioptions.RESTClientGetter) *MatchVersionFlags {
 	return &MatchVersionFlags{
 		Delegate: delegate,
 	}
