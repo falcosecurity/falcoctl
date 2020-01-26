@@ -24,12 +24,12 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// InstallProbe creates the `install probe` command
-func InstallProbe(streams genericclioptions.IOStreams) *cobra.Command {
+// InstallModule creates the `install module` command
+func InstallModule(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                   "probe",
+		Use:                   "module",
 		DisableFlagsInUseLine: true,
-		Short:                 "Install the Falco probe locally (linux only)",
+		Short:                 "Install the Falco module locally (linux only)",
 		Long:                  `Download and install the Falco module locally`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Critical("this command only works on machines running a linux kernel")
