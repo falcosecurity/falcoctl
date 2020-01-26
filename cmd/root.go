@@ -79,9 +79,9 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 	flags := cmd.Flags()
 	o.configFlags.AddFlags(flags)
 
-	matchVersionFlags := factory.NewMatchVersionFlags(o.configFlags)
+	matchVersionFlags := factory.MatchVersion(o.configFlags)
 	matchVersionFlags.AddFlags(flags)
-	f := factory.NewFactory(matchVersionFlags)
+	f := factory.New(matchVersionFlags)
 
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("falcoctl")

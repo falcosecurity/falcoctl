@@ -83,7 +83,7 @@ type openAPIGetter struct {
 	getter openapi.Getter
 }
 
-func NewFactory(clientGetter genericclioptions.RESTClientGetter) Factory {
+func New(clientGetter genericclioptions.RESTClientGetter) Factory {
 	if clientGetter == nil {
 		panic("attempt to instantiate client_access_factory with nil clientGetter")
 	}
