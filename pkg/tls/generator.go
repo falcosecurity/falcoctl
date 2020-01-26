@@ -79,7 +79,7 @@ func GRPCTLSGenerator(country, organization, name string, days int) *GRPCTLS {
 }
 
 // Generate is used to first generate TLS material in memory.
-func (g *GRPCTLS Generate() error {
+func (g *GRPCTLS) Generate() error {
 	i64 := &big.Int{}
 	i64.SetInt64(01)
 
