@@ -52,7 +52,7 @@ func Install(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Comm
 	}
 
 	cmd.AddCommand(InstallFalco(streams, f))
-	cmd.AddCommand(InstallProbe(streams))
+	cmd.AddCommand(InstallModule(streams))
 	cmd.AddCommand(InstallTLS(streams))
 	cmd.AddCommand(InstallRule(streams))
 

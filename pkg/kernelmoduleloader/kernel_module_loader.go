@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package probeloader
+package kernelmoduleloader
 
 import (
 	"bytes"
@@ -148,7 +148,7 @@ func LoadModule(path string) error {
 		return err
 	}
 
-	logger.Always("Opened probe: %s", path)
+	logger.Always("Opened kernel module: %s", path)
 
 	p0, err := unix.BytePtrFromString("")
 
