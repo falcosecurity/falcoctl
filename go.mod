@@ -20,7 +20,7 @@ require (
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pkg/errors v0.8.1 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/spacemonkeygo/openssl v0.0.0-20181017203307-c2dcc5cca94a
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3

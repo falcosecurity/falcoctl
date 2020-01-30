@@ -24,6 +24,7 @@ import (
 	"k8s.io/api/auditregistration/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	auditregistrationv1alpha1 "k8s.io/client-go/kubernetes/typed/auditregistration/v1alpha1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/utils/pointer"
@@ -141,10 +142,26 @@ func (i *auditInstaller) Install() error {
 		},
 	}
 
-	_, err = i.auditClient.AuditSinks().Create(as)
-	if err != nil {
-		return err
-	}
+	createOrUpdateAuditSink(i.auditClient, as)
 	logger.Always("Kubernetes AuditSink enabled with Falco.")
+
+	return nil
+}
+
+func createOrUpdateAuditSink(auditClient auditregistrationv1alpha1.AuditregistrationV1alpha1Interface, as *v1alpha1.AuditSink) error{
+	_, err := auditClient.AuditSinks().Create(as)
+
+	if err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return fmt.Errorf("unable to create auditsink", err)
+		}
+
+		logger.Info("AuditSink already exists: %v, updating existing AuditSink", as.Name)
+		_, err := auditClient.AuditSinks().Update(as)
+		if err != nil {
+			return fmt.Errorf("unable to update auditsink", err)
+		}
+	}
+
 	return nil
 }
