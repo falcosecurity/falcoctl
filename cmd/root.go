@@ -90,6 +90,7 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.AddCommand(Install(streams, f))
 	cmd.AddCommand(Delete(streams, f))
 	cmd.AddCommand(Convert(streams))
+        cmd.AddCommand(MakeVersion(streams))
 
 	return cmd
 }
