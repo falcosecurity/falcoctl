@@ -85,12 +85,12 @@ func InstallModule(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			falcoModuleFullpath := path.Join(o.falcoModulePath, o.falcoModuleFile)
-			falcoConfigHash, err := kernelmoduleloader.GetKernelConfigHash()
+			falcoConfigHash, err := kernelmoduleloader.KernelConfigHash()
 			if err != nil {
 				logger.Critical("Error getting Kernel Config Hash: %s", err)
 				return err
 			}
-			falcoKernelRelease, err := kernelmoduleloader.GetKernelRelease()
+			falcoKernelRelease, err := kernelmoduleloader.KernelRelease()
 			if err != nil {
 				logger.Critical("Error getting Kernel Version: %s", err)
 				return err
