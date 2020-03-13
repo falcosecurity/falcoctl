@@ -340,7 +340,7 @@ func satisfyDir(dirName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to calculate absolute path: %v", err)
 	}
-	err = os.MkdirAll(abs, 0644)
+	err = os.MkdirAll(abs, 0700)
 	if err == nil || os.IsExist(err) {
 		return abs, nil
 	}
