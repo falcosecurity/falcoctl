@@ -46,8 +46,8 @@ func Delete(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:                   "delete",
 		DisableFlagsInUseLine: true,
-		Short:                 "Delete a component wih falcoctl",
-		Long:                  `Delete a component wih falcoctl`,
+		Short:                 "Delete a component with falcoctl",
+		Long:                  `Delete a component with falcoctl`,
 	}
 
 	cmd.AddCommand(DeleteFalco(streams, f))
