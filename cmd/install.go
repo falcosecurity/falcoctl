@@ -47,8 +47,8 @@ func Install(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Comm
 		Use:                   "install",
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
-		Short:                 "Install a component wih falcoctl",
-		Long:                  `Install a component wih falcoctl`,
+		Short:                 "Install a component with falcoctl",
+		Long:                  `Install a component with falcoctl`,
 	}
 
 	cmd.AddCommand(InstallFalco(streams, f))
