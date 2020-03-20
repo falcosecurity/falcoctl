@@ -43,8 +43,8 @@ type Converter struct {
 }
 
 type PspTemplate struct {
-	NamePrefix string
-	PSPImages string
+	NamePrefix    string
+	PSPImages     string
 	PSPNamespaces string
 	v1beta1.PodSecurityPolicy
 }

@@ -23,8 +23,8 @@ import (
 	"github.com/kris-nova/logger"
 	"k8s.io/api/auditregistration/v1alpha1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	auditregistrationv1alpha1 "k8s.io/client-go/kubernetes/typed/auditregistration/v1alpha1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/utils/pointer"
@@ -148,7 +148,7 @@ func (i *auditInstaller) Install() error {
 	return nil
 }
 
-func createOrUpdateAuditSink(auditClient auditregistrationv1alpha1.AuditregistrationV1alpha1Interface, as *v1alpha1.AuditSink) error{
+func createOrUpdateAuditSink(auditClient auditregistrationv1alpha1.AuditregistrationV1alpha1Interface, as *v1alpha1.AuditSink) error {
 	_, err := auditClient.AuditSinks().Create(as)
 
 	if err != nil {

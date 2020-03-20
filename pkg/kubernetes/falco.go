@@ -22,13 +22,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	appsv1cli "k8s.io/client-go/kubernetes/typed/apps/v1"
 	auditregistrationv1alpha1 "k8s.io/client-go/kubernetes/typed/auditregistration/v1alpha1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	rbacv1beta1 "k8s.io/client-go/kubernetes/typed/rbac/v1beta1"
 	"k8s.io/utils/pointer"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // falcoInstaller is a data structure used to install Falco in Kubernetes
@@ -89,24 +89,24 @@ func (i *falcoInstaller) Delete() error {
 	} else {
 		logger.Always("Falco namespace deleted: %s", i.namespace)
 	}
-       err = i.rbacClient.ClusterRoles().Delete("falco-cluster-role", &metav1.DeleteOptions{})
-        if err != nil {
-                logger.Critical("Error deleting clusterrole: %v", err)
-        } else {
-                logger.Always("Falco clusterrole deleted: %s", "falco-cluster-role")
-        }
-        err = i.rbacClient.ClusterRoleBindings().Delete("falco-cluster-role-binding", &metav1.DeleteOptions{})
-        if err != nil {
-                logger.Critical("Error deleting clusterrolebinding: %v", "falco-cluster-role-binding")
-        } else {
-                logger.Always("Falco clusterrolebinding deleted: %s", "falco-cluster-role-binding")
-        }
-        err = i.auditClient.AuditSinks().Delete("falco-audit-sink", &metav1.DeleteOptions{})
-        if err != nil {
-                logger.Critical("Error deleting auditsink: %v", "falco-audit-sink")
-        } else {
-                logger.Always("Falco auditsink deleted: %s", "falco-audit-sink")
-        }
+	err = i.rbacClient.ClusterRoles().Delete("falco-cluster-role", &metav1.DeleteOptions{})
+	if err != nil {
+		logger.Critical("Error deleting clusterrole: %v", err)
+	} else {
+		logger.Always("Falco clusterrole deleted: %s", "falco-cluster-role")
+	}
+	err = i.rbacClient.ClusterRoleBindings().Delete("falco-cluster-role-binding", &metav1.DeleteOptions{})
+	if err != nil {
+		logger.Critical("Error deleting clusterrolebinding: %v", "falco-cluster-role-binding")
+	} else {
+		logger.Always("Falco clusterrolebinding deleted: %s", "falco-cluster-role-binding")
+	}
+	err = i.auditClient.AuditSinks().Delete("falco-audit-sink", &metav1.DeleteOptions{})
+	if err != nil {
+		logger.Critical("Error deleting auditsink: %v", "falco-audit-sink")
+	} else {
+		logger.Always("Falco auditsink deleted: %s", "falco-audit-sink")
+	}
 	return nil
 }
 
