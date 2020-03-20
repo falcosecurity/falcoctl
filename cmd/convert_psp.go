@@ -18,13 +18,15 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
+
+	"io/ioutil"
 
 	converter "github.com/falcosecurity/falcoctl/pkg/converter/psp"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -84,6 +86,9 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 	logger.Debug("Reading PSP from %s", pspPath)
 
 	psp, err := ioutil.ReadAll(pspFile)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("Could not read PSP file: %s", pspPath)
+	}
 
 	conv, err := converter.NewConverter(debugLog, infoLog, errorLog)
 	if err != nil {
@@ -95,7 +100,9 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 		return fmt.Errorf("Could not convert psp file to falco rules: %v", err)
 	}
 
-	err = ioutil.WriteFile(rulesPath, []byte(rules), 0644)
+	if err = ioutil.WriteFile(rulesPath, []byte(rules), 0644); err != nil {
+		return fmt.Errorf("Could not write rules to: %s", rulesPath)
+	}
 
 	logger.Debug("Wrote rules to %s", rulesPath)
 
