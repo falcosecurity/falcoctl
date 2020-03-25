@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -40,7 +39,7 @@ func NewDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
 }
 
 // Delete creates the `delete` command
-func Delete(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+func Delete(streams genericclioptions.IOStreams) *cobra.Command {
 	// o := NewDeleteOptions(streams).(*DeleteOptions)
 
 	cmd := &cobra.Command{
@@ -50,7 +49,7 @@ func Delete(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Comma
 		Long:                  `Delete a component with falcoctl`,
 	}
 
-	cmd.AddCommand(DeleteFalco(streams, f))
+	cmd.AddCommand(DeleteFalco(streams))
 
 	return cmd
 }

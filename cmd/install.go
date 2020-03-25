@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -40,7 +39,7 @@ func NewInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
 }
 
 // Install creates the `install` command
-func Install(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+func Install(streams genericclioptions.IOStreams) *cobra.Command {
 	// o := NewInstallOptions(streams).(*InstallOptions)
 
 	cmd := &cobra.Command{
@@ -51,7 +50,7 @@ func Install(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Comm
 		Long:                  `Install a component with falcoctl`,
 	}
 
-	cmd.AddCommand(InstallFalco(streams, f))
+	cmd.AddCommand(InstallFalco(streams))
 	cmd.AddCommand(InstallModule(streams))
 	cmd.AddCommand(InstallTLS(streams))
 	cmd.AddCommand(InstallRule(streams))

@@ -47,9 +47,10 @@ func NewFalcoDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
 }
 
 // DeleteFalco creates the `delete falco` command
-func DeleteFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+func DeleteFalco(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewFalcoDeleteOptions(streams).(*FalcoDeleteOptions)
 
+	var clientGetter genericclioptions.RESTClientGetter
 	cmd := &cobra.Command{
 		Use:                   "falco",
 		DisableFlagsInUseLine: true,
@@ -57,7 +58,7 @@ func DeleteFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra.
 		Long:                  `Delete Falco from Kubernetes`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// todo > pass daemonset name using o.daemonSetName
-			installer, err := kubernetesfalc.NewFalcoInstaller(f)
+			installer, err := kubernetesfalc.NewFalcoInstaller(factory.New(clientGetter))
 			if err != nil {
 				logger.Critical("Fatal error: %v", err)
 				os.Exit(1)
@@ -70,6 +71,7 @@ func DeleteFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra.
 		},
 	}
 
+	clientGetter = initKubeFlags(cmd.PersistentFlags())
 	cmd.Flags().StringVarP(&o.daemonSetName, "daemonset-name", "D", o.daemonSetName, "Set the name to use with the Falco DaemonSet")
 
 	return cmd
