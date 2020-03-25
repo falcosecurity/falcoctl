@@ -46,9 +46,10 @@ func NewFalcoOptions(streams genericclioptions.IOStreams) CommandOptions {
 }
 
 // InstallFalco creates the `install falco` command
-func InstallFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra.Command {
+func InstallFalco(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewFalcoOptions(streams).(*FalcoOptions)
 
+	var clientGetter genericclioptions.RESTClientGetter
 	cmd := &cobra.Command{
 		Use:                   "falco",
 		TraverseChildren:      true,
@@ -57,7 +58,7 @@ func InstallFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra
 		Long:                  `Deploy Falco to Kubernetes`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// todo > pass daemonset name using o.daemonSetName
-			installer, err := kubernetesfalc.NewFalcoInstaller(f)
+			installer, err := kubernetesfalc.NewFalcoInstaller(factory.New(clientGetter))
 			if err != nil {
 				logger.Critical("Fatal error: %v", err)
 				os.Exit(1)
@@ -70,6 +71,7 @@ func InstallFalco(streams genericclioptions.IOStreams, f factory.Factory) *cobra
 		},
 	}
 
+	clientGetter = initKubeFlags(cmd.PersistentFlags())
 	cmd.Flags().StringVarP(&o.daemonSetName, "daemonset-name", "D", o.daemonSetName, "Set the name to use with the Falco DaemonSet")
 
 	return cmd

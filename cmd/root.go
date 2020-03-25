@@ -22,9 +22,11 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
+	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -105,4 +107,13 @@ func initConfig(configOptions *ConfigOptions) {
 			logger.Critical("error running with config file: %s", err)
 		}
 	}
+}
+
+func initKubeFlags(flags *pflag.FlagSet) genericclioptions.RESTClientGetter {
+	configFlags := genericclioptions.NewConfigFlags(false)
+	configFlags.AddFlags(flags)
+
+	matchVersionFlags := factory.MatchVersion(configFlags)
+	matchVersionFlags.AddFlags(flags)
+	return matchVersionFlags
 }
