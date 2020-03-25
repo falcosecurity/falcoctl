@@ -32,8 +32,6 @@ import (
 
 // PspConvertOptions represents options for PSP to Falco rules conversion
 type PspConvertOptions struct {
-	genericclioptions.IOStreams
-
 	pspPath   string
 	rulesPath string
 }
@@ -52,10 +50,8 @@ func (o PspConvertOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewPspConvertOptions instantiates PspConvertOptions
-func NewPspConvertOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &PspConvertOptions{
-		IOStreams: streams,
-	}
+func NewPspConvertOptions() CommandOptions {
+	o := &PspConvertOptions{}
 	o.pspPath = viper.GetString("psp-path")     // FALCOCTL_PSP_PATH env var
 	o.rulesPath = viper.GetString("rules-path") // FALCOCTL_RULES_PATH env var
 	if len(o.rulesPath) == 0 {
@@ -111,7 +107,7 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 
 // PspConvert instantiates the `convert psp` command
 func PspConvert(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewPspConvertOptions(streams).(*PspConvertOptions)
+	o := NewPspConvertOptions().(*PspConvertOptions)
 
 	cmd := &cobra.Command{
 		Use:   "psp",

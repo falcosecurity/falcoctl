@@ -24,7 +24,6 @@ import (
 
 // RuleOptions represents the `install tls` command options
 type RuleOptions struct {
-	genericclioptions.IOStreams
 }
 
 // Validate validates the `install probe` command options
@@ -34,16 +33,14 @@ func (o RuleOptions) Validate(c *cobra.Command, args []string) error {
 
 // NewRuleOptions instantiates the `install rule` command options
 func NewRuleOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &RuleOptions{
-		IOStreams: streams,
-	}
+	o := &RuleOptions{}
 	return o
 }
 
 // InstallRule creates the `install rule` command
 func InstallRule(streams genericclioptions.IOStreams) *cobra.Command {
 	// todo > uncomment me when implementing this command
-	// o := NewRuleOptions(streams).(*RuleOptions)
+	// o := NewRuleOptions().(*RuleOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "rule",

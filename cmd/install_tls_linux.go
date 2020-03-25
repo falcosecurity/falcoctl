@@ -34,7 +34,6 @@ const (
 
 // TLSOptions represents the `install tls` command options
 type TLSOptions struct {
-	genericclioptions.IOStreams
 	country string
 	org     string
 	name    string
@@ -49,10 +48,8 @@ func (o TLSOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewTLSOptions instantiates the `install tls` command options
-func NewTLSOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &TLSOptions{
-		IOStreams: streams,
-	}
+func NewTLSOptions() CommandOptions {
+	o := &TLSOptions{}
 
 	// Fallback to default only when also env variable is missing
 	// FALCOCTL_COUNTRY env var
@@ -86,7 +83,7 @@ func NewTLSOptions(streams genericclioptions.IOStreams) CommandOptions {
 
 // InstallTLS creates the `install tls` command
 func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewTLSOptions(streams).(*TLSOptions)
+	o := NewTLSOptions().(*TLSOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "tls",

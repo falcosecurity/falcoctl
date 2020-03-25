@@ -23,7 +23,6 @@ import (
 
 // DeleteOptions represents the `delete` command options
 type DeleteOptions struct {
-	genericclioptions.IOStreams
 }
 
 // Validate validates the `delete` command options
@@ -32,15 +31,13 @@ func (o DeleteOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewDeleteOptions instantiates the `delete` command options
-func NewDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &DeleteOptions{
-		IOStreams: streams,
-	}
+func NewDeleteOptions() CommandOptions {
+	return &DeleteOptions{}
 }
 
 // Delete creates the `delete` command
 func Delete(streams genericclioptions.IOStreams) *cobra.Command {
-	// o := NewDeleteOptions(streams).(*DeleteOptions)
+	// o := NewDeleteOptions().(*DeleteOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "delete",

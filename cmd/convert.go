@@ -23,7 +23,6 @@ import (
 
 // ConvertOptions represents the convert command options
 type ConvertOptions struct {
-	genericclioptions.IOStreams
 }
 
 // Validate validates the `convert` command options
@@ -33,9 +32,7 @@ func (o ConvertOptions) Validate(c *cobra.Command, args []string) error {
 
 // NewConvertOptions instantiates the `convert` command options
 func NewConvertOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &ConvertOptions{
-		IOStreams: streams,
-	}
+	return &ConvertOptions{}
 }
 
 // Convert creates the `convert` command

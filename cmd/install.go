@@ -23,7 +23,6 @@ import (
 
 // InstallOptions represents the install command options
 type InstallOptions struct {
-	genericclioptions.IOStreams
 }
 
 // Validate validates the `install` command options
@@ -32,15 +31,13 @@ func (o InstallOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewInstallOptions instantiates the `install` command options
-func NewInstallOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &InstallOptions{
-		IOStreams: streams,
-	}
+func NewInstallOptions() CommandOptions {
+	return &InstallOptions{}
 }
 
 // Install creates the `install` command
 func Install(streams genericclioptions.IOStreams) *cobra.Command {
-	// o := NewInstallOptions(streams).(*InstallOptions)
+	// o := NewInstallOptions().(*InstallOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "install",
