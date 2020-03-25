@@ -17,41 +17,23 @@ limitations under the License.
 package cmd
 
 import (
+	"os"
 	"strings"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// RootOptions represents the base command options
-type RootOptions struct {
-	configFlags *genericclioptions.ConfigFlags
-
-	genericclioptions.IOStreams
-
-	fabulous bool
-}
-
-// Validate validates the base command options
-func (o RootOptions) Validate(c *cobra.Command, args []string) error {
-	return nil
-}
-
-// NewRootOptions instantiates the base command options
-func NewRootOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &RootOptions{
-		configFlags: genericclioptions.NewConfigFlags(false),
-		IOStreams:   streams,
-	}
-}
-
-// New creates the command
+// New creates the faloctl root command
 func New(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewRootOptions(streams).(*RootOptions)
+	configOptions := NewConfigOptions()
+	cobra.OnInitialize(func() {
+		initConfig(configOptions)
+	})
 
 	cmd := &cobra.Command{
 		Use:                   "falcoctl",
@@ -62,10 +44,11 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 			// Set destination for usage and error messages
 			c.SetOutput(streams.ErrOut)
 			// Be fabulous
-			if o.fabulous {
+			if configOptions.Fabulous {
 				logger.Fabulous = true
 				logger.Color = false
 			}
+			logger.Level = configOptions.Verbose
 		},
 		Run: func(c *cobra.Command, args []string) {
 			cobra.NoArgs(c, args)
@@ -73,23 +56,53 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().BoolVarP(&o.fabulous, "fab", "f", o.fabulous, "Enable rainbow logs")
-	cmd.PersistentFlags().IntVarP(&logger.Level, "verbose", "v", 3, "Verbosity 0 (off) 4 (most)")
+	cmd.PersistentFlags().StringVarP(&configOptions.ConfigFile, "config", "c", configOptions.ConfigFile, "config file path (default $HOME/.falcoctl.yaml if exists)")
+	cmd.PersistentFlags().BoolVarP(&configOptions.Fabulous, "fab", "f", configOptions.Fabulous, "enable rainbow logs")
+	cmd.PersistentFlags().IntVarP(&configOptions.Verbose, "verbose", "v", configOptions.Verbose, "verbosity 0 (off) 4 (most)")
 
-	flags := cmd.Flags()
-	o.configFlags.AddFlags(flags)
+	cmd.AddCommand(Install(streams))
+	cmd.AddCommand(Delete(streams))
+	cmd.AddCommand(Convert(streams))
 
-	matchVersionFlags := factory.MatchVersion(o.configFlags)
-	matchVersionFlags.AddFlags(flags)
-	f := factory.New(matchVersionFlags)
+	return cmd
+}
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig(configOptions *ConfigOptions) {
+	if errs := configOptions.Validate(); errs != nil {
+		for _, err := range errs {
+			logger.Critical("error validating config options: %s", err)
+		}
+		os.Exit(1)
+	}
+	if configOptions.ConfigFile != "" {
+		viper.SetConfigFile(configOptions.ConfigFile)
+	} else {
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			logger.Critical("error getting the home directory: %s", err)
+		}
+
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".falcoctl")
+	}
 
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("falcoctl")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	cmd.AddCommand(Install(streams, f))
-	cmd.AddCommand(Delete(streams, f))
-	cmd.AddCommand(Convert(streams))
-
-	return cmd
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err == nil {
+		logger.Info("using config file: %s", viper.ConfigFileUsed())
+	} else {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found, ignore ...
+			logger.Debug("running without a configuration file")
+		} else {
+			// Config file was found but another error was produced
+			logger.Critical("error running with config file: %s", err)
+		}
+	}
 }
