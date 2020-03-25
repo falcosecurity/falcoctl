@@ -28,8 +28,6 @@ import (
 
 // FalcoOptions represents the `install falco` command options
 type FalcoOptions struct {
-	genericclioptions.IOStreams
-
 	daemonSetName string
 }
 
@@ -39,15 +37,13 @@ func (o FalcoOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewFalcoOptions instantiates the `install falco` command options
-func NewFalcoOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &FalcoOptions{
-		IOStreams: streams,
-	}
+func NewFalcoOptions() CommandOptions {
+	return &FalcoOptions{}
 }
 
 // InstallFalco creates the `install falco` command
 func InstallFalco(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewFalcoOptions(streams).(*FalcoOptions)
+	o := NewFalcoOptions().(*FalcoOptions)
 
 	var clientGetter genericclioptions.RESTClientGetter
 	cmd := &cobra.Command{

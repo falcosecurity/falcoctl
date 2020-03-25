@@ -30,7 +30,6 @@ import (
 
 // ModuleOptions represents the `install module` command options
 type ModuleOptions struct {
-	genericclioptions.IOStreams
 	falcoVersion    string
 	falcoModulePath string
 	falcoModuleFile string
@@ -47,10 +46,8 @@ func (o ModuleOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewModuleOptions instantiates the `install module` command options
-func NewModuleOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &ModuleOptions{
-		IOStreams: streams,
-	}
+func NewModuleOptions() CommandOptions {
+	o := &ModuleOptions{}
 	o.falcoVersion = viper.GetString("falco-version")        // FALCOCTL_FALCO_VERSION env var
 	o.falcoModulePath = viper.GetString("falco-module-path") // FALCOCTL_FALCO_MODULE_PATH env var
 	if len(o.falcoModulePath) == 0 {
@@ -70,7 +67,7 @@ func NewModuleOptions(streams genericclioptions.IOStreams) CommandOptions {
 
 // InstallModule creates the `install module` command
 func InstallModule(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewModuleOptions(streams).(*ModuleOptions)
+	o := NewModuleOptions().(*ModuleOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "module",

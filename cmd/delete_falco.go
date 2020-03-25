@@ -29,8 +29,6 @@ import (
 
 // FalcoDeleteOptions represents the `delete falco` command options
 type FalcoDeleteOptions struct {
-	genericclioptions.IOStreams
-
 	daemonSetName string
 }
 
@@ -40,15 +38,13 @@ func (o FalcoDeleteOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewFalcoDeleteOptions instantiates the `delete falco` command options
-func NewFalcoDeleteOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &FalcoDeleteOptions{
-		IOStreams: streams,
-	}
+func NewFalcoDeleteOptions() CommandOptions {
+	return &FalcoDeleteOptions{}
 }
 
 // DeleteFalco creates the `delete falco` command
 func DeleteFalco(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewFalcoDeleteOptions(streams).(*FalcoDeleteOptions)
+	o := NewFalcoDeleteOptions().(*FalcoDeleteOptions)
 
 	var clientGetter genericclioptions.RESTClientGetter
 	cmd := &cobra.Command{
