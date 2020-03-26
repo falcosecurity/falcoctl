@@ -53,13 +53,8 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 
 	rootCmd.PersistentPreRun = func(c *cobra.Command, args []string) {
 		// Set destination for usage and error messages
-		rootCmd.SetOutput(streams.ErrOut)
-		// Be fabulous
-		if configOptions.Fabulous {
-			logger.Fabulous = true
-			logger.Color = false
-		}
-		logger.Level = configOptions.Verbose
+		c.SetOut(streams.Out)
+		c.SetErr(streams.ErrOut)
 
 		// When a flag is not provided by the user,
 		// fallback to one of (in order of precedence):
@@ -72,6 +67,13 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 				c.Flags().Set(f.Name, v)
 			}
 		})
+
+		// Be fabulous
+		if configOptions.Fabulous {
+			logger.Fabulous = true
+			logger.Color = false
+		}
+		logger.Level = configOptions.Verbose
 	}
 
 	pflags := rootCmd.PersistentFlags()
