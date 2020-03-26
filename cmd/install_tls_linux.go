@@ -23,6 +23,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
+// Defaults
 const (
 	DefaultCertsCountry = "US"
 	DefaultCertsOrg     = "falcosecurity"
