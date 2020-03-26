@@ -24,7 +24,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/kernelmoduleloader"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -47,22 +46,12 @@ func (o ModuleOptions) Validate(c *cobra.Command, args []string) error {
 
 // NewModuleOptions instantiates the `install module` command options
 func NewModuleOptions() CommandOptions {
-	o := &ModuleOptions{}
-	o.falcoVersion = viper.GetString("falco-version")        // FALCOCTL_FALCO_VERSION env var
-	o.falcoModulePath = viper.GetString("falco-module-path") // FALCOCTL_FALCO_MODULE_PATH env var
-	if len(o.falcoModulePath) == 0 {
-		o.falcoModulePath = "/" // default
+	return &ModuleOptions{
+		// defaults
+		falcoModulePath: "/",
+		falcoModuleFile: "falco-module.ko",
+		falcoModuleRepo: "https://s3.amazonaws.com/download.draios.com/stable/sysdig-module-binaries/",
 	}
-	o.falcoModuleFile = viper.GetString("falco-module-file") // FALCOCTL_FALCO_MODULE_FILE env var
-	if len(o.falcoModuleFile) == 0 {
-		o.falcoModuleFile = "falco-module.ko" // default
-	}
-	o.falcoModuleURL = viper.GetString("falco-module-url")   // FALCOCTL_FALCO_MODULE_URL env var
-	o.falcoModuleRepo = viper.GetString("falco-module-repo") // FALCOCTL_FALCO_MODULE_REPO env var
-	if len(o.falcoModuleRepo) == 0 {
-		o.falcoModuleRepo = "https://s3.amazonaws.com/download.draios.com/stable/sysdig-module-binaries/" // default
-	}
-	return o
 }
 
 // InstallModule creates the `install module` command

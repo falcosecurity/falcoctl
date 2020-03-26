@@ -26,7 +26,6 @@ import (
 	converter "github.com/falcosecurity/falcoctl/pkg/converter/psp"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -51,13 +50,9 @@ func (o PspConvertOptions) Validate(c *cobra.Command, args []string) error {
 
 // NewPspConvertOptions instantiates PspConvertOptions
 func NewPspConvertOptions() CommandOptions {
-	o := &PspConvertOptions{}
-	o.pspPath = viper.GetString("psp-path")     // FALCOCTL_PSP_PATH env var
-	o.rulesPath = viper.GetString("rules-path") // FALCOCTL_RULES_PATH env var
-	if len(o.rulesPath) == 0 {
-		o.rulesPath = "./psp_falco_rules.yaml" // default
+	return &PspConvertOptions{
+		rulesPath: "./psp_falco_rules.yaml", // default
 	}
-	return o
 }
 
 func debugLog(format string, args ...interface{}) {

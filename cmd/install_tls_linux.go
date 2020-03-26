@@ -20,7 +20,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/tls"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -49,36 +48,13 @@ func (o TLSOptions) Validate(c *cobra.Command, args []string) error {
 
 // NewTLSOptions instantiates the `install tls` command options
 func NewTLSOptions() CommandOptions {
-	o := &TLSOptions{}
-
-	// Fallback to default only when also env variable is missing
-	// FALCOCTL_COUNTRY env var
-	o.country = viper.GetString("country")
-	if len(o.country) == 0 {
-		o.country = DefaultCertsCountry
+	return &TLSOptions{
+		country: DefaultCertsCountry,
+		org:     DefaultCertsCountry,
+		name:    DefaultCertsName,
+		days:    DefaultCertsDays,
+		path:    DefaultCertsPath,
 	}
-	// FALCOCTL_ORG env var
-	o.org = viper.GetString("org")
-	if len(o.org) == 0 {
-		o.org = DefaultCertsOrg
-	}
-	// FALCOCTL_NAME env var
-	o.name = viper.GetString("name")
-	if len(o.name) == 0 {
-		o.name = DefaultCertsName
-	}
-	// FALCOCTL_DAYS env var
-	o.path = viper.GetString("days")
-	if len(o.path) == 0 {
-		o.days = DefaultCertsDays
-	}
-	// FALCOCTL_PATH env var
-	o.path = viper.GetString("path")
-	if len(o.path) == 0 {
-		o.path = DefaultCertsPath
-	}
-
-	return o
 }
 
 // InstallTLS creates the `install tls` command
@@ -109,11 +85,12 @@ This command is a convenience to not only generate the TLS material, but also dr
 		},
 	}
 
-	cmd.Flags().StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
-	cmd.Flags().StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
-	cmd.Flags().StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
-	cmd.Flags().IntVarP(&o.days, "days", "d", o.days, "The number of days to make self signed TLS cert valid for")
-	cmd.Flags().StringVarP(&o.path, "path", "p", o.path, "The path to write the TLS cert to")
+	flags := cmd.Flags()
+	flags.StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
+	flags.StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
+	flags.StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
+	flags.IntVarP(&o.days, "days", "d", o.days, "The number of days to make self signed TLS cert valid for")
+	flags.StringVarP(&o.path, "path", "p", o.path, "The path to write the TLS cert to")
 
 	return cmd
 }
