@@ -153,13 +153,13 @@ func createOrUpdateAuditSink(auditClient auditregistrationv1alpha1.Auditregistra
 
 	if err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return fmt.Errorf("unable to create auditsink", err)
+			return fmt.Errorf("unable to create auditsink: %s", err)
 		}
 
 		logger.Info("AuditSink already exists: %v, updating existing AuditSink", as.Name)
 		_, err := auditClient.AuditSinks().Update(as)
 		if err != nil {
-			return fmt.Errorf("unable to update auditsink", err)
+			return fmt.Errorf("unable to update auditsink: %s", err)
 		}
 	}
 
