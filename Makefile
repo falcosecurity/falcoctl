@@ -4,8 +4,8 @@ GO ?= go
 
 TEST_FLAGS ?= -v -race
 
-.PHONY: falco-exporter
-falco-exporter:
+.PHONY: falcoctl
+falcoctl:
 	$(GO) build .
 
 .PHONY: test
