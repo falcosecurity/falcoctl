@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"io"
 	"os"
 	"strings"
 
@@ -32,13 +33,29 @@ import (
 
 var configOptions *ConfigOptions
 
+// Start setups and starts the CLI.
+func Start() {
+	// flags := pflag.NewFlagSet("falcoctl", pflag.ExitOnError)
+	// pflag.CommandLine = flags
+	root := New()
+	if err := root.Execute(); err != nil {
+		logger.Critical("error executing falcoctl: %s", err)
+		os.Exit(1)
+	}
+}
+
 func init() {
 	configOptions = NewConfigOptions()
 	cobra.OnInitialize(initConfig)
 }
 
+// FalcoctlRoot wraps the root cobra.Command.
+type FalcoctlRoot struct {
+	c *cobra.Command
+}
+
 // New creates the faloctl root command
-func New(streams genericclioptions.IOStreams) *cobra.Command {
+func New() *FalcoctlRoot {
 	rootCmd := &cobra.Command{
 		Use:                   "falcoctl",
 		DisableFlagsInUseLine: true,
@@ -50,12 +67,16 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 			c.Help()
 		},
 	}
+	streams := genericclioptions.IOStreams{
+		In:     os.Stdin,
+		Out:    os.Stdout,
+		ErrOut: os.Stderr,
+	}
+	// Set destination for usage and error messages
+	rootCmd.SetOut(streams.Out)
+	rootCmd.SetErr(streams.ErrOut)
 
 	rootCmd.PersistentPreRun = func(c *cobra.Command, args []string) {
-		// Set destination for usage and error messages
-		c.SetOut(streams.Out)
-		c.SetErr(streams.ErrOut)
-
 		// When a flag is not provided by the user,
 		// fallback to one of (in order of precedence):
 		// - ENV (with FALCOCTL_ prefix)
@@ -85,7 +106,29 @@ func New(streams genericclioptions.IOStreams) *cobra.Command {
 	rootCmd.AddCommand(Delete(streams))
 	rootCmd.AddCommand(Convert(streams))
 
-	return rootCmd
+	return &FalcoctlRoot{
+		c: rootCmd,
+	}
+}
+
+// SetOut sets the destination for usage messages.
+func (f *FalcoctlRoot) SetOut(w io.Writer) {
+	f.c.SetOut(w)
+}
+
+// SetErr sets the destination for error messages.
+func (f *FalcoctlRoot) SetErr(w io.Writer) {
+	f.c.SetErr(w)
+}
+
+// SetArgs proxies the args to the underlying cobra.Command.
+func (f *FalcoctlRoot) SetArgs(args []string) {
+	f.c.SetArgs(args)
+}
+
+// Execute proxies the cobra.Command execution.
+func (f *FalcoctlRoot) Execute() error {
+	return f.c.Execute()
 }
 
 // initConfig reads in config file and ENV variables if set.
