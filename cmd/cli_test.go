@@ -42,6 +42,19 @@ var tests = []testCase{
 			err: "unknown flag: --wrong",
 		},
 	},
+	{
+		args: []string{"help"},
+		expect: expect{
+			out: "testdata/help.txt",
+		},
+	},
+	{
+		descr: "help-flag",
+		args:  []string{"--help"},
+		expect: expect{
+			out: "testdata/help.txt",
+		},
+	},
 }
 
 func run(t *testing.T, test testCase) {
