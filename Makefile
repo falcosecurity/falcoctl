@@ -2,7 +2,8 @@ SHELL=/bin/bash -o pipefail
 
 GO ?= go
 
-TEST_FLAGS ?= -v -race
+# todo(leogr): re-enable race when CLI tests can run with race enabled
+TEST_FLAGS ?= -v # -race 
 
 .PHONY: falcoctl
 falcoctl:
