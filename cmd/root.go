@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"io"
 	"os"
 	"strings"
 
@@ -35,8 +34,6 @@ var configOptions *ConfigOptions
 
 // Start setups and starts the CLI.
 func Start() {
-	// flags := pflag.NewFlagSet("falcoctl", pflag.ExitOnError)
-	// pflag.CommandLine = flags
 	root := New()
 	if err := root.Execute(); err != nil {
 		logger.Critical("error executing falcoctl: %s", err)
@@ -49,13 +46,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 }
 
-// FalcoctlRoot wraps the root cobra.Command.
-type FalcoctlRoot struct {
-	c *cobra.Command
-}
-
 // New creates the faloctl root command
-func New() *FalcoctlRoot {
+func New() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:                   "falcoctl",
 		DisableFlagsInUseLine: true,
@@ -106,29 +98,7 @@ func New() *FalcoctlRoot {
 	rootCmd.AddCommand(Delete(streams))
 	rootCmd.AddCommand(Convert(streams))
 
-	return &FalcoctlRoot{
-		c: rootCmd,
-	}
-}
-
-// SetOut sets the destination for usage messages.
-func (f *FalcoctlRoot) SetOut(w io.Writer) {
-	f.c.SetOut(w)
-}
-
-// SetErr sets the destination for error messages.
-func (f *FalcoctlRoot) SetErr(w io.Writer) {
-	f.c.SetErr(w)
-}
-
-// SetArgs proxies the args to the underlying cobra.Command.
-func (f *FalcoctlRoot) SetArgs(args []string) {
-	f.c.SetArgs(args)
-}
-
-// Execute proxies the cobra.Command execution.
-func (f *FalcoctlRoot) Execute() error {
-	return f.c.Execute()
+	return rootCmd
 }
 
 // initConfig reads in config file and ENV variables if set.
