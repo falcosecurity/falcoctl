@@ -18,9 +18,8 @@ package cmd
 
 import (
 	"github.com/falcosecurity/falcoctl/pkg/tls"
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // Defaults
@@ -32,6 +31,8 @@ const (
 	DefaultCertsDays    = 365
 )
 
+var _ CommandOptions = &TLSOptions{}
+
 // TLSOptions represents the `install tls` command options
 type TLSOptions struct {
 	country string
@@ -41,14 +42,24 @@ type TLSOptions struct {
 	days    int
 }
 
+// AddFlags adds flag to c
+func (o *TLSOptions) AddFlags(c *cobra.Command) {
+	flags := c.Flags()
+	flags.StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
+	flags.StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
+	flags.StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
+	flags.IntVarP(&o.days, "days", "d", o.days, "The number of days to make self signed TLS cert valid for")
+	flags.StringVarP(&o.path, "path", "p", o.path, "The path to write the TLS cert to")
+}
+
 // Validate validates the `install probe` command options
-func (o TLSOptions) Validate(c *cobra.Command, args []string) error {
+func (o *TLSOptions) Validate(c *cobra.Command, args []string) error {
 	// todo > validate path exists and is writable here
 	return nil
 }
 
 // NewTLSOptions instantiates the `install tls` command options
-func NewTLSOptions() CommandOptions {
+func NewTLSOptions() *TLSOptions {
 	return &TLSOptions{
 		country: DefaultCertsCountry,
 		org:     DefaultCertsCountry,
@@ -58,9 +69,9 @@ func NewTLSOptions() CommandOptions {
 	}
 }
 
-// InstallTLS creates the `install tls` command
-func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewTLSOptions().(*TLSOptions)
+// NewInstallTLS creates the `install tls` command
+func NewInstallTLSCmd(options CommandOptions) *cobra.Command {
+	o := options.(*TLSOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "tls",
@@ -69,16 +80,17 @@ func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
 		Long: `Falco gRPC server runs with mutually encrypted TLS by default.
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: o.Validate,
+		RunE: func(c *cobra.Command, args []string) error {
 			g := tls.GRPCTLSGenerator(o.country, o.org, o.name, o.days)
 			err := g.Generate()
 			if err != nil {
-				logger.Critical(err.Error())
+				logger.Fatal(err.Error())
 				return err
 			}
 			err = g.FlushToDisk(o.path)
 			if err != nil {
-				logger.Critical(err.Error())
+				logger.Fatal(err.Error())
 				return err
 			}
 
@@ -86,12 +98,7 @@ This command is a convenience to not only generate the TLS material, but also dr
 		},
 	}
 
-	flags := cmd.Flags()
-	flags.StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
-	flags.StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
-	flags.StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
-	flags.IntVarP(&o.days, "days", "d", o.days, "The number of days to make self signed TLS cert valid for")
-	flags.StringVarP(&o.path, "path", "p", o.path, "The path to write the TLS cert to")
+	o.AddFlags(cmd)
 
 	return cmd
 }

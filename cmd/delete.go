@@ -18,27 +18,10 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// DeleteOptions represents the `delete` command options
-type DeleteOptions struct {
-}
-
-// Validate validates the `delete` command options
-func (o DeleteOptions) Validate(c *cobra.Command, args []string) error {
-	return nil
-}
-
-// NewDeleteOptions instantiates the `delete` command options
-func NewDeleteOptions() CommandOptions {
-	return &DeleteOptions{}
-}
-
-// Delete creates the `delete` command
-func Delete(streams genericclioptions.IOStreams) *cobra.Command {
-	// o := NewDeleteOptions().(*DeleteOptions)
-
+// NewDelete creates the `delete` command
+func NewDeleteCmd(options CommandOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "delete",
 		DisableFlagsInUseLine: true,
@@ -46,7 +29,7 @@ func Delete(streams genericclioptions.IOStreams) *cobra.Command {
 		Long:                  `Delete a component with falcoctl`,
 	}
 
-	cmd.AddCommand(DeleteFalco(streams))
+	cmd.AddCommand(NewDeleteFalcoCmd(nil))
 
 	return cmd
 }

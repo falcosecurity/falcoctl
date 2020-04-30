@@ -18,26 +18,32 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // ConvertOptions represents the convert command options
 type ConvertOptions struct {
+	*PspConvertOptions
+}
+
+func (o *ConvertOptions) AddFlags(c *cobra.Command) {
+
 }
 
 // Validate validates the `convert` command options
-func (o ConvertOptions) Validate(c *cobra.Command, args []string) error {
+func (o *ConvertOptions) Validate(c *cobra.Command, args []string) error {
 	return nil
 }
 
 // NewConvertOptions instantiates the `convert` command options
-func NewConvertOptions(streams genericclioptions.IOStreams) CommandOptions {
-	return &ConvertOptions{}
+func NewConvertOptions() CommandOptions {
+	return &ConvertOptions{
+		PspConvertOptions: NewPspConvertOptions(),
+	}
 }
 
-// Convert creates the `convert` command
-func Convert(streams genericclioptions.IOStreams) *cobra.Command {
-	// o := NewConvertOptions(streams).(*ConvertOptions)
+// NewConvert creates the `convert` command
+func NewConvertCmd(options CommandOptions) *cobra.Command {
+	o := options.(*ConvertOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "convert",
@@ -47,7 +53,9 @@ func Convert(streams genericclioptions.IOStreams) *cobra.Command {
 		Long:                  `Various conversion helpers`,
 	}
 
-	cmd.AddCommand(PspConvert(streams))
+	o.AddFlags(cmd)
+
+	cmd.AddCommand(NewPspConvertCmd(o.PspConvertOptions))
 
 	return cmd
 }

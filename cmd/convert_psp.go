@@ -24,15 +24,19 @@ import (
 	"io/ioutil"
 
 	converter "github.com/falcosecurity/falcoctl/pkg/converter/psp"
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // PspConvertOptions represents options for PSP to Falco rules conversion
 type PspConvertOptions struct {
 	pspPath   string
 	rulesPath string
+}
+
+func (o *PspConvertOptions) AddFlags(c *cobra.Command) {
+	c.Flags().StringVarP(&o.pspPath, "psp-path", "P", o.pspPath, "Path to PSP as YAML file")
+	c.Flags().StringVarP(&o.rulesPath, "rules-path", "R", o.rulesPath, "Write converted rules to this file")
 }
 
 // Validate options to psp_conv command
@@ -49,22 +53,10 @@ func (o PspConvertOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewPspConvertOptions instantiates PspConvertOptions
-func NewPspConvertOptions() CommandOptions {
+func NewPspConvertOptions() *PspConvertOptions {
 	return &PspConvertOptions{
 		rulesPath: "./psp_falco_rules.yaml", // default
 	}
-}
-
-func debugLog(format string, args ...interface{}) {
-	logger.Debug(format, args)
-}
-
-func infoLog(format string, args ...interface{}) {
-	logger.Info(format, args)
-}
-
-func errorLog(format string, args ...interface{}) {
-	logger.Critical(format, args)
 }
 
 func convertPspFalcoRules(pspPath string, rulesPath string) error {
@@ -74,14 +66,14 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 	}
 	defer pspFile.Close()
 
-	logger.Debug("Reading PSP from %s", pspPath)
+	logger.Debugf("Reading PSP from %s", pspPath)
 
 	psp, err := ioutil.ReadAll(pspFile)
 	if err != nil && err != io.EOF {
 		return fmt.Errorf("Could not read PSP file: %s", pspPath)
 	}
 
-	conv, err := converter.NewConverter(debugLog, infoLog, errorLog)
+	conv, err := converter.NewConverter(logger.Debugf, logger.Infof, logger.Errorf)
 	if err != nil {
 		return fmt.Errorf("Could not create converter: %v", err)
 	}
@@ -95,36 +87,27 @@ func convertPspFalcoRules(pspPath string, rulesPath string) error {
 		return fmt.Errorf("Could not write rules to: %s", rulesPath)
 	}
 
-	logger.Debug("Wrote rules to %s", rulesPath)
+	logger.Debugf("Wrote rules to %s", rulesPath)
 
 	return nil
 }
 
-// PspConvert instantiates the `convert psp` command
-func PspConvert(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewPspConvertOptions().(*PspConvertOptions)
+// NewPspConvert instantiates the `convert psp` command
+func NewPspConvertCmd(options CommandOptions) *cobra.Command {
+	o := options.(*PspConvertOptions)
 
 	cmd := &cobra.Command{
 		Use:   "psp",
 		Short: "Convert a PSP to a set of Falco Rules",
 		Long: `Convert a K8s Pod Security Policy (PSP), provided via the --psp-path argument, to a set of Falco rules that can evaluate the conditions in the PSP.
 The resulting rules are written to the file provided by the --rules-path argument`,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := o.Validate(cmd, args); err != nil {
-				logger.Critical("%s", err)
-				os.Exit(1)
-			}
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := convertPspFalcoRules(o.pspPath, o.rulesPath); err != nil {
-				logger.Critical("%s", err)
-				os.Exit(1)
-			}
+		PreRunE: o.Validate,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return convertPspFalcoRules(o.pspPath, o.rulesPath)
 		},
 	}
 
-	cmd.Flags().StringVarP(&o.pspPath, "psp-path", "P", o.pspPath, "Path to PSP as YAML file")
-	cmd.Flags().StringVarP(&o.rulesPath, "rules-path", "R", o.rulesPath, "Write converted rules to this file")
+	o.AddFlags(cmd)
 
 	return cmd
 }

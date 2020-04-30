@@ -20,23 +20,22 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
-	"github.com/falcosecurity/falcoctl/validate"
+	"github.com/falcosecurity/falcoctl/cmd/internal/validate"
 	"github.com/go-playground/validator/v10"
-	logger "github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 )
 
 // ConfigOptions represent the persistent configuration flags of falcoctl.
 type ConfigOptions struct {
-	ConfigFile string `name:"config"`
-	Verbose    int    `validate:"number,min=0,max=4" default:"3" name:"verbose"`
-	Fabulous   bool   `name:"fab"`
+	ConfigFile string
+	LogLevel   string `validate:"logrus" name:"log level" default:"info"`
 }
 
 // NewConfigOptions creates an instance of ConfigOptions.
 func NewConfigOptions() *ConfigOptions {
 	o := &ConfigOptions{}
 	if err := defaults.Set(o); err != nil {
-		logger.Critical("error setting falcoctl options default")
+		logger.WithError(err).WithField("options", "ConfigOptions").Fatal("error setting falcoctl options defaults")
 	}
 	return o
 }
