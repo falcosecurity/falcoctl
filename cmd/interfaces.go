@@ -20,9 +20,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// CommandOptions is ...
+// CommandFactory is the interface for command factories.
+type CommandFactory func(CommandOptions) *cobra.Command
+
+// CommandOptions is the interface for command options.
 type CommandOptions interface {
-	Validate(*cobra.Command, []string) error
-	// Complete(factory.Factory, *cobra.Command, []string) error
-	// Run() error
+	// AddFlags to command
+	AddFlags(command *cobra.Command)
+
+	// Validate command flags and args
+	Validate(cmd *cobra.Command, args []string) error
 }

@@ -17,31 +17,13 @@ limitations under the License.
 package cmd
 
 import (
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// FalcoDeleteOptions represents the `delete falco` command options
-type FalcoDeleteOptions struct {
-}
+// NewDeleteFalco creates the `delete falco` command
+func NewDeleteFalcoCmd(options CommandOptions) *cobra.Command {
 
-// Validate validates the `delete falco` command options
-func (o FalcoDeleteOptions) Validate(c *cobra.Command, args []string) error {
-	return nil
-}
-
-// NewFalcoDeleteOptions instantiates the `delete falco` command options
-func NewFalcoDeleteOptions() CommandOptions {
-	return &FalcoDeleteOptions{}
-}
-
-// DeleteFalco creates the `delete falco` command
-func DeleteFalco(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewFalcoDeleteOptions().(*FalcoDeleteOptions)
-
-	var clientGetter genericclioptions.RESTClientGetter
 	cmd := &cobra.Command{
 		Use:                   "falco",
 		DisableFlagsInUseLine: true,

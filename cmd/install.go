@@ -18,26 +18,29 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // InstallOptions represents the install command options
 type InstallOptions struct {
+	*TLSOptions
 }
 
 // Validate validates the `install` command options
-func (o InstallOptions) Validate(c *cobra.Command, args []string) error {
+func (o *InstallOptions) Validate(c *cobra.Command, args []string) error {
+	// todo > validate path exists and is writable here
 	return nil
 }
 
 // NewInstallOptions instantiates the `install` command options
 func NewInstallOptions() CommandOptions {
-	return &InstallOptions{}
+	return &InstallOptions{
+		TLSOptions: NewTLSOptions(),
+	}
 }
 
-// Install creates the `install` command
-func Install(streams genericclioptions.IOStreams) *cobra.Command {
-	// o := NewInstallOptions().(*InstallOptions)
+// NewInstall creates the `install` command
+func NewInstallCmd(options CommandOptions) *cobra.Command {
+	o := options.(*InstallOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "install",
@@ -47,10 +50,9 @@ func Install(streams genericclioptions.IOStreams) *cobra.Command {
 		Long:                  `Install a component with falcoctl`,
 	}
 
-	cmd.AddCommand(InstallFalco(streams))
-	cmd.AddCommand(InstallModule(streams))
-	cmd.AddCommand(InstallTLS(streams))
-	cmd.AddCommand(InstallRule(streams))
+	cmd.AddCommand(NewInstallFalcoCmd(nil))
+	cmd.AddCommand(NewInstallTLSCmd(o.TLSOptions))
+	cmd.AddCommand(NewInstallRuleCmd(nil))
 
 	return cmd
 }

@@ -17,31 +17,12 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// RuleOptions represents the `install tls` command options
-type RuleOptions struct {
-}
-
-// Validate validates the `install probe` command options
-func (o RuleOptions) Validate(c *cobra.Command, args []string) error {
-	return nil
-}
-
-// NewRuleOptions instantiates the `install rule` command options
-func NewRuleOptions(streams genericclioptions.IOStreams) CommandOptions {
-	o := &RuleOptions{}
-	return o
-}
-
-// InstallRule creates the `install rule` command
-func InstallRule(streams genericclioptions.IOStreams) *cobra.Command {
-	// todo > uncomment me when implementing this command
-	// o := NewRuleOptions().(*RuleOptions)
-
+// NewInstallRule creates the `install rule` command
+func NewInstallRuleCmd(options CommandOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "rule",
 		DisableFlagsInUseLine: true,

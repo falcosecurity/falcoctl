@@ -19,13 +19,12 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// InstallTLS creates the `install tls` command
-func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
+// NewInstallTLS creates the `install tls` command
+func NewInstallTLSCmd(options CommandOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "tls",
 		DisableFlagsInUseLine: true,
@@ -34,7 +33,7 @@ func InstallTLS(streams genericclioptions.IOStreams) *cobra.Command {
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger.Critical("this command only works on machines running a linux kernel")
+			logger.Fatal("this command only works on machines running a linux kernel")
 
 			return nil
 		},
