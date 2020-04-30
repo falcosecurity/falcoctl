@@ -30,8 +30,37 @@ func init() {
 		return name
 	})
 
+	V.RegisterValidation("logrus", isLogrusLevel)
+	V.RegisterValidation("filepath", isFilePath)
+
 	eng := en.New()
 	uni := ut.New(eng, eng)
 	T, _ = uni.GetTranslator("en")
 	en_translations.RegisterDefaultTranslations(V, T)
+
+	V.RegisterTranslation(
+		"filepath",
+		T,
+		func(ut ut.Translator) error {
+			return ut.Add("filepath", "{0} must be a valid file path", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("filepath", fe.Field())
+
+			return t
+		},
+	)
+
+	V.RegisterTranslation(
+		"logrus",
+		T,
+		func(ut ut.Translator) error {
+			return ut.Add("logrus", "{0} must be a valid logrus level", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("logrus", fe.Field())
+
+			return t
+		},
+	)
 }
