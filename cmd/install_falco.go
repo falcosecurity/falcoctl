@@ -17,10 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"os"
-
-	kubernetesfalc "github.com/falcosecurity/falcoctl/pkg/kubernetes"
-	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -28,7 +24,6 @@ import (
 
 // FalcoOptions represents the `install falco` command options
 type FalcoOptions struct {
-	daemonSetName string
 }
 
 // Validate validates the `install falco` command options
@@ -53,22 +48,9 @@ func InstallFalco(streams genericclioptions.IOStreams) *cobra.Command {
 		Short:                 "Install Falco in Kubernetes",
 		Long:                  `Deploy Falco to Kubernetes`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// todo > pass daemonset name using o.daemonSetName
-			installer, err := kubernetesfalc.NewFalcoInstaller(factory.New(clientGetter))
-			if err != nil {
-				logger.Critical("Fatal error: %v", err)
-				os.Exit(1)
-			}
-			err = installer.Install()
-			if err != nil {
-				logger.Critical("Fatal error: %v", err)
-				os.Exit(1)
-			}
+			logger.Info("to be implemented")
 		},
 	}
-
-	clientGetter = initKubeFlags(cmd.PersistentFlags())
-	cmd.Flags().StringVarP(&o.daemonSetName, "daemonset-name", "D", o.daemonSetName, "Set the name to use with the Falco DaemonSet")
 
 	return cmd
 }
