@@ -17,30 +17,13 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// FalcoOptions represents the `install falco` command options
-type FalcoOptions struct {
-}
+// NewInstallFalco creates the `install falco` command
+func NewInstallFalcoCmd(options CommandOptions) *cobra.Command {
 
-// Validate validates the `install falco` command options
-func (o FalcoOptions) Validate(c *cobra.Command, args []string) error {
-	return nil
-}
-
-// NewFalcoOptions instantiates the `install falco` command options
-func NewFalcoOptions() CommandOptions {
-	return &FalcoOptions{}
-}
-
-// InstallFalco creates the `install falco` command
-func InstallFalco(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewFalcoOptions().(*FalcoOptions)
-
-	var clientGetter genericclioptions.RESTClientGetter
 	cmd := &cobra.Command{
 		Use:                   "falco",
 		TraverseChildren:      true,

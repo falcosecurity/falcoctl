@@ -19,20 +19,19 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kris-nova/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// InstallRule creates the `install rule` command
-func InstallRule(streams genericclioptions.IOStreams) *cobra.Command {
+// NewInstallRule creates the `install rule` command
+func NewInstallRuleCmd(options CommandOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "rule",
 		DisableFlagsInUseLine: true,
 		Short:                 "Install Falco rules",
 		Long:                  `Use this command to install various Falco rules from configured repositories`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger.Critical("this command only works on machines running a linux kernel")
+			logger.Fatal("this command only works on machines running a linux kernel")
 
 			return nil
 		},
