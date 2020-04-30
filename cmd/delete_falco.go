@@ -17,19 +17,14 @@ limitations under the License.
 package cmd
 
 import (
-	"os"
-
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	kubernetesfalc "github.com/falcosecurity/falcoctl/pkg/kubernetes"
-	"github.com/falcosecurity/falcoctl/pkg/kubernetes/factory"
 	"github.com/kris-nova/logger"
 	"github.com/spf13/cobra"
 )
 
 // FalcoDeleteOptions represents the `delete falco` command options
 type FalcoDeleteOptions struct {
-	daemonSetName string
 }
 
 // Validate validates the `delete falco` command options
@@ -53,22 +48,9 @@ func DeleteFalco(streams genericclioptions.IOStreams) *cobra.Command {
 		Short:                 "Delete Falco from Kubernetes",
 		Long:                  `Delete Falco from Kubernetes`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// todo > pass daemonset name using o.daemonSetName
-			installer, err := kubernetesfalc.NewFalcoInstaller(factory.New(clientGetter))
-			if err != nil {
-				logger.Critical("Fatal error: %v", err)
-				os.Exit(1)
-			}
-			err = installer.Delete()
-			if err != nil {
-				logger.Critical("Fatal error: %v", err)
-				os.Exit(1)
-			}
+			logger.Info("to be implemented")
 		},
 	}
-
-	clientGetter = initKubeFlags(cmd.PersistentFlags())
-	cmd.Flags().StringVarP(&o.daemonSetName, "daemonset-name", "D", o.daemonSetName, "Set the name to use with the Falco DaemonSet")
 
 	return cmd
 }
