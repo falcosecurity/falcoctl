@@ -57,7 +57,7 @@ var tests = []testCase{
 
 func run(t *testing.T, test testCase) {
 	// Setup
-	c := New()
+	c := New(nil)
 	o := bytes.NewBufferString("")
 	c.SetOut(o)
 	c.SetErr(o)
