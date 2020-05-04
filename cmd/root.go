@@ -39,7 +39,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 			// at this stage configOptions is bound to command line flags only
 			validateConfig(*configOptions)
 			initLogger(configOptions.LogLevel)
-			logger.Debugf("running with args: ", strings.Join(os.Args, " "))
+			logger.Debugf("running with args: %s", strings.Join(os.Args, " "))
 			initConfig(configOptions.ConfigFile)
 
 			// then bind all flags to ENV and config file

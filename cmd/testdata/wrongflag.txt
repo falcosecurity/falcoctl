@@ -1,6 +1,6 @@
 Error: unknown flag: --wrong
 Usage:
-  falcoctl
+  falcoctl [flags]
   falcoctl [command]
 
 Available Commands:
@@ -10,10 +10,9 @@ Available Commands:
   install     Install a component with falcoctl
 
 Flags:
-      --config string   config file path (default $HOME/.falcoctl.yaml if exists)
-  -f, --fab             enable rainbow logs
-  -h, --help            help for falcoctl
-  -v, --verbose int     verbosity 0 (off) 4 (most) (default 3)
+  -c, --config string     Config file path (default $HOME/.falcoctl.yaml if exists)
+  -h, --help              help for falcoctl
+  -l, --loglevel string   Log level (default "info")
 
 Use "falcoctl [command] --help" for more information about a command.
 
