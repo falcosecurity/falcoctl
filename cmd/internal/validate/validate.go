@@ -32,6 +32,7 @@ func init() {
 
 	V.RegisterValidation("logrus", isLogrusLevel)
 	V.RegisterValidation("filepath", isFilePath)
+	V.RegisterValidation("registryurl", isRegistryURL)
 
 	eng := en.New()
 	uni := ut.New(eng, eng)

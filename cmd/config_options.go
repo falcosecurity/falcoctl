@@ -27,8 +27,9 @@ import (
 
 // ConfigOptions represent the persistent configuration flags of falcoctl.
 type ConfigOptions struct {
-	ConfigFile string
-	LogLevel   string `validate:"logrus" name:"log level" default:"info"`
+	ConfigFile  string
+	LogLevel    string `validate:"logrus" name:"log level" default:"info"`
+	RegistryURL string `validate: "registryurl" name:"registry url" default: "https://raw.githubusercontent.com/falcosecurity/plugins/master/registry.yaml"`
 }
 
 // NewConfigOptions creates an instance of ConfigOptions.
