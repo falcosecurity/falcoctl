@@ -4,7 +4,6 @@ Usage:
   falcoctl [command]
 
 Available Commands:
-  convert     Conversion helpers
   delete      Delete a component with falcoctl
   help        Help about any command
   install     Install a component with falcoctl
