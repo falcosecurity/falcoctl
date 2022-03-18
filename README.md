@@ -5,6 +5,8 @@
 
 # falcoctl
 
+Status: **Under development**
+
 > A Go CLI tool to interface with Falco, and perform useful tasks in the Falco Runtime Security ecosystem.
 
 ## Call for contributors/maintainers
