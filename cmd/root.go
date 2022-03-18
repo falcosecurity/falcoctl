@@ -47,11 +47,12 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 			initEnv()
 			initFlags(flags, map[string]bool{
 				// exclude flags to be not bound to ENV and config file
-				"config":   true,
-				"loglevel": true,
-				"help":     true,
+				"config":      true,
+				"loglevel":    true,
+				"help":        true,
+				"registryurl": false,
 			})
-			// validateConfig(*configOptions) // enable if other flags were bound to configOptions
+			//validateConfig(*configOptions) // enable if other flags were bound to configOptions
 			debugFlags(flags)
 		},
 		Run: func(c *cobra.Command, args []string) {
@@ -67,6 +68,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 	// Commands
 	rootCmd.AddCommand(NewDeleteCmd(nil))
 	rootCmd.AddCommand(NewInstallCmd(NewInstallOptions()))
+	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
 
 	return rootCmd
 }
@@ -143,6 +145,7 @@ func initConfig(configFile string) {
 
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".falcoctl")
+		viper.SetConfigType("yaml")
 	}
 
 	// If a config file is found, read it in.

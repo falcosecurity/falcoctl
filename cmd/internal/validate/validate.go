@@ -32,6 +32,7 @@ func init() {
 
 	V.RegisterValidation("logrus", isLogrusLevel)
 	V.RegisterValidation("filepath", isFilePath)
+	V.RegisterValidation("registryurl", isRegistryURL)
 
 	eng := en.New()
 	uni := ut.New(eng, eng)
@@ -59,6 +60,19 @@ func init() {
 		},
 		func(ut ut.Translator, fe validator.FieldError) string {
 			t, _ := ut.T("logrus", fe.Field())
+
+			return t
+		},
+	)
+
+	V.RegisterTranslation(
+		"registryurl",
+		T,
+		func(ut ut.Translator) error {
+			return ut.Add("registryurl", "{0} must be a valid URL", true)
+		},
+		func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("registryurl", fe.Field())
 
 			return t
 		},
