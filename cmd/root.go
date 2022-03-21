@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -13,6 +14,11 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+)
+
+const (
+	configName = "config"
+	configDir  = ".falcoctl"
 )
 
 func init() {
@@ -62,7 +68,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 
 	// Global flags
 	flags := rootCmd.PersistentFlags()
-	flags.StringVarP(&configOptions.ConfigFile, "config", "c", configOptions.ConfigFile, "Config file path (default $HOME/.falcoctl.yaml if exists)")
+	flags.StringVarP(&configOptions.ConfigFile, "config", "c", configOptions.ConfigFile, "Config file path (default "+filepath.Join("$HOME", configDir, configName+"yaml")+" if exists)")
 	flags.StringVarP(&configOptions.LogLevel, "loglevel", "l", configOptions.LogLevel, "Log level")
 
 	// Commands
@@ -132,7 +138,7 @@ func initLogger(logLevel string) {
 	logger.SetLevel(lvl)
 }
 
-// initConfig reads in config file, if any
+// initConfig reads in config file, if any. Default location is ~/.falcoctl/config.yaml
 func initConfig(configFile string) {
 	if configFile != "" {
 		viper.SetConfigFile(configFile)
@@ -143,8 +149,8 @@ func initConfig(configFile string) {
 			logger.WithError(err).Fatal("error getting the home directory")
 		}
 
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".falcoctl")
+		viper.AddConfigPath(filepath.Join(home, configDir))
+		viper.SetConfigName(configName)
 		viper.SetConfigType("yaml")
 	}
 
