@@ -11,6 +11,9 @@ const (
 // RepoOptions represents the install command options
 type RepoOptions struct {
 	*RepoAddOptions
+	*RepoRemoveOptions
+	RepoPath string
+	RepoFile string
 }
 
 // Validate validates the `install` command options
@@ -19,10 +22,17 @@ func (o *RepoOptions) Validate(c *cobra.Command, args []string) error {
 	return nil
 }
 
+func (o *RepoOptions) AddFlags(c *cobra.Command) {
+
+}
+
 // NewRepoOptions instantiates the `repo` command options
 func NewRepoOptions() CommandOptions {
 	return &RepoOptions{
-		RepoAddOptions: NewRepoAddOptions(),
+		RepoAddOptions:    NewRepoAddOptions(),
+		RepoRemoveOptions: NewRepoRemoveOptions(),
+		RepoPath:          DefaultRepoPath,
+		RepoFile:          DefaultRepoFile,
 	}
 }
 
@@ -35,7 +45,8 @@ func NewRepoCmd(options CommandOptions) *cobra.Command {
 		Long:                  "Manage artifact repositories",
 	}
 
-	cmd.AddCommand(NewRepoAddCmd(o.RepoAddOptions))
+	cmd.AddCommand(NewRepoAddCmd(o))
+	cmd.AddCommand(NewRepoRemoveCmd(o))
 
 	return cmd
 }

@@ -19,8 +19,6 @@ var _ CommandOptions = &RepoAddOptions{}
 
 // RepoAddOption represents the `repo add` command options
 type RepoAddOptions struct {
-	RepoPath string
-	RepoFile string
 }
 
 // AddFlags adds flag to c
@@ -37,14 +35,11 @@ func (o *RepoAddOptions) Validate(c *cobra.Command, args []string) error {
 
 // NewRepoAddOptions instantiates the `search registry` command options
 func NewRepoAddOptions() *RepoAddOptions {
-	return &RepoAddOptions{
-		RepoPath: DefaultRepoPath,
-		RepoFile: DefaultRepoFile,
-	}
+	return &RepoAddOptions{}
 }
 
 func NewRepoAddCmd(options CommandOptions) *cobra.Command {
-	o := options.(*RepoAddOptions)
+	o := options.(*RepoOptions)
 
 	cmd := &cobra.Command{
 		Use:                   "add",
@@ -85,6 +80,6 @@ func NewRepoAddCmd(options CommandOptions) *cobra.Command {
 			return nil
 		},
 	}
-	o.AddFlags(cmd)
+	o.RepoAddOptions.AddFlags(cmd)
 	return cmd
 }
