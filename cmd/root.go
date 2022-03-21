@@ -75,6 +75,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 	rootCmd.AddCommand(NewDeleteCmd(nil))
 	rootCmd.AddCommand(NewInstallCmd(NewInstallOptions()))
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
+	rootCmd.AddCommand(NewRepoCmd(NewRepoOptions()))
 
 	return rootCmd
 }
