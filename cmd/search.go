@@ -16,7 +16,7 @@ func (o *SearchOptions) Validate(c *cobra.Command, args []string) error {
 // NewSearchOptions instantiates the `search` command options
 func NewSearchOptions() CommandOptions {
 	return &SearchOptions{
-		SearchRegOptions: NewSearchRegptions(),
+		SearchRegOptions: NewSearchRegOptions(),
 	}
 }
 
