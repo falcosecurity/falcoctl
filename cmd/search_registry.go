@@ -39,7 +39,7 @@ func (o *SearchRegOptions) Validate(c *cobra.Command, args []string) error {
 }
 
 // NewRegOptions instantiates the `search registry` command options
-func NewSearchRegptions() *SearchRegOptions {
+func NewSearchRegOptions() *SearchRegOptions {
 	return &SearchRegOptions{
 		registry: DefaultRegUrl,
 		printall: DefaultPrintAll,
@@ -53,7 +53,7 @@ func NewSearchRegistryCmd(options CommandOptions) *cobra.Command {
 		Use:                   "registry",
 		DisableFlagsInUseLine: true,
 		Short:                 "Search a plugin inside the official Falco registry",
-		Long:                  `Search a plugin inside the official Falco registry`,
+		Long:                  "Search a plugin inside the official Falco registry",
 		PreRunE:               o.Validate,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var output string
