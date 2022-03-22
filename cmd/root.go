@@ -17,8 +17,10 @@ import (
 )
 
 const (
-	configName = "config"
-	configDir  = ".falcoctl"
+	configName      = "config"
+	configDir       = ".falcoctl"
+	defaultRepoPath = ".falcoctl"
+	defaultRepoFile = "sources.yaml"
 )
 
 func init() {
@@ -76,6 +78,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 	rootCmd.AddCommand(NewInstallCmd(NewInstallOptions()))
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
 	rootCmd.AddCommand(NewRepoCmd(NewRepoOptions()))
+	rootCmd.AddCommand(NewListCmd(NewListOptions()))
 
 	return rootCmd
 }
