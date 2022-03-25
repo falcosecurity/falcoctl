@@ -9,7 +9,7 @@ import (
 
 const (
 	timeformat = "2006-01-02 15:04:05"
-	writeperm  = 0777
+	writeperm  = 0666
 )
 
 type RepoList struct {
