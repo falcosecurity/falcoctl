@@ -68,7 +68,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 
 	// Global flags
 	flags := rootCmd.PersistentFlags()
-	flags.StringVarP(&configOptions.ConfigFile, "config", "c", configOptions.ConfigFile, "Config file path (default "+filepath.Join("$HOME", configDir, configName+"yaml")+" if exists)")
+	flags.StringVarP(&configOptions.ConfigFile, "config", "c", configOptions.ConfigFile, "Config file path (default "+filepath.Join("$HOME", configDir, configName+".yaml")+" if exists)")
 	flags.StringVarP(&configOptions.LogLevel, "loglevel", "l", configOptions.LogLevel, "Log level")
 
 	// Commands
