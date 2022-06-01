@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"text/tabwriter"
+
 	"github.com/falcosecurity/falcoctl/cmd/internal/validate"
 	"github.com/falcosecurity/falcoctl/pkg/repo"
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/go-homedir"
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
-	"text/tabwriter"
 )
 
 // Defaults
@@ -71,11 +72,11 @@ func NewListRepoCmd(options CommandOptions) *cobra.Command {
 			w := new(tabwriter.Writer)
 			w.Init(os.Stdout, 8, 8, 0, '\t', 0)
 			defer w.Flush()
-			fmt.Fprintf(w, "\n %s\t%s\t%s\t", "NAMEs", "URL", "UPDATED")
+			fmt.Fprintf(w, "%s\t%s\t%s\t", "NAME", "URL", "UPDATED")
 			for _, k := range r.Sources {
-				fmt.Fprintf(w, "\n %s\t%s\t%s\t", k.Name, k.Url, k.Date)
+				fmt.Fprintf(w, "\n%s\t%s\t%s\t", k.Name, k.Url, k.Date)
 			}
-			fmt.Fprintf(w, "\n\n")
+			fmt.Fprintf(w, "\n")
 			return nil
 		},
 	}
