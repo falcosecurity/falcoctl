@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/falcosecurity/falcoctl/cmd/internal/validate"
 	"github.com/falcosecurity/falcoctl/pkg/registry"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/cobra"
-	"net/http"
 )
 
 // Defaults
@@ -56,7 +57,6 @@ func NewSearchRegistryCmd(options CommandOptions) *cobra.Command {
 		Long:                  "Search a plugin inside the official Falco registry",
 		PreRunE:               o.Validate,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var output string
 			if !o.printall && len(args) == 0 {
 				return fmt.Errorf("please provide one or more arguments or --all/-a flag")
 			}
@@ -72,15 +72,23 @@ func NewSearchRegistryCmd(options CommandOptions) *cobra.Command {
 				return fmt.Errorf("could not load registry: %s", err.Error())
 			}
 
+			var plugins []registry.Plugin
+			var output string
+
 			if o.printall {
-				output, err = reg.Plugins.ToString()
+				plugins = reg.Plugins
 			} else {
-				plugins := reg.SearchByKeywords(args)
-				output, err = plugins.ToString()
+				plugins = reg.SearchByKeywords(args)
 			}
-			if err != nil {
-				return err
+
+			for _, p := range plugins {
+				s, err := p.ToString()
+				if err != nil {
+					continue
+				}
+				output = output + s
 			}
+
 			fmt.Println(output)
 			return nil
 		},
