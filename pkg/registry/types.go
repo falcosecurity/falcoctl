@@ -7,68 +7,57 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Source struct {
-	ID          uint   `yaml:"id"`
-	Source      string `yaml:"source"`
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Authors     string `yaml:"authors"`
-	Contact     string `yaml:"contact"`
-	URL         string `yaml:"url"`
-	License     string `yaml:"license"`
-	Reserved    bool   `yaml:"reserved"`
+type SourcingCapability struct {
+	Supported bool   `yaml:"supported"`
+	ID        uint   `yaml:"id"`
+	Source    string `yaml:"source"`
 }
 
-type Extractor struct {
-	Sources     []string `yaml:"sources"`
-	Name        string   `yaml:"name"`
-	Description string   `yaml:"description"`
-	Authors     string   `yaml:"authors"`
-	Contact     string   `yaml:"contact"`
-	URL         string   `yaml:"url"`
-	License     string   `yaml:"license"`
-	Reserved    bool     `yaml:"reserved"`
+type ExtractionCapability struct {
+	Supported bool     `yaml:"supported"`
+	Sources   []string `yaml:"sources"`
 }
 
-type Plugins struct {
-	Source    []Source    `yaml:"source"`
-	Extractor []Extractor `yaml:"extractor"`
+type Capabilities struct {
+	Sourcing   SourcingCapability   `yaml:"sourcing"`
+	Extraction ExtractionCapability `yaml:"extraction"`
 }
 
-func (p *Plugins) ToString() (string, error) {
+type Plugin struct {
+	Name         string       `yaml:"name"`
+	Description  string       `yaml:"description"`
+	Authors      string       `yaml:"authors"`
+	Contact      string       `yaml:"contact"`
+	URL          string       `yaml:"url"`
+	License      string       `yaml:"license"`
+	Reserved     bool         `yaml:"reserved"`
+	Capabilities Capabilities `yaml:"capabilities"`
+}
+
+type Registry struct {
+	Plugins         []Plugin `yaml:"plugins"`
+	ReservedSources []string `yaml:"reserved_sources"`
+}
+
+func (r *Registry) SearchByKeywords(keywords []string) []Plugin {
+	plugins := make([]Plugin, 0)
+	for _, plugin := range r.Plugins {
+		for _, keyword := range keywords {
+			if strings.Contains(strings.ToLower(plugin.Name), strings.ToLower(keyword)) ||
+				strings.Contains(strings.ToLower(plugin.Description), strings.ToLower(keyword)) {
+				plugins = append(plugins, plugin)
+			}
+		}
+	}
+	return plugins
+}
+
+func (p *Plugin) ToString() (string, error) {
 	bytes, err := yaml.Marshal(p)
 	if err != nil {
 		return "", err
 	}
 	return string(bytes), nil
-}
-
-type Registry struct {
-	Plugins         Plugins  `yaml:"plugins"`
-	ReservedSources []string `yaml:"reserved_sources"`
-}
-
-func (r *Registry) SearchByKeywords(keywords []string) *Plugins {
-	plugins := &Plugins{}
-	for _, source := range r.Plugins.Source {
-		for _, keyword := range keywords {
-			if strings.Contains(strings.ToLower(source.Description), strings.ToLower(keyword)) {
-				plugins.Source = append(plugins.Source, source)
-			} else if strings.Contains(strings.ToLower(source.Name), strings.ToLower(keyword)) {
-				plugins.Source = append(plugins.Source, source)
-			}
-		}
-	}
-	for _, extractor := range r.Plugins.Extractor {
-		for _, keyword := range keywords {
-			if strings.Contains(strings.ToLower(extractor.Description), strings.ToLower(keyword)) {
-				plugins.Extractor = append(plugins.Extractor, extractor)
-			} else if strings.Contains(strings.ToLower(extractor.Name), strings.ToLower(keyword)) {
-				plugins.Extractor = append(plugins.Extractor, extractor)
-			}
-		}
-	}
-	return plugins
 }
 
 func LoadRegistry(r *io.ReadCloser) (*Registry, error) {
