@@ -1,9 +1,4 @@
 approvers:
-  - kris-nova
-  - markyjackson-taulia
-  - leodido
-  - fntlnz
-  - mstemm
   - leogr
 reviewers:
   - kris-nova
@@ -13,3 +8,9 @@ reviewers:
   - markyjackson-taulia
   - mstemm
   - leogr
+emeritus_approvers:
+  - kris-nova
+  - markyjackson-taulia
+  - leodido
+  - fntlnz
+  - mstemm
