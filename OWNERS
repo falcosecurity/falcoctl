@@ -1,15 +1,10 @@
 approvers:
-  - kris-nova
-  - markyjackson-taulia
-  - leodido
-  - fntlnz
-  - mstemm
   - leogr
 reviewers:
-  - kris-nova
-  - fntlnz
-  - leodido
   - mfdii
+emeritus_approvers:
+  - kris-nova
   - markyjackson-taulia
+  - leodido
+  - fntlnz
   - mstemm
-  - leogr
