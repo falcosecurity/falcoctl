@@ -45,7 +45,7 @@ type TLSOptions struct {
 // AddFlags adds flag to c
 func (o *TLSOptions) AddFlags(c *cobra.Command) {
 	flags := c.Flags()
-	flags.StringVarP(&o.country, "country", "c", o.country, "The country to self sign the TLS cert with")
+	flags.StringVarP(&o.country, "country", "", o.country, "The country to self sign the TLS cert with")
 	flags.StringVarP(&o.org, "org", "o", o.org, "The org to self sign the TLS cert with")
 	flags.StringVarP(&o.name, "name", "n", o.name, "The name to self sign the TLS cert with")
 	flags.IntVarP(&o.days, "days", "d", o.days, "The number of days to make self signed TLS cert valid for")
