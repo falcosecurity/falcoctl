@@ -5,6 +5,7 @@ Usage:
   falcoctl [command]
 
 Available Commands:
+  completion  Generate the autocompletion script for the specified shell
   delete      Delete a component with falcoctl
   help        Help about any command
   install     Install a component with falcoctl
