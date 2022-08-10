@@ -18,28 +18,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// InstallOptions represents the install command options
-type InstallOptions struct {
-	*TLSOptions
-}
-
-// Validate validates the `install` command options
-func (o *InstallOptions) Validate(c *cobra.Command, args []string) error {
-	// todo > validate path exists and is writable here
-	return nil
-}
-
-// NewInstallOptions instantiates the `install` command options
-func NewInstallOptions() CommandOptions {
-	return &InstallOptions{
-		TLSOptions: NewTLSOptions(),
-	}
-}
-
 // NewInstall creates the `install` command
-func NewInstallCmd(options CommandOptions) *cobra.Command {
-	o := options.(*InstallOptions)
-
+func NewInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "install",
 		TraverseChildren:      true,
@@ -49,7 +29,7 @@ func NewInstallCmd(options CommandOptions) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewInstallFalcoCmd(nil))
-	cmd.AddCommand(NewInstallTLSCmd(o.TLSOptions))
+	cmd.AddCommand(NewInstallTLSCmd())
 	cmd.AddCommand(NewInstallRuleCmd(nil))
 
 	return cmd
