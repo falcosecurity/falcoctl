@@ -1,0 +1,65 @@
+name: Integration Pipeline
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [arm64, amd64]
+        exclude:
+          - goarch: arm64
+            goos: windows
+    steps:
+    - name: Checkout commit
+      uses: actions/checkout@v3
+
+    - name: Setup Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19
+
+    - name: Build Falcoctl
+      run: >
+        go build -o falcoctl-${{ matrix.goos }}-${{ matrix.goarch }} .
+      env:
+        CGO_ENABLED: 0
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+
+    - name: Create Archives
+      run: |
+        cp falcoctl-${{ matrix.goos }}-${{ matrix.goarch }} falcoctl
+        tar -czvf falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz falcoctl LICENSE
+
+    - name: Upload falcoctl
+      uses: actions/upload-artifact@v2
+      with:
+        name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
+        retention-days: 1
+
+    - name: Upload falcoctl Archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+        path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+        retention-days: 1
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout commit
+      uses: actions/checkout@v3
+
+    - name: Setup Go 1.19
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19
+    - run: go test ./...
