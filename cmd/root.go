@@ -88,7 +88,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 
 	// Commands
 	rootCmd.AddCommand(NewDeleteCmd(nil))
-	rootCmd.AddCommand(NewInstallCmd(NewInstallOptions()))
+	rootCmd.AddCommand(NewInstallCmd())
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
 	rootCmd.AddCommand(NewRepoCmd(NewRepoOptions()))
 	rootCmd.AddCommand(NewListCmd(NewListOptions()))
