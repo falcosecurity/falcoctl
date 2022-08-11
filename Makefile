@@ -54,5 +54,7 @@ else
 GOLANGCILINT=$(shell which golangci-lint)
 endif
 
+# It works when called in a branch different than master.
+# "--new-from-rev REV Show only new issues created after git revision REV"
 lint: golangci-lint
-	$(GOLANGCILINT) run --new
+	$(GOLANGCILINT) run --new-from-rev master
