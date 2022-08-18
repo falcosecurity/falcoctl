@@ -27,6 +27,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/version"
 )
 
 const (
@@ -49,6 +52,8 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 	if configOptions == nil {
 		configOptions = NewConfigOptions()
 	}
+	opt := options.NewOptions()
+	opt.Initialize()
 	rootCmd := &cobra.Command{
 		Use:               "falcoctl",
 		Short:             "The control tool for running Falco in Kubernetes",
@@ -85,6 +90,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 	flags := rootCmd.PersistentFlags()
 	flags.StringVarP(&configOptions.ConfigFile, "config", "c", configOptions.ConfigFile, "Config file path (default "+filepath.Join("$HOME", configDir, configName+".yaml")+" if exists)")
 	flags.StringVarP(&configOptions.LogLevel, "loglevel", "l", configOptions.LogLevel, "Log level")
+	opt.AddFlags(rootCmd.Flags())
 
 	// Commands
 	rootCmd.AddCommand(NewDeleteCmd(nil))
@@ -92,6 +98,7 @@ func New(configOptions *ConfigOptions) *cobra.Command {
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
 	rootCmd.AddCommand(NewRepoCmd(NewRepoOptions()))
 	rootCmd.AddCommand(NewListCmd(NewListOptions()))
+	rootCmd.AddCommand(version.NewVersionCmd(opt))
 
 	return rootCmd
 }
