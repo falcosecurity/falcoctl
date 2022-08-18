@@ -8,12 +8,22 @@ endif
 
 GO ?= go
 
+# version settings
+RELEASE?=$(shell git rev-parse --short HEAD)
+COMMIT?=$(shell git rev-parse --short HEAD)
+BUILD_DATE?=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
+PROJECT?=github.com/falcosecurity/falcoctl
+
 # todo(leogr): re-enable race when CLI tests can run with race enabled
 TEST_FLAGS ?= -v # -race 
 
 .PHONY: falcoctl
 falcoctl:
-	$(GO) build .
+	$(GO) build -ldflags \
+    "-X ${PROJECT}/pkg/version.semVersion=${RELEASE} \
+    -X ${PROJECT}/pkg/version.gitCommit=${COMMIT} \
+    -X ${PROJECT}/pkg/version.buildDate=${BUILD_DATE}" \
+    -o falcoctl .
 
 .PHONY: test
 test:
