@@ -12,10 +12,12 @@ Available Commands:
   list        Print list of resources
   repo        Manage artifact repositories
   search      Search a component with falcoctl
+  version     Print the falcoctl version information
 
 Flags:
   -c, --config string     Config file path (default $HOME/.falcoctl/config.yaml if exists)
   -h, --help              help for falcoctl
   -l, --loglevel string   Log level (default "info")
+  -v, --verbose           Enable verbose logs (default false)
 
 Use "falcoctl [command] --help" for more information about a command.
