@@ -1,7 +1,6 @@
 The control tool for running Falco in Kubernetes
 
 Usage:
-  falcoctl [flags]
   falcoctl [command]
 
 Available Commands:
