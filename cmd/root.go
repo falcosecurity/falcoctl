@@ -16,14 +16,13 @@ package cmd
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
 
-	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 	"github.com/falcosecurity/falcoctl/pkg/version"
 )
 
@@ -31,14 +30,6 @@ const (
 	defaultRepoPath = ".falcoctl"
 	defaultRepoFile = "sources.yaml"
 )
-
-func init() {
-	logger.SetFormatter(&logger.TextFormatter{
-		ForceColors:            true,
-		DisableLevelTruncation: false,
-		DisableTimestamp:       true,
-	})
-}
 
 // New instantiates the root command.
 func New() *cobra.Command {
@@ -52,9 +43,6 @@ func New() *cobra.Command {
 			// Initializing the options. Subcommands can overwrite configs for the options
 			// by calling the initialize function.
 			opt.Initialize()
-		},
-		Run: func(c *cobra.Command, args []string) {
-			c.Help()
 		},
 	}
 
@@ -74,42 +62,15 @@ func New() *cobra.Command {
 
 // Execute creates the root command and runs it.
 func Execute() {
-	ctx := WithSignals(context.Background())
-	if err := New().ExecuteContext(ctx); err != nil {
-		logger.WithError(err).Fatal("error executing falcoctl")
-	}
-}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 
-// WithSignals returns a copy of ctx with a new Done channel.
-// The returned context's Done channel is closed when a SIGKILL or SIGTERM signal is received.
-func WithSignals(ctx context.Context) context.Context {
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-
-	ctx, cancel := context.WithCancel(ctx)
+	// If the ctx is marked as done then we reset the signals.
 	go func() {
-		defer cancel()
-		select {
-		case <-ctx.Done():
-			return
-		case s := <-sigCh:
-			switch s {
-			case os.Interrupt:
-				logger.Infof("received SIGINT")
-			case syscall.SIGTERM:
-				logger.Infof("received SIGTERM")
-			}
-			return
-		}
+		<-ctx.Done()
+		stop()
 	}()
-	return ctx
-}
 
-// initLogger configures the logger
-func initLogger(logLevel string) {
-	lvl, err := logger.ParseLevel(logLevel)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	logger.SetLevel(lvl)
+	// we do not log the error here since we expect that each subcommand
+	// handles the errors by itself.
+	output.ExitOnErr(New().ExecuteContext(ctx))
 }

@@ -1,6 +1,5 @@
 Error: unknown flag: --wrong
 Usage:
-  falcoctl [flags]
   falcoctl [command]
 
 Available Commands:
