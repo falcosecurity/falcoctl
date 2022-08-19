@@ -22,9 +22,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-// Used to store the verbose flag, and then passed to the printer.
-var verbose bool
-
 // ConfigOptions provides the common flags, options, and printers for all the
 // commands. All the fields provided by the ConfigOptions will be initialized before
 // the commands are executed through the Initialize func.
@@ -36,6 +33,8 @@ type ConfigOptions struct {
 	printerScope string
 	// writer is used to write the output of the printer.
 	writer io.Writer
+	// Used to store the verbose flag, and then passed to the printer.
+	verbose bool
 }
 
 // NewOptions returns a new ConfigOptions struct.
@@ -68,10 +67,10 @@ func (o *ConfigOptions) Initialize(cfgs ...Configs) {
 	}
 
 	// create the printer. The value of verbose is a flag value.
-	o.Printer = output.NewPrinter(o.printerScope, verbose, o.writer)
+	o.Printer = output.NewPrinter(o.printerScope, o.verbose, o.writer)
 }
 
 // AddFlags registers the common flags.
 func (o *ConfigOptions) AddFlags(flags *pflag.FlagSet) {
-	flags.BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logs (default false)")
+	flags.BoolVarP(&o.verbose, "verbose", "v", false, "Enable verbose logs (default false)")
 }
