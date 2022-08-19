@@ -50,7 +50,6 @@ func New() *cobra.Command {
 	opt.AddFlags(rootCmd.Flags())
 
 	// Commands
-	rootCmd.AddCommand(NewDeleteCmd(nil))
 	rootCmd.AddCommand(NewInstallCmd())
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
 	rootCmd.AddCommand(NewRepoCmd(NewRepoOptions()))

@@ -28,9 +28,7 @@ func NewInstallCmd() *cobra.Command {
 		Long:                  `Install a component with falcoctl`,
 	}
 
-	cmd.AddCommand(NewInstallFalcoCmd(nil))
 	cmd.AddCommand(NewInstallTLSCmd())
-	cmd.AddCommand(NewInstallRuleCmd(nil))
 
 	return cmd
 }
