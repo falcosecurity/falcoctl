@@ -2,6 +2,7 @@ project_name: falcoctl
 before:
   hooks:
     - go mod tidy
+
 builds:
   - id: "falcoctl"
     goos:
@@ -11,11 +12,20 @@ builds:
     goarch:
     - amd64
     - 386
+    - arm64
+    ignore:
+    - goos: darwin
+      goarch: 386
+
+    ldflags: |
+      -X github.com/falcosecurity/falcoctl/pkg/version.buildDate={{ .Date }}
+      -X github.com/falcosecurity/falcoctl/pkg/version.gitCommit={{ .Commit }}
+      -X github.com/falcosecurity/falcoctl/pkg/version.semVersion={{ if .IsSnapshot }}{{ .Commit }}{{ else }}{{ .Version }}{{ end }}
     main: .
     env:
       - GO111MODULE=on
       - CGO_ENABLED=0
-    binary: falcoctl
+
 archives:
   - id: windows
     format_overrides:
@@ -23,7 +33,7 @@ archives:
         format: zip
 
 snapshot:
-  name_template: 'master'
+  name_template: "{{ .ShortCommit }}"
 
 release:
   github:
