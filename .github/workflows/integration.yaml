@@ -7,59 +7,81 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [arm64, amd64]
-        exclude:
-          - goarch: arm64
-            goos: windows
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.configure.outputs.matrix }}
+      artifacts-dir: ${{ steps.configure.outputs.artifacts-dir }}
+      cache-key: ${{ steps.configure.outputs.cache-key }}
     steps:
     - name: Checkout commit
-      uses: actions/checkout@v3
+      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3.0.2
+      with:
+        fetch-depth: 0
 
     - name: Setup Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a #v3.2.1
       with:
         go-version: 1.19
 
-    - name: Build Falcoctl
-      run: >
-        go build -o falcoctl-${{ matrix.goos }}-${{ matrix.goarch }} .
-      env:
-        CGO_ENABLED: 0
-        GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }}
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@68acf3b1adf004ac9c2f0a4259e85c5f66e99bef #v3.0.0
+      with:
+        distribution: goreleaser
+        version: v1.10.3
+        args: release --rm-dist --snapshot
 
-    - name: Create Archives
+    - name: Save config variables
+      id: configure
       run: |
-        cp falcoctl-${{ matrix.goos }}-${{ matrix.goarch }} falcoctl
-        tar -czvf falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz falcoctl LICENSE
+        # Save artifacts info in matrix variable. Only artifacts of type "Archive".
+        # The matrix variable is used in a later job to upload the artifacts.
+        matrix=$(jq 'map(. | select(.type=="Archive"))' dist/artifacts.json)
+        echo "::set-output name=matrix::{\"include\":$(echo $matrix)}"
+        
+        # Save the commit hash to be used as unique key for the cached artifacts.
+        echo "::set-output name=cache-key::${{ github.sha }}"
+        
+        # Save the artifacts directory in a variable.
+        echo "::set-output name=artifacts-dir::dist"
 
-    - name: Upload falcoctl
-      uses: actions/upload-artifact@v2
+    - name: Cache artifacts - upload
+      id: cache-artifacts
+      uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 #v3.0.8
       with:
-        name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
-        retention-days: 1
+        path: ${{ steps.configure.outputs.artifacts-dir }}
+        key: ${{ steps.configure.outputs.cache-key }}
 
-    - name: Upload falcoctl Archive
-      uses: actions/upload-artifact@v2
+  upload-artifacts:
+    runs-on: ubuntu-22.04
+    needs: build
+    strategy:
+      matrix: ${{ fromJson(needs.build.outputs.matrix) }}
+    steps:
+    - name: Cache artifacts - download
+      id: cache-artifacts
+      uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 #v3.0.8
       with:
-        name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
-        path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+        path: ${{ needs.build.outputs.artifacts-dir}}
+        key: ${{ needs.build.outputs.cache-key}}
+
+    - name: Upload ${{ matrix.name }}
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 #v3.1.0
+      with:
+        name: ${{ matrix.name }}
+        path: ./${{ matrix.path }}
         retention-days: 1
 
   test:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout commit
-      uses: actions/checkout@v3
+      - name: Checkout commit
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3.0.2
 
-    - name: Setup Go 1.19
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.19
-    - run: go test ./...
+      - name: Setup Go
+        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a #v3.2.1
+        with:
+          go-version: 1.19
+
+      - name: Run tests
+        run: go test ./...
