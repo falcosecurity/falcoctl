@@ -38,3 +38,6 @@ snapshot:
 release:
   github:
   prerelease: auto
+
+changelog:
+  use: github
