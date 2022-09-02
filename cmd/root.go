@@ -52,8 +52,6 @@ func New() *cobra.Command {
 	// Commands
 	rootCmd.AddCommand(NewInstallCmd())
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
-	rootCmd.AddCommand(NewRepoCmd(NewRepoOptions()))
-	rootCmd.AddCommand(NewListCmd(NewListOptions()))
 	rootCmd.AddCommand(version.NewVersionCmd(opt))
 
 	return rootCmd
