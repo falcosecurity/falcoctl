@@ -6,6 +6,7 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
   install     Install a component with falcoctl
+  registry    Interact with OCI registries
   search      Search a component with falcoctl
   version     Print the falcoctl version information
 
