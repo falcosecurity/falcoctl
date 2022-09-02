@@ -22,10 +22,10 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-// ConfigOptions provides the common flags, options, and printers for all the
-// commands. All the fields provided by the ConfigOptions will be initialized before
+// CommonOptions provides the common flags, options, and printers for all the
+// commands. All the fields provided by the CommonOptions will be initialized before
 // the commands are executed through the Initialize func.
-type ConfigOptions struct {
+type CommonOptions struct {
 	// Printer used by all commands to output messages.
 	Printer *output.Printer
 	// printerScope contains the data of the optional scope of a prefix.
@@ -37,31 +37,31 @@ type ConfigOptions struct {
 	verbose bool
 }
 
-// NewOptions returns a new ConfigOptions struct.
-func NewOptions() *ConfigOptions {
-	return &ConfigOptions{}
+// NewOptions returns a new CommonOptions struct.
+func NewOptions() *CommonOptions {
+	return &CommonOptions{}
 }
 
 // Configs type of the configs accepted by the Initialize function.
-type Configs func(options *ConfigOptions)
+type Configs func(options *CommonOptions)
 
 // WithPrinterScope sets the scope for the printer.
 func WithPrinterScope(scope string) Configs {
-	return func(options *ConfigOptions) {
+	return func(options *CommonOptions) {
 		options.printerScope = scope
 	}
 }
 
 // WithWriter sets the writer for the printer.
 func WithWriter(writer io.Writer) Configs {
-	return func(options *ConfigOptions) {
+	return func(options *CommonOptions) {
 		options.writer = writer
 	}
 }
 
 // Initialize initializes the options based on the configs. Subsequent calls will overwrite the
 // previous configurations based on the new configs passed to the functions.
-func (o *ConfigOptions) Initialize(cfgs ...Configs) {
+func (o *CommonOptions) Initialize(cfgs ...Configs) {
 	for _, cfg := range cfgs {
 		cfg(o)
 	}
@@ -71,6 +71,6 @@ func (o *ConfigOptions) Initialize(cfgs ...Configs) {
 }
 
 // AddFlags registers the common flags.
-func (o *ConfigOptions) AddFlags(flags *pflag.FlagSet) {
+func (o *CommonOptions) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&o.verbose, "verbose", "v", false, "Enable verbose logs (default false)")
 }
