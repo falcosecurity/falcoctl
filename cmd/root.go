@@ -53,6 +53,7 @@ func New() *cobra.Command {
 	rootCmd.AddCommand(NewInstallCmd())
 	rootCmd.AddCommand(NewSearchCmd(NewSearchOptions()))
 	rootCmd.AddCommand(version.NewVersionCmd(opt))
+	rootCmd.AddCommand(NewRegistryCmd(opt))
 
 	return rootCmd
 }
