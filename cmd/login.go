@@ -19,7 +19,6 @@ import (
 	"context"
 	"os"
 	"strings"
-	"syscall"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -119,7 +118,7 @@ func getCredentials(p *output.Printer) (username, password string, err error) {
 	}
 
 	p.DefaultText.Print("Password: ")
-	bytePassword, err := term.ReadPassword(syscall.Stdin)
+	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		return "", "", err
 	}
