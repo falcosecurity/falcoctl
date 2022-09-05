@@ -137,6 +137,11 @@ issues:
       # Disable the check to test errors type assertion on switches.
       text: type switch on error will fail on wrapped errors. Use errors.As to check for specific errors
 
+    # Disable goheader for multi authors files
+    - linters: 
+      - goheader
+      path: pkg/oci/authn/credentialstore.go
+
     # Exclude the following linters from running on tests files.
     - path: _test\.go
       linters:
