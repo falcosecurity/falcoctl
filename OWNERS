@@ -1,7 +1,13 @@
 approvers:
   - leogr
+  - zuc
+  - maxgio92
+  - fededp
+  - cpanato
 reviewers:
   - mfdii
+  - alacuku
+  - loresuso
 emeritus_approvers:
   - kris-nova
   - markyjackson-taulia
