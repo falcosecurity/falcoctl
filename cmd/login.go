@@ -27,12 +27,12 @@ import (
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
-	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 type loginOptions struct {
-	*commonoptions.CommonOptions
+	*options.CommonOptions
 	hostname string
 }
 
@@ -46,7 +46,7 @@ func (o *loginOptions) Validate(args []string) error {
 }
 
 // NewLoginCmd returns the login command.
-func NewLoginCmd(opt *commonoptions.CommonOptions) *cobra.Command {
+func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := loginOptions{
 		CommonOptions: opt,
 	}
@@ -61,7 +61,7 @@ func NewLoginCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 			o.Printer.CheckErr(o.Validate(args))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunLogin(args))
+			o.Printer.CheckErr(o.RunLogin(ctx, args))
 		},
 	}
 
@@ -69,10 +69,9 @@ func NewLoginCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 }
 
 // RunLogin executes the business logic for the login command.
-func (o *loginOptions) RunLogin(args []string) error {
+func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 	user, token, err := getCredentials(o.Printer)
 	if err != nil {
-		o.Printer.Error.Println(err.Error())
 		return err
 	}
 
@@ -83,7 +82,6 @@ func (o *loginOptions) RunLogin(args []string) error {
 
 	client := authn.NewClient(cred)
 	if err != nil {
-		o.Printer.Error.Println(err.Error())
 		return err
 	}
 
@@ -93,14 +91,13 @@ func (o *loginOptions) RunLogin(args []string) error {
 		return err
 	}
 	registry.Client = client
-	if err = registry.Ping(context.Background()); err != nil {
+	if err = registry.Ping(ctx); err != nil {
 		return err
 	}
 
 	// Store validated credentials
 	err = authn.Login(o.hostname, user, token)
 	if err != nil {
-		o.Printer.Error.Println(err.Error())
 		return err
 	}
 

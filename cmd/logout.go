@@ -63,7 +63,6 @@ func NewLogoutCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 func (o *logoutOptions) RunLogout(args []string) error {
 	err := authn.Logout(o.hostname)
 	if err != nil {
-		o.Printer.Error.Println(err.Error())
 		return err
 	}
 
