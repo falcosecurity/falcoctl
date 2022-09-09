@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -71,7 +72,7 @@ var tests = []testCase{
 
 func run(t *testing.T, test testCase) {
 	// Setup
-	c := New()
+	c := New(context.Background())
 	o := bytes.NewBufferString("")
 	c.SetOut(o)
 	c.SetErr(o)
