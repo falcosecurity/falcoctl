@@ -89,6 +89,7 @@ func (p *Printer) CheckErr(err error) {
 	// If the printer is initialized then print the error through it.
 	case p != nil:
 		util.BehaviorOnFatal(func(msg string, code int) {
+			msg = strings.TrimPrefix(msg, "error: ")
 			p.Error.Println(strings.TrimRight(msg, "\n"))
 			os.Exit(code)
 		})
