@@ -16,40 +16,29 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"regexp"
-	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/pkg/oci"
+	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
-	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type pushOptions struct {
-	*commonoptions.CommonOptions
-	artifactType oci.ArtifactType
-	dependencies []string
+	*options.CommonOptions
+	*options.ArtifactOptions
 }
 
-func (o *pushOptions) Validate() error {
-	r := regexp.MustCompile(`^[a-z]+:\d+.\d+.\d+`)
-
-	for _, dep := range o.dependencies {
-		if ok := r.MatchString(dep); !ok {
-			return fmt.Errorf("wrong dependency format: %s", dep)
-		}
-	}
-
-	return nil
+func (o pushOptions) validate() error {
+	return o.ArtifactOptions.Validate()
 }
 
 // NewPushCmd returns the push command.
-func NewPushCmd(opt *commonoptions.CommonOptions) *cobra.Command {
+func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := pushOptions{
-		CommonOptions: opt,
+		CommonOptions:   opt,
+		ArtifactOptions: &options.ArtifactOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -58,36 +47,28 @@ func NewPushCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 		Short:                 "Push a Falco OCI artifact to a registry",
 		Long:                  "Push Falco rules or plugins OCI artifacts to a registry",
 		Args:                  cobra.ExactArgs(2),
+		SilenceErrors:         true,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.Validate())
+			o.Printer.CheckErr(o.validate())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunPush(args))
+			o.Printer.CheckErr(o.RunPush(ctx, args))
 		},
 	}
-
-	cmd.Flags().VarP(&o.artifactType, "type", "t", `type of artifact to be pushed. Allowed values: "rule", "plugin"`)
-	err := cmd.MarkFlagRequired("type")
-	if err != nil {
-		o.Printer.Error.Println("cannot mark type flag as required")
-	}
-	cmd.Flags().StringArrayVarP(&o.dependencies, "dependency", "d", []string{},
-		"define a rule to plugin dependency. Example: '--dependency cloudtrail:1.2.3")
-
+	o.CommonOptions.AddFlags(cmd.Flags())
+	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
 	return cmd
 }
 
 // RunPush executes the business logic for the push command.
-func (o *pushOptions) RunPush(args []string) error {
-	ctx := context.TODO()
+func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	path := args[0]
 	ref := args[1]
-	index := strings.Index(ref, "/")
-	if index <= 0 {
-		return fmt.Errorf("cannot extract registry name")
-	}
 
-	registry := ref[0:index]
+	registry, err := utils.GetRegistryFromRef(ref)
+	if err != nil {
+		return err
+	}
 
 	credentialStore, err := authn.NewStore([]string{}...)
 	if err != nil {
@@ -99,15 +80,13 @@ func (o *pushOptions) RunPush(args []string) error {
 	}
 	client := authn.NewClient(cred)
 
-	pusher, err := ocipusher.NewPusher(ctx, client)
+	pusher, err := ocipusher.NewPusher(client)
 	if err != nil {
-		o.Printer.Error.Println(err.Error())
 		return err
 	}
 
-	res, err := pusher.Push(ctx, o.artifactType, path, ref, o.dependencies...)
+	res, err := pusher.Push(ctx, o.ArtifactType, path, ref, o.Platform, o.Dependencies...)
 	if err != nil {
-		o.Printer.Error.Println(err.Error())
 		return err
 	}
 
