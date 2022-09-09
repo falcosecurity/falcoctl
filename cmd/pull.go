@@ -16,29 +16,30 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
-	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type pullOptions struct {
-	*commonoptions.CommonOptions
+	*options.CommonOptions
+	*options.ArtifactOptions
+	destDir string
 }
 
 func (o *pullOptions) Validate() error {
-	// TODO.
-	return nil
+	return o.ArtifactOptions.Validate()
 }
 
 // NewPullCmd returns the pull command.
-func NewPullCmd(opt *commonoptions.CommonOptions) *cobra.Command {
+func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := pullOptions{
-		CommonOptions: opt,
+		CommonOptions:   opt,
+		ArtifactOptions: &options.ArtifactOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -51,23 +52,23 @@ func NewPullCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 			o.Printer.CheckErr(o.Validate())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunPull(args))
+			o.Printer.CheckErr(o.RunPull(ctx, args))
 		},
 	}
-
+	o.CommonOptions.AddFlags(cmd.Flags())
+	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
+	cmd.Flags().StringVarP(&o.destDir, "dest-dir", "o", "", "destination dir where to save the artifacts")
 	return cmd
 }
 
 // RunPull executes the business logic for the pull command.
-func (o *pullOptions) RunPull(args []string) error {
-	ctx := context.TODO()
+func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 	ref := args[0]
-	index := strings.Index(ref, "/")
-	if index <= 0 {
-		return fmt.Errorf("cannot extract registry name")
-	}
 
-	registry := ref[0:index]
+	registry, err := utils.GetRegistryFromRef(ref)
+	if err != nil {
+		return err
+	}
 
 	credentialStore, err := authn.NewStore([]string{}...)
 	if err != nil {
@@ -81,7 +82,7 @@ func (o *pullOptions) RunPull(args []string) error {
 
 	puller := ocipuller.NewPuller(client)
 
-	res, err := puller.Pull(ctx, ref, "")
+	res, err := puller.Pull(ctx, o.ArtifactType, ref, o.destDir, o.GetOS(), o.GetArch())
 	if err != nil {
 		o.Printer.Error.Println(err.Error())
 		return err
