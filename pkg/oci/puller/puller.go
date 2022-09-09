@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote"
@@ -41,7 +42,7 @@ func NewPuller(client *auth.Client) *Puller {
 
 // Pull an artifact from a remote registry.
 // Ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
-func (p *Puller) Pull(ctx context.Context, ref, destDir string) (*oci.RegistryResult, error) {
+func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, destDir, os, arch string) (*oci.RegistryResult, error) {
 	fileStore := file.New(destDir)
 
 	repo, err := remote.NewRepository(ref)
@@ -50,7 +51,17 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir string) (*oci.RegistryRe
 	}
 	repo.Client = p.Client
 
-	desc, err := oras.Copy(ctx, repo, ref, fileStore, ref, oras.CopyOptions{})
+	copyOpts := oras.CopyOptions{}
+	if artifactType == oci.Plugin {
+		plt := &v1.Platform{
+			OS:           os,
+			Architecture: arch,
+		}
+		copyOpts.WithTargetPlatform(plt)
+	}
+
+	desc, err := oras.Copy(ctx, repo, ref, fileStore, ref, copyOpts)
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to pull artifact %s with tag %s from repo %s: %w",
 			repo.Reference.Repository, repo.Reference.Reference, repo.Reference.Repository, err)
