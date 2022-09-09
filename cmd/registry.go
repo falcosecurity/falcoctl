@@ -15,13 +15,15 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 // NewRegistryCmd returns the registry command.
-func NewRegistryCmd(opt *commonoptions.CommonOptions) *cobra.Command {
+func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "registry",
 		DisableFlagsInUseLine: true,
@@ -29,10 +31,10 @@ func NewRegistryCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 		Long:                  "Interact with OCI registries",
 	}
 
-	cmd.AddCommand(NewLoginCmd(opt))
+	cmd.AddCommand(NewLoginCmd(ctx, opt))
 	cmd.AddCommand(NewLogoutCmd(opt))
-	cmd.AddCommand(NewPushCmd(opt))
-	cmd.AddCommand(NewPullCmd(opt))
+	cmd.AddCommand(NewPushCmd(ctx, opt))
+	cmd.AddCommand(NewPullCmd(ctx, opt))
 
 	return cmd
 }
