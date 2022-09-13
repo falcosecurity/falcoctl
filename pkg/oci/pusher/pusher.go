@@ -30,7 +30,6 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
-	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
@@ -112,9 +111,8 @@ func (p *Pusher) retrieveIndex(ctx context.Context, repo *remote.Repository) (*v
 	var indexBytes []byte
 	var index v1.Index
 
-	memoryStore := memory.New()
 	ref := repo.Reference.String()
-	indexDesc, err := oras.Copy(ctx, repo, repo.Reference.Reference, memoryStore, "", oras.DefaultCopyOptions)
+	indexDesc, reader, err := repo.FetchReference(ctx, repo.Reference.Reference)
 	if err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("%s: not found", repo.Reference.Reference)) {
 			return nil, fmt.Errorf("unable to download image index for ref %s, %w", ref, ErrNotFound)
@@ -126,11 +124,6 @@ func (p *Pusher) retrieveIndex(ctx context.Context, repo *remote.Repository) (*v
 	if indexDesc.MediaType != v1.MediaTypeImageIndex {
 		return nil, fmt.Errorf("the pulled descriptor for ref %q has media type %q while expecting %q",
 			ref, indexDesc.MediaType, v1.MediaTypeImageIndex)
-	}
-
-	reader, err := memoryStore.Fetch(ctx, indexDesc)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch index from memory store for ref %q: %w", ref, err)
 	}
 
 	if indexBytes, err = io.ReadAll(reader); err != nil {
