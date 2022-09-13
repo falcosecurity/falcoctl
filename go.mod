@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/docker/cli v20.10.17+incompatible
+	github.com/docker/docker v20.10.17+incompatible
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
@@ -20,7 +21,6 @@ require (
 )
 
 require (
-	github.com/docker/docker v20.10.17+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.6.4 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/opencontainers/distribution-spec/specs-go v0.0.0-20220620172159-4ab4752c3b86 // indirect
