@@ -21,9 +21,10 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/spf13/cobra"
+
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/spf13/cobra"
 )
 
 type indexRemoveOptions struct {

@@ -16,8 +16,6 @@ package index
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -43,9 +41,14 @@ type IndexEntry struct {
 type Index struct {
 	Name        string
 	Filename    string
-	Config      *IndexConfig
-	Entries     []IndexEntry
+	config      *IndexConfig
+	Entries     []*IndexEntry
 	entryByName map[string]*IndexEntry
+}
+
+type MergedIndexes struct {
+	Index
+	indexByEntry map[*IndexEntry]*Index
 }
 
 // NewIndex loads an index from a file.
@@ -63,45 +66,35 @@ func NewIndex(path string) (*Index, error) {
 	return &index, nil
 }
 
-// GetIndex retrieves a remote index using its URL.
-func GetIndex(url string) (*Index, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
+// Add adds a new entry to the index or updates an existing one.
+func (i *Index) Upsert(entry *IndexEntry) {
+	defer func() {
+		i.entryByName[entry.Name] = entry
+	}()
 
-	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("cannot download index, bad response status: %s", resp.Status)
+	for k, e := range i.Entries {
+		if e.Name == entry.Name {
+			i.Entries[k] = entry
+			return
+		}
 	}
-	defer resp.Body.Close()
-
-	bytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read bytes from response body: %w", err)
-	}
-
-	var index Index
-	if err := yaml.Unmarshal(bytes, &index.Entries); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal index: %w", err)
-	}
-
-	return &index, nil
+	i.Entries = append(i.Entries, entry)
 }
 
-func (i *Index) Add(entry *IndexEntry) {
-	i.Entries = append(i.Entries, *entry)
-}
-
-func (i *Index) Remove(name string) error {
-	for k, entry := range i.Entries {
-		if entry.Name == name {
+func (i *Index) Remove(entry *IndexEntry) error {
+	for k, e := range i.Entries {
+		if e == entry {
 			i.Entries = append(i.Entries[:k], i.Entries[k+1:]...)
+			delete(i.entryByName, e.Name)
 			return nil
 		}
 	}
 
-	return fmt.Errorf("cannot remove %s: not found", name)
+	return fmt.Errorf("cannot remove %s: not found", entry.Name)
+}
+
+func (i *Index) EntryByName(name string) *IndexEntry {
+	return i.entryByName[name]
 }
 
 func (i *Index) Write(path string) error {
@@ -117,7 +110,17 @@ func (i *Index) Write(path string) error {
 	return nil
 }
 
-func Merge(indexes ...Index) (*Index, error) {
+// Merge creates a new index considering all the indexes that are passed.
+// Orders matters. Be sure to pass an ordered list of indexes. For our use case, sort by added time.
+func (m *MergedIndexes) Merge(indexes ...*Index) {
+	for _, index := range indexes {
+		for _, indexEntry := range index.Entries {
+			m.Upsert(indexEntry)
+			m.indexByEntry[indexEntry] = index
+		}
+	}
+}
 
-	return nil, nil
+func (m *MergedIndexes) SearchByKeywords(keywords ...string) {
+
 }

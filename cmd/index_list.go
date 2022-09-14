@@ -19,10 +19,11 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker/pkg/homedir"
-	"github.com/falcosecurity/falcoctl/pkg/index"
-	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+
+	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type indexListOptions struct {

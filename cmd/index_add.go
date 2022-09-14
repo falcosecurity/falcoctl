@@ -75,7 +75,7 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 		return fmt.Errorf("cannot add already existing index: %s", name)
 	}
 
-	remoteIndex, err := index.GetIndex(url)
+	remoteIndex, err := index.FetchIndex(url)
 	if err != nil {
 		return err
 	}

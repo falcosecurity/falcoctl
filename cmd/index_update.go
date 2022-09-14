@@ -21,9 +21,10 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/spf13/cobra"
+
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/spf13/cobra"
 )
 
 type indexUpdateOptions struct {
@@ -74,7 +75,7 @@ func (o *indexAddOptions) RunIndexUpdate(ctx context.Context, args []string) err
 		return fmt.Errorf("cannot update index %s: not found", name)
 	}
 
-	remoteIndex, err := index.GetIndex(indexConfigEntry.URL)
+	remoteIndex, err := index.FetchIndex(indexConfigEntry.URL)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,9 @@ func (o *indexAddOptions) RunIndexUpdate(ctx context.Context, args []string) err
 	ts := time.Now().Format(timeFormat)
 	indexConfigEntry.UpdatedTimestamp = ts
 
-	indexConfig.Write(indexesFile)
+	if err = indexConfig.Write(indexesFile); err != nil {
+		return err
+	}
 
 	return nil
 }
