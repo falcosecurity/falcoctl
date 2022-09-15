@@ -21,7 +21,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// IndexEntry describe an entry of the index stored remotely and cached locally.
+// IndexEntry describes an entry of the index stored remotely and cached locally.
 type IndexEntry struct {
 	Description string   `yaml:"description"`
 	Home        string   `yaml:"home"`
@@ -38,6 +38,7 @@ type IndexEntry struct {
 	Type       string   `yaml:"type"`
 }
 
+// Index represents an index.
 type Index struct {
 	Name        string
 	Filename    string
@@ -46,27 +47,36 @@ type Index struct {
 	entryByName map[string]*IndexEntry
 }
 
+// MergedIndexes is used to aggregate all indexes and perform search operations.
 type MergedIndexes struct {
 	Index
 	indexByEntry map[*IndexEntry]*Index
 }
 
 // NewIndex loads an index from a file.
-func NewIndex(path string) (*Index, error) {
+func NewIndex(path, name string) (*Index, error) {
 	indexBytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read file %s: %w", path, err)
 	}
 
 	var index Index
-	if err = yaml.Unmarshal(indexBytes, &index); err != nil {
+	var entries []IndexEntry
+	if err = yaml.Unmarshal(indexBytes, &entries); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal index: %w", err)
 	}
+
+	for k, _ := range entries {
+		index.Entries = append(index.Entries, &entries[k])
+	}
+
+	index.Name = name
+	index.Filename = path
 
 	return &index, nil
 }
 
-// Add adds a new entry to the index or updates an existing one.
+// Upsert adds a new entry to the index or updates an existing one.
 func (i *Index) Upsert(entry *IndexEntry) {
 	defer func() {
 		i.entryByName[entry.Name] = entry
@@ -78,9 +88,11 @@ func (i *Index) Upsert(entry *IndexEntry) {
 			return
 		}
 	}
+
 	i.Entries = append(i.Entries, entry)
 }
 
+// Remove removes an entry from the index.
 func (i *Index) Remove(entry *IndexEntry) error {
 	for k, e := range i.Entries {
 		if e == entry {
@@ -93,10 +105,12 @@ func (i *Index) Remove(entry *IndexEntry) error {
 	return fmt.Errorf("cannot remove %s: not found", entry.Name)
 }
 
+// EntryByName returns a IndexEntry by passing its name.
 func (i *Index) EntryByName(name string) *IndexEntry {
 	return i.entryByName[name]
 }
 
+// Write writes an index to disk.
 func (i *Index) Write(path string) error {
 	indexBytes, err := yaml.Marshal(i.Entries)
 	if err != nil {
@@ -110,7 +124,17 @@ func (i *Index) Write(path string) error {
 	return nil
 }
 
-// Merge creates a new index considering all the indexes that are passed.
+// NewMergedIndexes initializes a MergedIndex.
+func NewMergedIndexes() *MergedIndexes {
+	m := &MergedIndexes{}
+
+	m.entryByName = make(map[string]*IndexEntry)
+	m.indexByEntry = make(map[*IndexEntry]*Index)
+
+	return m
+}
+
+// Merge creates a new index by merging all the indexes that are passed.
 // Orders matters. Be sure to pass an ordered list of indexes. For our use case, sort by added time.
 func (m *MergedIndexes) Merge(indexes ...*Index) {
 	for _, index := range indexes {
@@ -121,6 +145,28 @@ func (m *MergedIndexes) Merge(indexes ...*Index) {
 	}
 }
 
-func (m *MergedIndexes) SearchByKeywords(keywords ...string) {
+// SearchByKeywords search for entries matching the given keywords in MergedIndexes.
+func (m *MergedIndexes) SearchByKeywords(keywords ...string) []*IndexEntry {
+	var result []*IndexEntry
+	keywordSet := make(map[string]bool)
 
+	for _, keyword := range keywords {
+		keywordSet[keyword] = true
+	}
+
+	for _, entry := range m.Entries {
+		for _, indexKeyword := range entry.Keywords {
+			if _, ok := keywordSet[indexKeyword]; ok {
+				result = append(result, entry)
+				break
+			}
+		}
+	}
+
+	return result
+}
+
+// IndexByEntry is used to retrieve the original index from an entry in MergedIndexes.
+func (m *MergedIndexes) IndexByEntry(entry *IndexEntry) *Index {
+	return m.indexByEntry[entry]
 }

@@ -54,6 +54,7 @@ func New(ctx context.Context) *cobra.Command {
 	rootCmd.AddCommand(version.NewVersionCmd(opt))
 	rootCmd.AddCommand(NewRegistryCmd(ctx, opt))
 	rootCmd.AddCommand(NewIndexCmd(ctx, opt))
+	rootCmd.AddCommand(NewArtifactCommand(ctx, opt))
 
 	return rootCmd
 }
