@@ -32,12 +32,12 @@ type indexUpdateOptions struct {
 }
 
 func (o *indexUpdateOptions) Validate(args []string) error {
-	// TODO
 	return nil
 }
 
+// NewIndexUpdateCmd returns the index update command.
 func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
-	o := indexAddOptions{
+	o := indexUpdateOptions{
 		CommonOptions: opt,
 	}
 
@@ -58,7 +58,7 @@ func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 	return cmd
 }
 
-func (o *indexAddOptions) RunIndexUpdate(ctx context.Context, args []string) error {
+func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) error {
 	name := args[0]
 	nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 	falcoctlPath := filepath.Join(homedir.Get(), defaultFalcoctlPath)

@@ -17,6 +17,7 @@ package index
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -42,7 +43,6 @@ type IndexEntry struct {
 type Index struct {
 	Name        string
 	Filename    string
-	config      *IndexConfig
 	Entries     []*IndexEntry
 	entryByName map[string]*IndexEntry
 }
@@ -53,9 +53,9 @@ type MergedIndexes struct {
 	indexByEntry map[*IndexEntry]*Index
 }
 
-// NewIndex loads an index from a file.
+// NewIndex loads an Index from a file.
 func NewIndex(path, name string) (*Index, error) {
-	indexBytes, err := os.ReadFile(path)
+	indexBytes, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("cannot read file %s: %w", path, err)
 	}
@@ -76,7 +76,7 @@ func NewIndex(path, name string) (*Index, error) {
 	return &index, nil
 }
 
-// Upsert adds a new entry to the index or updates an existing one.
+// Upsert adds a new entry to the Index or updates an existing one.
 func (i *Index) Upsert(entry *IndexEntry) {
 	defer func() {
 		i.entryByName[entry.Name] = entry
@@ -92,7 +92,7 @@ func (i *Index) Upsert(entry *IndexEntry) {
 	i.Entries = append(i.Entries, entry)
 }
 
-// Remove removes an entry from the index.
+// Remove removes an entry from the Index.
 func (i *Index) Remove(entry *IndexEntry) error {
 	for k, e := range i.Entries {
 		if e == entry {
@@ -110,14 +110,14 @@ func (i *Index) EntryByName(name string) *IndexEntry {
 	return i.entryByName[name]
 }
 
-// Write writes an index to disk.
+// Write writes an Index to disk.
 func (i *Index) Write(path string) error {
 	indexBytes, err := yaml.Marshal(i.Entries)
 	if err != nil {
 		return fmt.Errorf("cannot marshal index: %w", err)
 	}
 
-	if err = os.WriteFile(path, indexBytes, 0600); err != nil {
+	if err = os.WriteFile(path, indexBytes, writePermissions); err != nil {
 		return fmt.Errorf("cannot write index to file: %w", err)
 	}
 

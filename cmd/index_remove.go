@@ -32,12 +32,12 @@ type indexRemoveOptions struct {
 }
 
 func (o *indexRemoveOptions) Validate(args []string) error {
-	// TODO
 	return nil
 }
 
+// NewIndexRemoveCmd returns the index remove command.
 func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
-	o := indexAddOptions{
+	o := indexRemoveOptions{
 		CommonOptions: opt,
 	}
 
@@ -59,7 +59,7 @@ func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 	return cmd
 }
 
-func (o *indexAddOptions) RunIndexRemove(ctx context.Context, args []string) error {
+func (o *indexRemoveOptions) RunIndexRemove(ctx context.Context, args []string) error {
 	name := args[0]
 	nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 	falcoctlPath := filepath.Join(homedir.Get(), defaultFalcoctlPath)

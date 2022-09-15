@@ -30,6 +30,7 @@ type indexListOptions struct {
 	*options.CommonOptions
 }
 
+// NewIndexListCmd returns the index list command.
 func NewIndexListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := indexListOptions{
 		CommonOptions: opt,

@@ -22,7 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// GetIndex retrieves a remote index using its URL.
+// FetchIndex retrieves a remote index using its URL.
 func FetchIndex(url string) (*Index, error) { // IndexByUrl !!
 	resp, err := http.Get(url)
 	if err != nil {

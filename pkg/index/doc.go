@@ -12,26 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
-
-import (
-	"context"
-
-	"github.com/spf13/cobra"
-
-	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
-)
-
-// NewArtifactCmd return the artifact command.
-func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                   "artifact",
-		DisableFlagsInUseLine: true,
-		Short:                 "Interact with OCI artifacts",
-		Long:                  "Interact with OCI artifacts",
-	}
-
-	cmd.AddCommand(NewArtifactSearchCmd(ctx, opt))
-
-	return cmd
-}
+// Package index implements all the logic for handling indexes.
+package index

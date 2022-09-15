@@ -31,7 +31,8 @@ type artifactSearchOptions struct {
 	*options.CommonOptions
 }
 
-func NewArtifactSearchCommand(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+// NewArtifactSearchCmd returns the artifact search command.
+func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := artifactSearchOptions{
 		CommonOptions: opt,
 	}

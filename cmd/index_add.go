@@ -32,10 +32,10 @@ type indexAddOptions struct {
 }
 
 func (o *indexAddOptions) Validate(args []string) error {
-	// TODO
 	return nil
 }
 
+// NewIndexAddCmd returns the index add command.
 func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := indexAddOptions{
 		CommonOptions: opt,

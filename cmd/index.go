@@ -28,6 +28,7 @@ const (
 	timeFormat             = "2006-01-02 15:04:05"
 )
 
+// NewIndexCmd returns the index command.
 func NewIndexCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "index",

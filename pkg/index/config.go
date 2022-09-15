@@ -43,27 +43,30 @@ type IndexConfig struct {
 	Configs []IndexConfigEntry `yaml:"configs"`
 }
 
+// NewIndexConfig loads an index config from a file.
 func NewIndexConfig(path string) (*IndexConfig, error) {
-	var IndexConfig IndexConfig
+	var indexConfig IndexConfig
 	file, err := os.ReadFile(filepath.Clean(path))
 	if os.IsNotExist(err) {
-		return &IndexConfig, nil
+		return &indexConfig, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(file, &IndexConfig)
+	err = yaml.Unmarshal(file, &indexConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return &IndexConfig, nil
+	return &indexConfig, nil
 }
 
+// Add adds a new config to IndexConfig.
 func (ic *IndexConfig) Add(entry IndexConfigEntry) {
 	ic.Configs = append(ic.Configs, entry)
 }
 
+// Remove removes a config by name from an IndexConfig.
 func (ic *IndexConfig) Remove(name string) error {
 	for k, conf := range ic.Configs {
 		if conf.Name == name {
@@ -75,6 +78,7 @@ func (ic *IndexConfig) Remove(name string) error {
 	return fmt.Errorf("cannot remove index %s: not found", name)
 }
 
+// Get returns a pointer to an entry in a IndexConfig.
 func (ic *IndexConfig) Get(name string) (*IndexConfigEntry, error) {
 	for k, conf := range ic.Configs {
 		if conf.Name == name {
@@ -85,13 +89,14 @@ func (ic *IndexConfig) Get(name string) (*IndexConfigEntry, error) {
 	return nil, fmt.Errorf("not found")
 }
 
+// Write writes an IndexConfig to disk.
 func (ic *IndexConfig) Write(path string) error {
 	data, err := yaml.Marshal(ic)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(path, data, 0600)
+	err = os.WriteFile(path, data, writePermissions)
 	if err != nil {
 		return err
 	}

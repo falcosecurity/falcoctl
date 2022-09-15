@@ -12,26 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package index
 
-import (
-	"context"
-
-	"github.com/spf13/cobra"
-
-	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
+const (
+	writePermissions = 0o600
 )
-
-// NewArtifactCmd return the artifact command.
-func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                   "artifact",
-		DisableFlagsInUseLine: true,
-		Short:                 "Interact with OCI artifacts",
-		Long:                  "Interact with OCI artifacts",
-	}
-
-	cmd.AddCommand(NewArtifactSearchCmd(ctx, opt))
-
-	return cmd
-}
