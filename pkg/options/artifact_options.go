@@ -45,7 +45,7 @@ func (art *ArtifactOptions) Validate() error {
 			}
 		}
 	case oci.Plugin:
-		r = regexp.MustCompile(`^[a-z]+/[a-z0-9]+$`)
+		r = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
 		if ok := r.MatchString(art.Platform); !ok {
 			return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
 				"and to satisfie the following regexp %s", art.Platform, r.String())
