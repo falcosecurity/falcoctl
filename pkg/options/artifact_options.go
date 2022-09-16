@@ -37,7 +37,7 @@ type ArtifactOptions struct {
 func (art *ArtifactOptions) Validate() error {
 	r := regexp.MustCompile(`^[a-z]+:\d+.\d+.\d+`)
 	switch art.ArtifactType {
-	case oci.Rule:
+	case oci.Rulesfile:
 		for _, dep := range art.Dependencies {
 			if ok := r.MatchString(dep); !ok {
 				return fmt.Errorf("dependencies %q seems to be in the wrong format, need to satisfie"+
@@ -62,7 +62,7 @@ func (art *ArtifactOptions) Validate() error {
 // AddFlags registers the artifacts flags.
 func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 	cmd.Flags().VarP(&art.ArtifactType, "type", "t",
-		`type of artifact to be pushed. Allowed values: "rule", "plugin"`)
+		`type of artifact to be pushed. Allowed values: "rulesfile", "plugin"`)
 	if err := cmd.MarkFlagRequired("type"); err != nil {
 		// this should never happen.
 		return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)

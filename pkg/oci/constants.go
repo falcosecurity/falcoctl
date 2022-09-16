@@ -16,11 +16,11 @@ package oci
 
 const (
 
-	// FalcoRuleConfigMediaType is the MediaType for rule's config layer.
-	FalcoRuleConfigMediaType = "application/vnd.cncf.falco.rule.config.v1+json"
+	// FalcoRulesfileConfigMediaType is the MediaType for rule's config layer.
+	FalcoRulesfileConfigMediaType = "application/vnd.cncf.falco.rulesfile.config.v1+json"
 
-	// FalcoRuleLayerMediaType is the MediaType for rules.
-	FalcoRuleLayerMediaType = "application/vnd.cncf.falco.rule.layer.v1+tar.gz"
+	// FalcoRulesfileLayerMediaType is the MediaType for rules.
+	FalcoRulesfileLayerMediaType = "application/vnd.cncf.falco.rulesfile.layer.v1+tar.gz"
 
 	// FalcoPluginConfigMediaType is the MediaType for plugin's config layer.
 	FalcoPluginConfigMediaType = "application/vnd.cncf.falco.plugin.config.v1+json"
