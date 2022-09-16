@@ -20,7 +20,7 @@ Both rules and plugins are potentially interconnected since some ruleset require
 We want to help DevOps/DevSecOps/Security engineers who use Falco performing the following operations:
 
 * **Search** interesting plugins and rulesets for their use case, such as monitoring cloudwatch, kubernetes logs for their managed system (EKS, GCP, ...)
-* **Specify a list of plugins and rules** (ie., an index) that need to be installed from _repositories_ (which could be managed by the Falco Organization, provided by third parties or custom, both public or private) in such a way that they could be installed locally or added to Helm configuration for easy automated deployment of a Falco installation that contain the requested plugins and rules. Additionally, this functionality could enable _subscribing_ to rule repositories that may change over time and could be updated and synced without needing to redeploy Falco.
+* **Specify a list of plugins and rules** that need to be installed from _repositories_ (which could be managed by the Falco Organization, provided by third parties or custom, both public or private) in such a way that they could be installed locally or added to Helm configuration for easy automated deployment of a Falco installation that contain the requested plugins and rules. Additionally, this functionality could enable _subscribing_ to rule repositories that may change over time and could be updated and synced without needing to redeploy Falco.
 
 Also, we want to allow repository maintainers and advanced users to:
 
