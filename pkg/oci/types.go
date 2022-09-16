@@ -23,8 +23,8 @@ import (
 type ArtifactType string
 
 const (
-	// Rule represents a rule artifact.
-	Rule ArtifactType = "rule"
+	// Rulesfile represents a rule artifact.
+	Rulesfile ArtifactType = "rulesfile"
 	// Plugin represents a plugin artifact.
 	Plugin ArtifactType = "plugin"
 )
@@ -39,11 +39,11 @@ func (e *ArtifactType) String() string {
 // Set an ArtifactType.
 func (e *ArtifactType) Set(v string) error {
 	switch v {
-	case "rule", "plugin":
+	case "rulesfile", "plugin":
 		*e = ArtifactType(v)
 		return nil
 	default:
-		return errors.New(`must be one of "rule", "plugin"`)
+		return errors.New(`must be one of "rulesfile", "plugin"`)
 	}
 }
 
@@ -59,7 +59,7 @@ type RegistryResult struct {
 	Config ArtifactConfig
 }
 
-// ArtifactConfig is the struct stored in the config layer of rule and plugin artifacts. Each type fills only the fields of interest.
+// ArtifactConfig is the struct stored in the config layer of rulesfile and plugin artifacts. Each type fills only the fields of interest.
 type ArtifactConfig struct {
 	RequiredPluginVersions []dependency `json:"required_plugin_versions,omitempty"`
 }
@@ -69,7 +69,7 @@ type dependency struct {
 	Version string `json:"version"`
 }
 
-// SetRequiredPluginVersions sets the rule to plugins dependencies to be stored in the config.
+// SetRequiredPluginVersions sets the rulesfile to plugins dependencies to be stored in the config.
 // Validation of dependency format is done in the cmd package.
 func (rc *ArtifactConfig) SetRequiredPluginVersions(dependencies ...string) error {
 	for _, dep := range dependencies {

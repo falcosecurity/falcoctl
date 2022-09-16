@@ -164,8 +164,8 @@ func (p *Pusher) storeMainLayer(ctx context.Context, artifactType oci.ArtifactTy
 	var layerMediaType string
 
 	switch artifactType {
-	case oci.Rule:
-		layerMediaType = oci.FalcoRuleLayerMediaType
+	case oci.Rulesfile:
+		layerMediaType = oci.FalcoRulesfileLayerMediaType
 	case oci.Plugin:
 		layerMediaType = oci.FalcoPluginLayerMediaType
 	}
@@ -185,8 +185,8 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, artifactType oci.Artifact
 	artifactConfig := oci.ArtifactConfig{}
 
 	switch artifactType {
-	case oci.Rule:
-		layerMediaType = oci.FalcoRuleConfigMediaType
+	case oci.Rulesfile:
+		layerMediaType = oci.FalcoRulesfileConfigMediaType
 		if err := artifactConfig.SetRequiredPluginVersions(dependencies...); err != nil {
 			return nil, fmt.Errorf("unable to set dependencies %s: %w", dependencies, err)
 		}
