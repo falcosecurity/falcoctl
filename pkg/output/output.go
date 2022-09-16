@@ -15,12 +15,23 @@
 package output
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/pterm/pterm"
 	"k8s.io/kubectl/pkg/cmd/util"
+)
+
+// TableHeader is used to print out the correct header for a command.
+type TableHeader int
+
+const (
+	// ArtifactSearch identifies the header for artifact search.
+	ArtifactSearch TableHeader = iota
+	// IndexList identifies the header for index list.
+	IndexList
 )
 
 // Printer used by all commands to output messages.
@@ -31,7 +42,8 @@ type Printer struct {
 	Warning *pterm.PrefixPrinter
 	Error   *pterm.PrefixPrinter
 
-	DefaultText *pterm.BasicTextPrinter
+	DefaultText  *pterm.BasicTextPrinter
+	TablePrinter *pterm.TablePrinter
 
 	verbose bool
 }
@@ -73,6 +85,8 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 		}),
 
 		DefaultText: basicText,
+
+		TablePrinter: pterm.DefaultTable.WithHasHeader().WithSeparator("\t"),
 	}
 
 	return printer
@@ -108,6 +122,26 @@ func (p *Printer) Verbosef(format string, args ...interface{}) {
 	if p.verbose {
 		p.Info.Printfln(strings.TrimRight(format, "\n"), args...)
 	}
+}
+
+// PrintTable is a helper used to print data in table format.
+func (p *Printer) PrintTable(header TableHeader, data [][]string) error {
+	var table [][]string
+
+	switch header {
+	case ArtifactSearch:
+		table = [][]string{{"INDEX", "ARTIFACT", "TYPE", "REGISTRY", "REPOSITORY"}}
+	case IndexList:
+		table = [][]string{{"NAME", "URL", "ADDED", "UPDATED"}}
+	default:
+		return fmt.Errorf("unsupported output table")
+	}
+
+	for i := range data {
+		table = append(table, data[i])
+	}
+
+	return p.TablePrinter.WithData(table).Render()
 }
 
 // ExitOnErr aborts the execution in case of errors, without printing any error message.
