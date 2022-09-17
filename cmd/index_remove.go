@@ -28,18 +28,20 @@ import (
 
 type indexRemoveOptions struct {
 	*options.CommonOptions
+	indexConfig *index.Config
 }
 
 func (o *indexRemoveOptions) Validate(args []string) error {
 	// Check that all the index names are actually stored in the system.
-	indexConfig, err := index.NewConfig(indexesFile)
+	var err error
+	o.indexConfig, err = index.NewConfig(indexesFile)
 	if err != nil {
 		return err
 	}
 
 	for _, name := range args {
-		if _, err := indexConfig.Get(name); err != nil {
-			return fmt.Errorf("Cannot remove %s: %w. Check that each passed index is cached in the system", name, err)
+		if _, err := o.indexConfig.Get(name); err != nil {
+			return fmt.Errorf("cannot remove %s: %w. Check that each passed index is cached in the system", name, err)
 		}
 	}
 
@@ -71,15 +73,10 @@ func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 }
 
 func (o *indexRemoveOptions) RunIndexRemove(ctx context.Context, args []string) error {
-	indexConfig, err := index.NewConfig(indexesFile)
-	if err != nil {
-		return err
-	}
-
 	for _, name := range args {
 		nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 		indexFile := filepath.Join(falcoctlPath, nameYaml)
-		if err := indexConfig.Remove(name); err != nil {
+		if err := o.indexConfig.Remove(name); err != nil {
 			return err
 		}
 
@@ -88,7 +85,7 @@ func (o *indexRemoveOptions) RunIndexRemove(ctx context.Context, args []string) 
 		}
 	}
 
-	if err := indexConfig.Write(indexesFile); err != nil {
+	if err := o.indexConfig.Write(indexesFile); err != nil {
 		return err
 	}
 
