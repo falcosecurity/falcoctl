@@ -28,18 +28,20 @@ import (
 
 type indexUpdateOptions struct {
 	*options.CommonOptions
+	indexConfig *index.Config
 }
 
 func (o *indexUpdateOptions) Validate(args []string) error {
 	// Check that all the index names are actually stored in the system.
-	indexConfig, err := index.NewConfig(indexesFile)
+	var err error
+	o.indexConfig, err = index.NewConfig(indexesFile)
 	if err != nil {
 		return err
 	}
 
 	for _, name := range args {
-		if _, err := indexConfig.Get(name); err != nil {
-			return fmt.Errorf("Cannot update %s: %w. Check that each passed index is cached in the system", name, err)
+		if _, err := o.indexConfig.Get(name); err != nil {
+			return fmt.Errorf("cannot update %s: %w. Check that each passed index is cached in the system", name, err)
 		}
 	}
 
@@ -70,18 +72,13 @@ func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 }
 
 func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) error {
-	indexConfig, err := index.NewConfig(indexesFile)
-	if err != nil {
-		return err
-	}
-
 	ts := time.Now().Format(timeFormat)
 
 	for _, name := range args {
 		nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 		indexFile := filepath.Join(falcoctlPath, nameYaml)
 
-		indexConfigEntry, err := indexConfig.Get(name)
+		indexConfigEntry, err := o.indexConfig.Get(name)
 		if err != nil {
 			return fmt.Errorf("cannot update index %s: not found", name)
 		}
@@ -99,7 +96,7 @@ func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) 
 		indexConfigEntry.UpdatedTimestamp = ts
 	}
 
-	if err = indexConfig.Write(indexesFile); err != nil {
+	if err := o.indexConfig.Write(indexesFile); err != nil {
 		return err
 	}
 
