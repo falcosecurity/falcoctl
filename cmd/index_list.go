@@ -38,7 +38,7 @@ func NewIndexListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Com
 		Use:                   "list [flags]",
 		DisableFlagsInUseLine: true,
 		Short:                 "List all the added indexes",
-		Long:                  "List all the added indexes that were cached in this system",
+		Long:                  "List all the added indexes that were configured in falcoctl",
 		Args:                  cobra.ExactArgs(0),
 		Aliases:               []string{"ls"},
 		Run: func(cmd *cobra.Command, args []string) {
