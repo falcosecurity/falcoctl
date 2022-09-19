@@ -53,8 +53,8 @@ type MergedIndexes struct {
 	indexByEntry map[*Entry]*Index
 }
 
-// NewIndex loads an Index from a file.
-func NewIndex(path, name string) (*Index, error) {
+// New loads an Index from a file.
+func New(path, name string) (*Index, error) {
 	indexBytes, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("cannot read file %s: %w", path, err)
@@ -146,7 +146,7 @@ func (m *MergedIndexes) Merge(indexes ...*Index) {
 }
 
 // SearchByKeywords search for entries matching the given keywords in MergedIndexes.
-func (m *MergedIndexes) SearchByKeywords(keywords ...string) []*Entry {
+func (i *Index) SearchByKeywords(keywords ...string) []*Entry {
 	var result []*Entry
 	keywordSet := make(map[string]bool)
 
@@ -154,7 +154,7 @@ func (m *MergedIndexes) SearchByKeywords(keywords ...string) []*Entry {
 		keywordSet[keyword] = true
 	}
 
-	for _, entry := range m.Entries {
+	for _, entry := range i.Entries {
 		for _, indexKeyword := range entry.Keywords {
 			if _, ok := keywordSet[indexKeyword]; ok {
 				result = append(result, entry)

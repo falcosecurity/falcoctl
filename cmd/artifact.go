@@ -27,8 +27,8 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 	cmd := &cobra.Command{
 		Use:                   "artifact",
 		DisableFlagsInUseLine: true,
-		Short:                 "Interact with OCI artifacts",
-		Long:                  "Interact with OCI artifacts",
+		Short:                 "Interact with Falco artifacts",
+		Long:                  "Interact with Falco artifacts",
 	}
 
 	cmd.AddCommand(NewArtifactSearchCmd(ctx, opt))

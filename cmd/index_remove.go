@@ -57,8 +57,8 @@ func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 	cmd := &cobra.Command{
 		Use:                   "remove [INDEX1 [INDEX2 ...]] [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Remove an index from the list of indexes",
-		Long:                  "Remove an index from the list of indexes",
+		Short:                 "Remove an index from the local falcoctl configuration",
+		Long:                  "Remove an index from the local falcoctl configuration",
 		Args:                  cobra.MinimumNArgs(1),
 		Aliases:               []string{"rm"},
 		PreRun: func(cmd *cobra.Command, args []string) {
