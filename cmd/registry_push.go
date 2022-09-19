@@ -18,12 +18,32 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2"
 
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
 	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
+
+var longPush = `Push Falco "rulefile" or "plugin" OCI artifacts to remote registry
+
+Example - Push artifact "myplugin.tar.gz" of type "plugin" for the platform where falcoctl is running (default):
+	falcoctl registry push myplugin.tar.gz localhost:5000/myplugin:latest --type plugin
+
+Example - Push artifact "myplugin.tar.gz" of type "plugin" for platform "linux/aarch64":
+	falcoctl registry push myplugin.tar.gz localhost:5000/myplugin:latest --type plugin --platform linux/aarch64
+
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile":
+	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile
+
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with dependencies "myplugin:1.2.3":
+	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --dependencies myplugin:1.2.3
+
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with multiple dependencies "myplugin:1.2.3", "otherplugin:3.2.1":
+	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --dependencies myplugin:1.2.3,otherplugin:3.2.1
+`
 
 type pushOptions struct {
 	*options.CommonOptions
@@ -34,6 +54,12 @@ func (o pushOptions) validate() error {
 	return o.ArtifactOptions.Validate()
 }
 
+func newPushProgressTracker(printer *output.Printer) ocipusher.ProgressTracker {
+	return func(target oras.Target) oras.Target {
+		return output.NewProgressTracker(printer, target, "Pushing")
+	}
+}
+
 // NewPushCmd returns the push command.
 func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := pushOptions{
@@ -42,10 +68,10 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "push filename hostname/repo:tag",
+		Use:                   "push file hostname/repo[:tag|@digest] [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Push a Falco OCI artifact to a registry",
-		Long:                  "Push Falco rules or plugins OCI artifacts to a registry",
+		Short:                 "Push a Falco OCI artifact to remote registry",
+		Long:                  longPush,
 		Args:                  cobra.ExactArgs(2),
 		SilenceErrors:         true,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -64,12 +90,14 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	path := args[0]
 	ref := args[1]
+	o.Printer.Info.Printfln("Preparing to push artifact %q of type %q", args[0], o.ArtifactType)
 
 	registry, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
 		return err
 	}
 
+	o.Printer.Verbosef("Retrieving credentials from local store")
 	credentialStore, err := authn.NewStore([]string{}...)
 	if err != nil {
 		return err
@@ -80,17 +108,14 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	}
 	client := authn.NewClient(cred)
 
-	pusher, err := ocipusher.NewPusher(client)
-	if err != nil {
-		return err
-	}
+	pusher := ocipusher.NewPusher(client, newPushProgressTracker(o.Printer))
 
 	res, err := pusher.Push(ctx, o.ArtifactType, path, ref, o.Platform, o.Dependencies...)
 	if err != nil {
 		return err
 	}
 
-	o.Printer.DefaultText.Printf("Artifact pushed. Digest: %s\n", res.Digest)
+	o.Printer.Success.Printfln("Artifact pushed. Digest: %q", res.Digest)
 
 	return nil
 }
