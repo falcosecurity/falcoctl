@@ -54,12 +54,12 @@ type Pusher struct {
 }
 
 // NewPusher create a new pusher that can be used for push operations.
-func NewPusher(client *auth.Client, tracker ProgressTracker) (*Pusher, error) {
+func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
 	return &Pusher{
 		Client:    client,
 		fileStore: file.New(""),
 		tracker:   tracker,
-	}, nil
+	}
 }
 
 // Push an artifact to a remote registry.
