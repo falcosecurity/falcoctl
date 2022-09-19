@@ -45,6 +45,8 @@ type Printer struct {
 	DefaultText  *pterm.BasicTextPrinter
 	TablePrinter *pterm.TablePrinter
 
+	ProgressBar *pterm.ProgressbarPrinter
+
 	verbose bool
 }
 
@@ -52,6 +54,12 @@ type Printer struct {
 func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 	generic := &pterm.PrefixPrinter{MessageStyle: pterm.NewStyle(pterm.FgDefault)}
 	basicText := &pterm.BasicTextPrinter{}
+	progressBar := pterm.DefaultProgressbar.
+		WithTitleStyle(pterm.NewStyle(pterm.FgDefault)).
+		WithBarStyle(pterm.NewStyle(pterm.FgDefault)).
+		WithBarCharacter("#").
+		WithLastCharacter("#").
+		WithShowElapsedTime(false)
 
 	if scope != "" {
 		generic = generic.WithScope(pterm.Scope{Text: scope, Style: pterm.NewStyle(pterm.FgGray)})
@@ -60,18 +68,19 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 	if writer != nil {
 		generic = generic.WithWriter(writer)
 		basicText = basicText.WithWriter(writer)
+		progressBar = progressBar.WithWriter(writer)
 	}
 
 	printer := &Printer{
 		verbose: verbose,
 		Info: generic.WithPrefix(pterm.Prefix{
 			Text:  "INFO",
-			Style: pterm.NewStyle(pterm.FgDarkGray),
+			Style: pterm.NewStyle(pterm.FgDefault),
 		}),
 
 		Success: generic.WithPrefix(pterm.Prefix{
 			Text:  "INFO",
-			Style: pterm.NewStyle(pterm.FgGreen),
+			Style: pterm.NewStyle(pterm.FgLightGreen),
 		}),
 
 		Warning: generic.WithPrefix(pterm.Prefix{
@@ -85,6 +94,8 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 		}),
 
 		DefaultText: basicText,
+
+		ProgressBar: progressBar,
 
 		TablePrinter: pterm.DefaultTable.WithHasHeader().WithSeparator("\t"),
 	}
