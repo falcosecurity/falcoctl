@@ -27,16 +27,21 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
+// ProgressTracker type of the tracker that the puller accepts. It implements the tracker logic.
+type ProgressTracker func(target oras.Target) oras.Target
+
 // Puller implements pull operations.
 type Puller struct {
-	Client *auth.Client
+	Client  *auth.Client
+	tracker ProgressTracker
 }
 
 // NewPuller create a new puller that can be used for pull operations.
 // The client must be ready to be used by the puller.
-func NewPuller(client *auth.Client) *Puller {
+func NewPuller(client *auth.Client, tracker ProgressTracker) *Puller {
 	return &Puller{
-		Client: client,
+		Client:  client,
+		tracker: tracker,
 	}
 }
 
@@ -52,6 +57,7 @@ func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, d
 	repo.Client = p.Client
 
 	copyOpts := oras.CopyOptions{}
+	copyOpts.Concurrency = 1
 	if artifactType == oci.Plugin {
 		plt := &v1.Platform{
 			OS:           os,
@@ -60,7 +66,12 @@ func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, d
 		copyOpts.WithTargetPlatform(plt)
 	}
 
-	desc, err := oras.Copy(ctx, repo, ref, fileStore, ref, copyOpts)
+	localTarget := oras.Target(fileStore)
+
+	if p.tracker != nil {
+		localTarget = p.tracker(localTarget)
+	}
+	desc, err := oras.Copy(ctx, repo, ref, localTarget, ref, copyOpts)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to pull artifact %s with tag %s from repo %s: %w",
