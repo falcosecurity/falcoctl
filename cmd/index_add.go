@@ -32,6 +32,7 @@ type indexAddOptions struct {
 }
 
 func (o *indexAddOptions) Validate(args []string) error {
+	// TODO(loresuso): we should move this logic elsewhere
 	if _, err := os.Stat(falcoctlPath); os.IsNotExist(err) {
 		err = os.Mkdir(falcoctlPath, 0o700)
 		if err != nil {
@@ -50,8 +51,8 @@ func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Comm
 	cmd := &cobra.Command{
 		Use:                   "add [NAME] [URL] [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Add an index to the list of indexes",
-		Long:                  "Add an index to the list of indexes. Indexes are used to perform search operations for artifacts",
+		Short:                 "Add an index to the local falcoctl configuration",
+		Long:                  "Add an index to the local falcoctl configuration. Indexes are used to perform search operations for artifacts",
 		Args:                  cobra.ExactArgs(2),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.Validate(args))
@@ -77,7 +78,8 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 	}
 
 	if _, err := indexConfig.Get(name); err == nil {
-		return fmt.Errorf("cannot add already existing index: %s", name)
+		o.Printer.Warning.Printf("%s already exists with the same configuration, skipping\n", name)
+		return nil
 	}
 
 	remoteIndex, err := index.FetchIndex(ctx, url)
