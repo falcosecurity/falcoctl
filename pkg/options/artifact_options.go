@@ -74,7 +74,7 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 	// If the command is the pull one, then do not add the dependency flag.
 	if cmd.Name() != "pull" {
 		cmd.Flags().StringArrayVarP(&art.Dependencies, "dependency", "d", []string{},
-			"define a rule to plugin dependency. Example: '--dependency cloudtrail:1.2.3")
+			`define a rule to plugin dependency. Example: "--dependency cloudtrail:1.2.3"`)
 	}
 
 	return nil
