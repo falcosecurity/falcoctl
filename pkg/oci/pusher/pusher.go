@@ -43,17 +43,22 @@ var (
 
 func errNotFound() error { return errors.New("not found") }
 
+// ProgressTracker type of the tracker that the pusher accepts. It implements the tracker logic.
+type ProgressTracker func(target oras.Target) oras.Target
+
 // Pusher implements push operations.
 type Pusher struct {
 	Client    *auth.Client
 	fileStore *file.Store
+	tracker   ProgressTracker
 }
 
 // NewPusher create a new pusher that can be used for push operations.
-func NewPusher(client *auth.Client) (*Pusher, error) {
+func NewPusher(client *auth.Client, tracker ProgressTracker) (*Pusher, error) {
 	return &Pusher{
 		Client:    client,
 		fileStore: file.New(""),
+		tracker:   tracker,
 	}, nil
 }
 
@@ -97,7 +102,16 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	if err = p.fileStore.Tag(ctx, *rootDesc, repo.Reference.Reference); err != nil {
 		return nil, err
 	}
-	_, err = oras.Copy(ctx, p.fileStore, repo.Reference.Reference, repo, "", oras.DefaultCopyOptions)
+
+	remoteTarget := oras.Target(repo)
+
+	if p.tracker != nil {
+		remoteTarget = p.tracker(repo)
+	}
+
+	defaultCopyOptions := oras.DefaultCopyOptions
+	defaultCopyOptions.Concurrency = 1
+	_, err = oras.Copy(ctx, p.fileStore, repo.Reference.Reference, remoteTarget, "", defaultCopyOptions)
 	if err != nil {
 		return nil, err
 	}
