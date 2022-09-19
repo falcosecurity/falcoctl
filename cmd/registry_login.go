@@ -34,14 +34,11 @@ import (
 type loginOptions struct {
 	*options.CommonOptions
 	hostname string
+	username string
+	password string
 }
 
 func (o *loginOptions) Validate(args []string) error {
-	if len(args) != 0 {
-		o.hostname = args[0]
-	} else {
-		o.hostname = oci.DefaultRegistry
-	}
 	return nil
 }
 
@@ -52,11 +49,11 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "login hostname",
-		DisableFlagsInUseLine: true,
+		Use:                   "login [host -u user -p token]",
+		DisableFlagsInUseLine: false,
 		Short:                 "Login to an OCI registry",
 		Long:                  "Login to an OCI registry to push and pull Falco rules and plugins",
-		Args:                  cobra.MaximumNArgs(1),
+		Args:                  cobra.MaximumNArgs(3),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.Validate(args))
 		},
@@ -64,15 +61,27 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 			o.Printer.CheckErr(o.RunLogin(ctx, args))
 		},
 	}
+	cmd.Flags().StringVarP(&o.hostname, "host", "", "", "Hostname of the registry")
+	cmd.Flags().StringVarP(&o.username, "user", "u", "", "Username (required if password is set)")
+	cmd.Flags().StringVarP(&o.password, "token", "p", "", "Password (required if username is set)")
+	cmd.MarkFlagsRequiredTogether("user", "token")
+
+	cmd.Flags().SortFlags = false
+	cmd.Flags().Lookup("host").NoOptDefVal = oci.DefaultRegistry
 
 	return cmd
 }
 
 // RunLogin executes the business logic for the login command.
 func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
-	user, token, err := getCredentials(o.Printer)
-	if err != nil {
-		return err
+	var err error
+	user, token := o.username, o.password
+
+	if o.username == "" || o.password == "" {
+		user, token, err = getCredentials(o.Printer)
+		if err != nil {
+			return err
+		}
 	}
 
 	cred := auth.Credential{
