@@ -142,7 +142,7 @@ func (i *Index) Normalize() error {
 	return nil
 }
 
-// Write writes an Index to disk.
+// Write writes entries to a file.
 func (i *Index) Write(path string) error {
 	if err := i.Normalize(); err != nil {
 		return err
@@ -154,6 +154,28 @@ func (i *Index) Write(path string) error {
 
 	if err = os.WriteFile(path, indexBytes, writePermissions); err != nil {
 		return fmt.Errorf("cannot write index to file: %w", err)
+	}
+
+	return nil
+}
+
+// Read reads entries from a file.
+func (i *Index) Read(path string) error {
+	bytes, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return fmt.Errorf("cannot read index from file: %w", err)
+	}
+
+	if err := yaml.Unmarshal(bytes, &i.Entries); err != nil {
+		return fmt.Errorf("cannot unmarshal index: %w", err)
+	}
+
+	i.entryByName = make(map[string]*Entry, len(i.Entries))
+	for _, e := range i.Entries {
+		if _, ok := i.entryByName[e.Name]; ok {
+			return fmt.Errorf("duplicate entry found: %s", e.Name)
+		}
+		i.entryByName[e.Name] = e
 	}
 
 	return nil
