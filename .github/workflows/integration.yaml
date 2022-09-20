@@ -2,7 +2,7 @@ name: Integration Pipeline
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
