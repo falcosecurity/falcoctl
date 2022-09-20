@@ -18,12 +18,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
 
 // Entry describes an entry of the index stored remotely and cached locally.
 type Entry struct {
+	// Mandatory fields
+	Name       string `yaml:"name"`
+	Type       string `yaml:"type"`
+	Registry   string `yaml:"registry"`
+	Repository string `yaml:"repository"`
+	// Optional fields
 	Description string   `yaml:"description"`
 	Home        string   `yaml:"home"`
 	Keywords    []string `yaml:"keywords"`
@@ -32,11 +39,7 @@ type Entry struct {
 		Email string `yaml:"email"`
 		Name  string `yaml:"name"`
 	} `yaml:"maintainers"`
-	Name       string   `yaml:"name"`
-	Registry   string   `yaml:"registry"`
-	Repository string   `yaml:"repository"`
-	Sources    []string `yaml:"sources"`
-	Type       string   `yaml:"type"`
+	Sources []string `yaml:"sources"`
 }
 
 // Index represents an index.
@@ -110,8 +113,40 @@ func (i *Index) EntryByName(name string) *Entry {
 	return i.entryByName[name]
 }
 
+// Normalize the index to the canonical form (i.e., entries sorted by name,
+// lexically byte-wise in ascending order).
+//
+// Since only one possible representation of a normalized index exists,
+// a digest of a normalized index is suitable for integrity checking
+// or similar purposes.
+// Return an error if the index is not in a consistent state.
+func (i *Index) Normalize() error {
+	if i == nil {
+		return fmt.Errorf("cannot normalize an uninitialized index")
+	}
+
+	if len(i.entryByName) != len(i.Entries) {
+		return fmt.Errorf("inconsistent index state")
+	}
+
+	for _, e := range i.Entries {
+		if _, ok := i.entryByName[e.Name]; !ok {
+			return fmt.Errorf("inconsistent index state")
+		}
+	}
+
+	sort.Slice(i.Entries, func(k, j int) bool {
+		return i.Entries[k].Name < i.Entries[j].Name
+	})
+
+	return nil
+}
+
 // Write writes an Index to disk.
 func (i *Index) Write(path string) error {
+	if err := i.Normalize(); err != nil {
+		return err
+	}
 	indexBytes, err := yaml.Marshal(i.Entries)
 	if err != nil {
 		return fmt.Errorf("cannot marshal index: %w", err)
