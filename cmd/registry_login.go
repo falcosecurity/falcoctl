@@ -17,14 +17,15 @@ package cmd
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
+	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/options"
@@ -74,6 +75,14 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 
 // RunLogin executes the business logic for the login command.
 func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
+	var registry string
+
+	if n := len(args); n == 1 {
+		registry = args[0]
+	} else {
+		registry = oci.DefaultRegistry
+	}
+
 	var err error
 	user, token := o.username, o.password
 
@@ -84,24 +93,14 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		}
 	}
 
-	cred := auth.Credential{
+	cred := &auth.Credential{
 		Username: user,
 		Password: token,
 	}
 
-	client := authn.NewClient(cred)
-	if err != nil {
-		return err
-	}
-
-	// Ensure credentials are valid
-	registry, err := remote.NewRegistry(o.hostname)
-	if err != nil {
-		return err
-	}
-	registry.Client = client
-	if err = registry.Ping(ctx); err != nil {
-		return err
+	if err := utils.CheckRegistryConnection(ctx, cred, registry, o.Printer); err != nil {
+		o.Printer.Verbosef("%s", err.Error())
+		return fmt.Errorf("unable to connect to registry %q", registry)
 	}
 
 	// Store validated credentials
@@ -110,7 +109,7 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		return err
 	}
 
-	o.Printer.DefaultText.Println("Login succeeded")
+	o.Printer.Success.Println("Login succeeded")
 	return nil
 }
 

@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pterm/pterm"
 	"k8s.io/kubectl/pkg/cmd/util"
@@ -34,6 +35,8 @@ const (
 	IndexList
 )
 
+var spinnerCharset = []string{"⠈⠁", "⠈⠑", "⠈⠱", "⠈⡱", "⢀⡱", "⢄⡱", "⢄⡱", "⢆⡱", "⢎⡱", "⢎⡰", "⢎⡠", "⢎⡀", "⢎⠁", "⠎⠁", "⠊⠁"}
+
 // Printer used by all commands to output messages.
 // If a commands needs a new format for its output add it here.
 type Printer struct {
@@ -46,6 +49,8 @@ type Printer struct {
 	TablePrinter *pterm.TablePrinter
 
 	ProgressBar *pterm.ProgressbarPrinter
+
+	Spinner *pterm.SpinnerPrinter
 
 	verbose bool
 }
@@ -60,6 +65,17 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 		WithBarCharacter("#").
 		WithLastCharacter("#").
 		WithShowElapsedTime(false)
+	tablePrinter := pterm.DefaultTable.WithHasHeader().WithSeparator("\t")
+	spinner := &pterm.SpinnerPrinter{
+		Sequence:            spinnerCharset,
+		Style:               pterm.NewStyle(pterm.FgDefault),
+		Delay:               time.Millisecond * 100,
+		MessageStyle:        pterm.NewStyle(pterm.FgDefault),
+		RemoveWhenDone:      false,
+		ShowTimer:           true,
+		TimerRoundingFactor: time.Second,
+		TimerStyle:          &pterm.ThemeDefault.TimerStyle,
+	}
 
 	if scope != "" {
 		generic = generic.WithScope(pterm.Scope{Text: scope, Style: pterm.NewStyle(pterm.FgGray)})
@@ -67,8 +83,10 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 
 	if writer != nil {
 		generic = generic.WithWriter(writer)
+		spinner = spinner.WithWriter(writer)
 		basicText = basicText.WithWriter(writer)
 		progressBar = progressBar.WithWriter(writer)
+		tablePrinter = tablePrinter.WithWriter(writer)
 	}
 
 	printer := &Printer{
@@ -97,8 +115,15 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 
 		ProgressBar: progressBar,
 
-		TablePrinter: pterm.DefaultTable.WithHasHeader().WithSeparator("\t"),
+		TablePrinter: tablePrinter,
+
+		Spinner: spinner,
 	}
+
+	// Populate the printers for the spinner. We use the same one define in the printer.
+	printer.Spinner.FailPrinter = printer.Error
+	printer.Spinner.WarningPrinter = printer.Warning
+	printer.Spinner.SuccessPrinter = printer.Info
 
 	return printer
 }
@@ -110,6 +135,13 @@ func (p *Printer) CheckErr(err error) {
 	switch {
 	case err == nil:
 		return
+
+	// Print the error through the spinner, if active.
+	case p != nil && p.Spinner.IsActive:
+		util.BehaviorOnFatal(func(msg string, code int) {
+			p.Spinner.Fail(msg)
+			os.Exit(code)
+		})
 
 	// If the printer is initialized then print the error through it.
 	case p != nil:
