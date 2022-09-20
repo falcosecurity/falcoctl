@@ -15,8 +15,15 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"strings"
+
+	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/auth"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 // GetRegistryFromRef extracts the registry from a ref string.
@@ -27,4 +34,26 @@ func GetRegistryFromRef(ref string) (string, error) {
 	}
 
 	return ref[0:index], nil
+}
+
+// CheckRegistryConnection checks whether the registry implement Docker Registry API V2 or
+// OCI Distribution Specification. It also checks authentication.
+func CheckRegistryConnection(ctx context.Context, cred *auth.Credential, regName string, printer *output.Printer) error {
+	sp, _ := printer.Spinner.Start(fmt.Sprintf("Checking connection to remote registry %q", regName))
+	client := authn.NewClient(*cred)
+
+	// Ensure credentials are valid.
+	registry, err := remote.NewRegistry(regName)
+	if err != nil {
+		return err
+	}
+
+	registry.Client = client
+	if err = registry.Ping(ctx); err != nil {
+		return err
+	}
+
+	sp.Success(fmt.Sprintf("Remote registry %q is reachable", regName))
+
+	return nil
 }

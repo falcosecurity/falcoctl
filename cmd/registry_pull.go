@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
@@ -104,6 +105,12 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	if err := utils.CheckRegistryConnection(ctx, &cred, registry, o.Printer); err != nil {
+		o.Printer.Verbosef("%s", err.Error())
+		return fmt.Errorf("unable to connect to registry %q", registry)
+	}
+
 	client := authn.NewClient(cred)
 
 	puller := ocipuller.NewPuller(client, newPullProgressTracker(o.Printer))
