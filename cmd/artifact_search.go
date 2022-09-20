@@ -61,7 +61,8 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 	// When reading from this file, entries are already ordered by added time.
 	for _, indexConfigEntry := range indexConfig.Configs {
 		nameYaml := fmt.Sprintf("%s%s", indexConfigEntry.Name, ".yaml")
-		i, err := index.New(filepath.Join(falcoctlPath, nameYaml), indexConfigEntry.Name)
+		i := index.New(indexConfigEntry.Name)
+		err := i.Read(filepath.Join(falcoctlPath, nameYaml))
 		if err != nil {
 			return fmt.Errorf("cannot search: %w", err)
 		}

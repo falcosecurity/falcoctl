@@ -55,26 +55,12 @@ type MergedIndexes struct {
 	indexByEntry map[*Entry]*Index
 }
 
-// New loads an Index from a file.
-func New(path, name string) (*Index, error) {
-	indexBytes, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
-		return nil, fmt.Errorf("cannot read file %s: %w", path, err)
+// New returns a new empty Index.
+func New(name string) *Index {
+	return &Index{
+		Name:        name,
+		entryByName: map[string]*Entry{},
 	}
-
-	var index Index
-	var entries []Entry
-	if err = yaml.Unmarshal(indexBytes, &entries); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal index: %w", err)
-	}
-
-	for k := range entries {
-		index.Entries = append(index.Entries, &entries[k])
-	}
-
-	index.Name = name
-
-	return &index, nil
 }
 
 // Upsert adds a new entry to the Index or updates an existing one.
