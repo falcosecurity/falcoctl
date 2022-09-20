@@ -45,7 +45,6 @@ type Entry struct {
 // Index represents an index.
 type Index struct {
 	Name        string
-	Filename    string
 	Entries     []*Entry
 	entryByName map[string]*Entry
 }
@@ -74,7 +73,6 @@ func New(path, name string) (*Index, error) {
 	}
 
 	index.Name = name
-	index.Filename = path
 
 	return &index, nil
 }
