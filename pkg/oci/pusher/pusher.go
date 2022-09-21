@@ -63,10 +63,12 @@ func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
 }
 
 // Push an artifact to a remote registry.
+//
 // artifactType can be either a rule or plugin.
 // artifactPath path of the artifact blob on the disk.
 // ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
-// dependencies rule to plugin dependency expressed as pluginName:version. Ex. cloudtrail:1.2.3.
+// Artifact dependencies can be expressed in the format "artifact-name:1.0.0"
+// (use "|" to append alternatives, eg. "|alternative-a:1.0.0|alternative-b:1.0.0").
 func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	artifactPath, ref, platform string, dependencies ...string) (*oci.RegistryResult, error) {
 	var dataDesc, configDesc, manifestDesc, rootDesc *v1.Descriptor
@@ -191,12 +193,14 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, artifactType oci.Artifact
 	// Create config and fill common fields of the config (empty for now).
 	artifactConfig := oci.ArtifactConfig{}
 
+	err := artifactConfig.ParseDependencies(dependencies...)
+	if err != nil {
+		return nil, err
+	}
+
 	switch artifactType {
 	case oci.Rulesfile:
 		layerMediaType = oci.FalcoRulesfileConfigMediaType
-		if err := artifactConfig.SetRequiredPluginVersions(dependencies...); err != nil {
-			return nil, fmt.Errorf("unable to set dependencies %s: %w", dependencies, err)
-		}
 	case oci.Plugin:
 		layerMediaType = oci.FalcoPluginConfigMediaType
 	}
