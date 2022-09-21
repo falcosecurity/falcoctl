@@ -39,11 +39,16 @@ Example - Push artifact "myplugin.tar.gz" of type "plugin" for platform "linux/a
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile":
 	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile
 
-Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with dependencies "myplugin:1.2.3":
-	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --dependencies myplugin:1.2.3
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with a dependency "myplugin:1.2.3":
+	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --depends-on myplugin:1.2.3
+
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with a dependency "myplugin:1.2.3" and an alternative "otherplugin:3.2.1":
+	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --depends-on "myplugin:1.2.3|otherplugin:3.2.1"
 
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with multiple dependencies "myplugin:1.2.3", "otherplugin:3.2.1":
-	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --dependencies myplugin:1.2.3,otherplugin:3.2.1
+	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile \
+		--depends-on myplugin:1.2.3 \
+		--depends-on otherplugin:3.2.1
 `
 
 type pushOptions struct {
