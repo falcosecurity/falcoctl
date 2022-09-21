@@ -33,24 +33,16 @@ type ArtifactOptions struct {
 	Dependencies []string
 }
 
+var platformRgx = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
+
 // Validate validates the options passed by the user.
 func (art *ArtifactOptions) Validate() error {
-	r := regexp.MustCompile(`^[a-z]+:\d+.\d+.\d+`)
 	switch art.ArtifactType {
-	case oci.Rulesfile:
-		for _, dep := range art.Dependencies {
-			if ok := r.MatchString(dep); !ok {
-				return fmt.Errorf("dependencies %q seems to be in the wrong format, need to satisfie"+
-					" the following regexp %s", dep, r.String())
-			}
-		}
 	case oci.Plugin:
-		r = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
-		if ok := r.MatchString(art.Platform); !ok {
+		if ok := platformRgx.MatchString(art.Platform); !ok {
 			return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
-				"and to satisfie the following regexp %s", art.Platform, r.String())
+				"and to satisfy the following regexp %s", art.Platform, platformRgx.String())
 		}
-
 	default:
 		// should never happen since we already validate the artifact type ad parsing time.
 		return fmt.Errorf("unsupported artifact type: must be one of rule or plugin")
@@ -71,10 +63,10 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 	cmd.Flags().StringVar(&art.Platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 		"os and architecture of the artifact in OS/ARCH format(only for plugins artifacts)")
 
-	// If the command is the pull one, then do not add the dependency flag.
+	// If the command is the pull one, then do not add the "depends-on" flag.
 	if cmd.Name() != "pull" {
-		cmd.Flags().StringArrayVarP(&art.Dependencies, "dependency", "d", []string{},
-			`define a rule to plugin dependency. Example: "--dependency cloudtrail:1.2.3"`)
+		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", []string{},
+			`set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"`)
 	}
 
 	return nil
