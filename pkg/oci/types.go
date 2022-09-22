@@ -132,6 +132,8 @@ func (rc *ArtifactConfig) ParseDependencies(dependencies ...string) error {
 			if err != nil {
 				return fmt.Errorf(`cannot parse "%s": %w`, a, err)
 			}
+			// The first dependency is used to fill the "name" and "version" fields.
+			// All the other dependencies, if any, are set as alternatives.
 			if i == 0 {
 				insertPos = rc.SetDepedency(parsedRef.Name, parsedRef.Version)
 			} else {
