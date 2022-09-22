@@ -93,8 +93,9 @@ func (i *Index) Remove(entry *Entry) error {
 }
 
 // EntryByName returns a Entry by passing its name.
-func (i *Index) EntryByName(name string) *Entry {
-	return i.entryByName[name]
+func (i *Index) EntryByName(name string) (*Entry, bool) {
+	entry, ok := i.entryByName[name]
+	return entry, ok
 }
 
 // Normalize the index to the canonical form (i.e., entries sorted by name,
