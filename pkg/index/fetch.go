@@ -24,7 +24,7 @@ import (
 )
 
 // FetchIndex retrieves a remote index using its URL.
-func FetchIndex(ctx context.Context, url string) (*Index, error) {
+func FetchIndex(ctx context.Context, url, name string) (*Index, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("cannot fetch index: %w", err)
@@ -42,10 +42,18 @@ func FetchIndex(ctx context.Context, url string) (*Index, error) {
 		return nil, fmt.Errorf("cannot read bytes from response body: %w", err)
 	}
 
-	var index Index
-	if err := yaml.Unmarshal(bytes, &index.Entries); err != nil {
+	i := New(name)
+	if err := yaml.Unmarshal(bytes, &i.Entries); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal index: %w", err)
 	}
 
-	return &index, nil
+	i.entryByName = make(map[string]*Entry, len(i.Entries))
+	for _, e := range i.Entries {
+		if _, ok := i.entryByName[e.Name]; ok {
+			return nil, fmt.Errorf("duplicate entry found: %s", e.Name)
+		}
+		i.entryByName[e.Name] = e
+	}
+
+	return i, nil
 }
