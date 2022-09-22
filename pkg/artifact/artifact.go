@@ -41,7 +41,7 @@ type Artifact struct {
 	Version string
 }
 
-// ValidateName retunrs an error if the given name is not a valid artifact name.
+// ValidateName returns an error if the given name is not a valid artifact name.
 func ValidateName(name string) error {
 	if !nameRgx.MatchString(name) {
 		return ErrInvalidName
@@ -49,7 +49,7 @@ func ValidateName(name string) error {
 	return nil
 }
 
-// ValidateVersion retunrs an error if the given name is not a valid artifact version.
+// ValidateVersion returns an error if the given name is not a valid artifact version.
 //
 // Artifact version must be a semver string (see https://semver.org/).
 func ValidateVersion(ver string) error {
