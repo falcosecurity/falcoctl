@@ -83,7 +83,7 @@ func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) 
 			return fmt.Errorf("cannot update index %s: not found", name)
 		}
 
-		remoteIndex, err := index.FetchIndex(ctx, indexConfigEntry.URL)
+		remoteIndex, err := index.FetchIndex(ctx, indexConfigEntry.URL, name)
 		if err != nil {
 			return err
 		}
