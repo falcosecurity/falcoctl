@@ -67,12 +67,15 @@ func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
 // artifactType can be either a rule or plugin.
 // artifactPath path of the artifact blob on the disk.
 // ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
-// Artifact dependencies can be expressed in the format "artifact-name:1.0.0"
-// (use "|" to append alternatives, eg. "|alternative-a:1.0.0|alternative-b:1.0.0").
 func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
-	artifactPath, ref, platform string, dependencies ...string) (*oci.RegistryResult, error) {
+	artifactPath, ref string, options ...Option) (*oci.RegistryResult, error) {
 	var dataDesc, configDesc, manifestDesc, rootDesc *v1.Descriptor
 	var err error
+
+	o := &opts{}
+	if err := Options(options).apply(o); err != nil {
+		return nil, err
+	}
 
 	// Create the object to interact with the remote repo.
 	repo, err := remote.NewRepository(ref)
@@ -87,12 +90,12 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	}
 
 	// Prepare configuration layer.
-	if configDesc, err = p.storeConfigLayer(ctx, artifactType, dependencies); err != nil {
+	if configDesc, err = p.storeConfigLayer(ctx, artifactType, o.Dependencies); err != nil {
 		return nil, err
 	}
 
 	// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
-	if manifestDesc, err = p.packManifest(ctx, configDesc, dataDesc, platform); err != nil {
+	if manifestDesc, err = p.packManifest(ctx, configDesc, dataDesc, o.Platform); err != nil {
 		return nil, err
 	}
 
