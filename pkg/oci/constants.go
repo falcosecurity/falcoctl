@@ -30,4 +30,7 @@ const (
 
 	// DefaultRegistry is the default container registry to use.
 	DefaultRegistry = "ghcr.io"
+
+	// DefaultTag is the default tag reference to be used when none is provided.
+	DefaultTag = "latest"
 )

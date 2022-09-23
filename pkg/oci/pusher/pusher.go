@@ -89,6 +89,11 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	}
 	repo.Client = p.Client
 
+	// Using ":latest" by default if no tag was provided.
+	if repo.Reference.Reference == "" {
+		repo.Reference.Reference = oci.DefaultTag
+	}
+
 	// Set remoteTarget and its tracker.
 	remoteTarget := oras.Target(repo)
 
@@ -99,16 +104,16 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	defaultCopyOptions := oras.DefaultCopyGraphOptions
 	defaultCopyOptions.Concurrency = 1
 
+	// Initialize the file store for this artifact.
+	tmpDir, err := os.MkdirTemp("", "falcoctl")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
 	manifestDescs := make([]*v1.Descriptor, len(o.Filepaths))
 	var fileStore *file.Store
 	for i, artifactPath := range o.Filepaths {
-		// Initialize the file store for this artifact
-		tmpDir, err := os.MkdirTemp("", "falcoctl")
-		if err != nil {
-			return nil, err
-		}
-		defer os.RemoveAll(tmpDir)
-
 		fileStore = file.New(tmpDir)
 
 		platform := ""
@@ -117,7 +122,11 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 
 		// Prepare data layer.
-		if dataDesc, err = p.storeMainLayer(ctx, fileStore, artifactType, artifactPath); err != nil {
+		absolutePath, err := filepath.Abs(artifactPath)
+		if err != nil {
+			return nil, err
+		}
+		if dataDesc, err = p.storeMainLayer(ctx, fileStore, artifactType, absolutePath); err != nil {
 			return nil, err
 		}
 
@@ -159,6 +168,11 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 
 	// Tag the root descriptor remotely.
 	repo.PushReference(ctx, *rootDesc, rootReader, repo.Reference.Reference)
+	if len(o.Tags) > 0 {
+		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, oras.DefaultTagNOptions); err != nil {
+			return nil, err
+		}
+	}
 
 	return &oci.RegistryResult{
 		Digest: string(rootDesc.Digest),
