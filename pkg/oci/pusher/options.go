@@ -14,8 +14,11 @@
 
 package pusher
 
+import "fmt"
+
 type opts struct {
-	Platform     string
+	Filepaths    []string
+	Platforms    []string
 	Dependencies []string
 }
 
@@ -35,10 +38,28 @@ func (o Options) apply(oo *opts) error {
 	return nil
 }
 
-// WithPlatform sets the platform option.
-func WithPlatform(platform string) Option {
+// WithFilepaths sets the filepaths passed at execution time.
+func WithFilepaths(filepaths []string) Option {
 	return func(o *opts) error {
-		o.Platform = platform
+		o.Filepaths = filepaths
+		o.Platforms = nil
+		return nil
+	}
+}
+
+// WithFilepathsAndPlatforms sets filepaths and platforms passed at execution time.
+// It also checks that the number of filepaths and platforms is the same.
+func WithFilepathsAndPlatforms(filepaths, platforms []string) Option {
+	return func(o *opts) error {
+		if len(filepaths) != len(platforms) {
+			return fmt.Errorf(
+				`"filepaths" length (%d) must match "platforms" length (%d)`,
+				len(filepaths),
+				len(platforms),
+			)
+		}
+		o.Filepaths = filepaths
+		o.Platforms = platforms
 		return nil
 	}
 }
