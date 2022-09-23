@@ -20,6 +20,7 @@ type opts struct {
 	Filepaths    []string
 	Platforms    []string
 	Dependencies []string
+	Tags         []string
 }
 
 // Option is a functional option for pusher.
@@ -71,6 +72,14 @@ func WithFilepathsAndPlatforms(filepaths, platforms []string) Option {
 func WithDependencies(deps ...string) Option {
 	return func(o *opts) error {
 		o.Dependencies = deps
+		return nil
+	}
+}
+
+// WithTags sets the tags option.
+func WithTags(tags ...string) Option {
+	return func(o *opts) error {
+		o.Tags = tags
 		return nil
 	}
 }
