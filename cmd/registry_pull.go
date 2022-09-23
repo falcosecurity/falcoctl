@@ -17,6 +17,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"runtime"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
@@ -120,7 +121,11 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		o.Printer.Info.Printfln("Pulling artifact in %q directory", o.destDir)
 	}
 
-	res, err := puller.Pull(ctx, o.ArtifactType, ref, o.destDir, o.GetOS(), o.GetArch())
+	os, arch := runtime.GOOS, runtime.GOARCH
+	if len(o.ArtifactOptions.Platforms) > 0 {
+		os, arch = o.OSArch(0)
+	}
+	res, err := puller.Pull(ctx, o.ArtifactType, ref, o.destDir, os, arch)
 	if err != nil {
 		return err
 	}

@@ -31,22 +31,27 @@ import (
 var longPush = `Push Falco "rulefile" or "plugin" OCI artifacts to remote registry
 
 Example - Push artifact "myplugin.tar.gz" of type "plugin" for the platform where falcoctl is running (default):
-	falcoctl registry push myplugin.tar.gz localhost:5000/myplugin:latest --type plugin
+	falcoctl registry push --type plugin localhost:5000/myplugin:latest myplugin.tar.gz
 
 Example - Push artifact "myplugin.tar.gz" of type "plugin" for platform "linux/aarch64":
-	falcoctl registry push myplugin.tar.gz localhost:5000/myplugin:latest --type plugin --platform linux/aarch64
+	falcoctl registry push --type plugin localhost:5000/myplugin:latest myplugin.tar.gz --platform linux/aarch64
+
+Example - Push artifact "myplugin.tar.gz" of type "plugin" for multiple platforms:
+	falcoctl registry push --type plugin localhost:5000/myplugin:latest \
+		myplugin-linux-x86_64.tar.gz --platform linux/x86_64 \
+		myplugin-linux-arm64.tar.gz --platform linux/aarch64
 
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile":
-	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile
+	falcoctl registry push --type rulesfile localhost:5000/myrulesfile:latest myrulesfile.tar.gz
 
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with a dependency "myplugin:1.2.3":
-	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --depends-on myplugin:1.2.3
+	falcoctl registry push --type rulesfile localhost:5000/myrulesfile:latest myrulesfile.tar.gz --depends-on myplugin:1.2.3
 
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with a dependency "myplugin:1.2.3" and an alternative "otherplugin:3.2.1":
-	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile --depends-on "myplugin:1.2.3|otherplugin:3.2.1"
+	falcoctl registry push --type rulesfile localhost:5000/myrulesfile:latest myrulesfile.tar.gz --depends-on "myplugin:1.2.3|otherplugin:3.2.1"
 
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with multiple dependencies "myplugin:1.2.3", "otherplugin:3.2.1":
-	falcoctl registry push myrulesfile.tar.gz localhost:5000/myrulesfile:latest --type rulesfile \
+    falcoctl registry push --type rulesfile localhost:5000/myrulesfile:latest myrulesfile.tar.gz \
 		--depends-on myplugin:1.2.3 \
 		--depends-on otherplugin:3.2.1
 `
@@ -94,8 +99,8 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 
 // RunPush executes the business logic for the push command.
 func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
-	path := args[0]
-	ref := args[1]
+	ref := args[0]
+	paths := args[1:]
 	o.Printer.Info.Printfln("Preparing to push artifact %q of type %q", args[0], o.ArtifactType)
 
 	registry, err := utils.GetRegistryFromRef(ref)
@@ -121,11 +126,10 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	client := authn.NewClient(cred)
 
 	pusher := ocipusher.NewPusher(client, newPushProgressTracker(o.Printer))
-
 	res, err := pusher.Push(
-		ctx, o.ArtifactType, path, ref,
-		ocipusher.WithPlatform(o.Platform),
+		ctx, o.ArtifactType, ref,
 		ocipusher.WithDependencies(o.Dependencies...),
+		ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms),
 	)
 	if err != nil {
 		return err
