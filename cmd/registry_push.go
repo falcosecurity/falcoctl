@@ -22,6 +22,7 @@ import (
 	"oras.land/oras-go/v2"
 
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
+	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
 	"github.com/falcosecurity/falcoctl/pkg/options"
@@ -94,6 +95,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 	}
 	o.CommonOptions.AddFlags(cmd.Flags())
 	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
+
 	return cmd
 }
 
@@ -126,11 +128,20 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	client := authn.NewClient(cred)
 
 	pusher := ocipusher.NewPusher(client, newPushProgressTracker(o.Printer))
-	res, err := pusher.Push(
-		ctx, o.ArtifactType, ref,
+
+	opts := ocipusher.Options{
 		ocipusher.WithDependencies(o.Dependencies...),
-		ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms),
-	)
+		ocipusher.WithTags(o.Tags...),
+	}
+
+	switch o.ArtifactType {
+	case oci.Plugin:
+		opts = append(opts, ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms))
+	case oci.Rulesfile:
+		opts = append(opts, ocipusher.WithFilepaths(paths))
+	}
+
+	res, err := pusher.Push(ctx, o.ArtifactType, ref, opts...)
 	if err != nil {
 		return err
 	}
