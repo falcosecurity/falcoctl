@@ -56,9 +56,14 @@ func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, d
 	}
 	repo.Client = p.Client
 
+	refDesc, _, err := repo.FetchReference(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
 	copyOpts := oras.CopyOptions{}
 	copyOpts.Concurrency = 1
-	if artifactType == oci.Plugin {
+	if artifactType == oci.Plugin && refDesc.MediaType == v1.MediaTypeImageIndex {
 		plt := &v1.Platform{
 			OS:           os,
 			Architecture: arch,
