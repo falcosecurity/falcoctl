@@ -83,7 +83,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		DisableFlagsInUseLine: true,
 		Short:                 "Push a Falco OCI artifact to remote registry",
 		Long:                  longPush,
-		Args:                  cobra.ExactArgs(2),
+		Args:                  cobra.MinimumNArgs(2),
 		SilenceErrors:         true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.validate())

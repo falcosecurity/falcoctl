@@ -55,17 +55,15 @@ type ProgressTracker func(target oras.Target) oras.Target
 
 // Pusher implements push operations.
 type Pusher struct {
-	Client    *auth.Client
-	fileStore *file.Store
-	tracker   ProgressTracker
+	Client  *auth.Client
+	tracker ProgressTracker
 }
 
 // NewPusher create a new pusher that can be used for push operations.
 func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
 	return &Pusher{
-		Client:    client,
-		fileStore: file.New(""),
-		tracker:   tracker,
+		Client:  client,
+		tracker: tracker,
 	}
 }
 
@@ -76,7 +74,7 @@ func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
 // ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
 func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	ref string, options ...Option) (*oci.RegistryResult, error) {
-	var dataDesc, configDesc, manifestDesc, rootDesc *v1.Descriptor
+	var dataDesc, configDesc, rootDesc *v1.Descriptor
 	var err error
 
 	o := &opts{}
@@ -91,25 +89,49 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	}
 	repo.Client = p.Client
 
+	// Set remoteTarget and its tracker.
+	remoteTarget := oras.Target(repo)
+
+	if p.tracker != nil {
+		remoteTarget = p.tracker(repo)
+	}
+
+	defaultCopyOptions := oras.DefaultCopyGraphOptions
+	defaultCopyOptions.Concurrency = 1
+
 	manifestDescs := make([]*v1.Descriptor, len(o.Filepaths))
+	var fileStore *file.Store
 	for i, artifactPath := range o.Filepaths {
+		// Initialize the file store for this artifact
+		tmpDir, err := os.MkdirTemp("", "falcoctl")
+		if err != nil {
+			return nil, err
+		}
+		defer os.RemoveAll(tmpDir)
+
+		fileStore = file.New(tmpDir)
+
 		platform := ""
 		if len(o.Platforms) > i {
 			platform = o.Platforms[i]
 		}
 
 		// Prepare data layer.
-		if dataDesc, err = p.storeMainLayer(ctx, artifactType, artifactPath); err != nil {
+		if dataDesc, err = p.storeMainLayer(ctx, fileStore, artifactType, artifactPath); err != nil {
 			return nil, err
 		}
 
 		// Prepare configuration layer.
-		if configDesc, err = p.storeConfigLayer(ctx, artifactType, o.Dependencies); err != nil {
+		if configDesc, err = p.storeConfigLayer(ctx, fileStore, artifactType, o.Dependencies); err != nil {
 			return nil, err
 		}
 
 		// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
-		if manifestDescs[i], err = p.packManifest(ctx, configDesc, dataDesc, platform); err != nil {
+		if manifestDescs[i], err = p.packManifest(ctx, fileStore, configDesc, dataDesc, platform); err != nil {
+			return nil, err
+		}
+
+		if err = oras.CopyGraph(ctx, fileStore, remoteTarget, *manifestDescs[i], defaultCopyOptions); err != nil {
 			return nil, err
 		}
 	}
@@ -120,31 +142,26 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	case 1:
 		rootDesc = manifestDescs[0]
 	default:
-		if rootDesc, err = p.storeArtifactsIndex(ctx, manifestDescs); err != nil {
+		// Assuming this filestore to be memory only (size of the index should be less than 4MiB)
+		fileStore = file.New("")
+		if rootDesc, err = p.storeArtifactsIndex(ctx, fileStore, manifestDescs); err != nil {
 			return nil, err
 		}
 	}
 
-	// Tag the manifest desc locally.
-	if err = p.fileStore.Tag(ctx, *rootDesc, repo.Reference.Reference); err != nil {
-		return nil, err
-	}
-
-	remoteTarget := oras.Target(repo)
-
-	if p.tracker != nil {
-		remoteTarget = p.tracker(repo)
-	}
-
-	defaultCopyOptions := oras.DefaultCopyOptions
-	defaultCopyOptions.Concurrency = 1
-	_, err = oras.Copy(ctx, p.fileStore, repo.Reference.Reference, remoteTarget, "", defaultCopyOptions)
+	// If we have only one manifest descriptor, fileStore points to the first and only file.Store we created.
+	// Otherwise, it points to the filestore containing the
+	rootReader, err := fileStore.Fetch(ctx, *rootDesc)
 	if err != nil {
 		return nil, err
 	}
+	defer rootReader.Close()
+
+	// Tag the root descriptor remotely.
+	repo.PushReference(ctx, *rootDesc, rootReader, repo.Reference.Reference)
 
 	return &oci.RegistryResult{
-		Digest: string(manifestDesc.Digest),
+		Digest: string(rootDesc.Digest),
 	}, nil
 }
 
@@ -194,7 +211,7 @@ func (p *Pusher) updateIndex(indexDesc *v1.Index, manifestDesc *v1.Descriptor) *
 	return indexDesc
 }
 
-func (p *Pusher) storeMainLayer(ctx context.Context, artifactType oci.ArtifactType, artifactPath string) (*v1.Descriptor, error) {
+func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store, artifactType oci.ArtifactType, artifactPath string) (*v1.Descriptor, error) {
 	var layerMediaType string
 
 	switch artifactType {
@@ -205,7 +222,7 @@ func (p *Pusher) storeMainLayer(ctx context.Context, artifactType oci.ArtifactTy
 	}
 
 	// Add the content of the principal layer to the file store.
-	desc, err := p.fileStore.Add(ctx, filepath.Base(artifactPath), layerMediaType, filepath.Clean(artifactPath))
+	desc, err := fileStore.Add(ctx, filepath.Base(artifactPath), layerMediaType, filepath.Clean(artifactPath))
 	if err != nil {
 		return nil, fmt.Errorf("unable to store artifact %s of type %s: %w", artifactPath, artifactType, err)
 	}
@@ -213,7 +230,7 @@ func (p *Pusher) storeMainLayer(ctx context.Context, artifactType oci.ArtifactTy
 	return &desc, nil
 }
 
-func (p *Pusher) storeConfigLayer(ctx context.Context, artifactType oci.ArtifactType, dependencies []string) (*v1.Descriptor, error) {
+func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store, artifactType oci.ArtifactType, dependencies []string) (*v1.Descriptor, error) {
 	var layerMediaType string
 	// Create config and fill common fields of the config (empty for now).
 	artifactConfig := oci.ArtifactConfig{}
@@ -230,10 +247,10 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, artifactType oci.Artifact
 		layerMediaType = oci.FalcoPluginConfigMediaType
 	}
 
-	return p.toFileStore(ctx, layerMediaType, ConfigLayerName, artifactConfig)
+	return p.toFileStore(ctx, fileStore, layerMediaType, ConfigLayerName, artifactConfig)
 }
 
-func (p *Pusher) storeArtifactsIndex(ctx context.Context, manifestDescs []*v1.Descriptor) (*v1.Descriptor, error) {
+func (p *Pusher) storeArtifactsIndex(ctx context.Context, fileStore *file.Store, manifestDescs []*v1.Descriptor) (*v1.Descriptor, error) {
 	// fat manifest
 	index := &v1.Index{
 		Versioned: specs.Versioned{SchemaVersion: 2},
@@ -245,10 +262,10 @@ func (p *Pusher) storeArtifactsIndex(ctx context.Context, manifestDescs []*v1.De
 		index.Manifests = append(index.Manifests, *manifestDesc)
 	}
 
-	return p.toFileStore(ctx, index.MediaType, ArtifactsIndexName, index)
+	return p.toFileStore(ctx, fileStore, index.MediaType, ArtifactsIndexName, index)
 }
 
-func (p *Pusher) toFileStore(ctx context.Context, mediaType, name string, data interface{}) (*v1.Descriptor, error) {
+func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaType, name string, data interface{}) (*v1.Descriptor, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal data of media type %q: %w", mediaType, err)
@@ -269,17 +286,17 @@ func (p *Pusher) toFileStore(ctx context.Context, mediaType, name string, data i
 		return nil, fmt.Errorf("unable to write data of media type %q to temporary file %s: %w", mediaType, configFile.Name(), err)
 	}
 
-	desc, err := p.fileStore.Add(ctx, name, mediaType, filepath.Clean(configFile.Name()))
+	desc, err := fileStore.Add(ctx, name, mediaType, filepath.Clean(configFile.Name()))
 	if err != nil {
 		return nil, fmt.Errorf("unable to store data of media type %q in the file store: %w", mediaType, err)
 	}
 	return &desc, nil
 }
 
-func (p *Pusher) packManifest(ctx context.Context, configDesc, dataDesc *v1.Descriptor, platform string) (*v1.Descriptor, error) {
+func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store, configDesc, dataDesc *v1.Descriptor, platform string) (*v1.Descriptor, error) {
 	// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
 	packOptions := oras.PackOptions{ConfigDescriptor: configDesc}
-	desc, err := oras.Pack(ctx, p.fileStore, []v1.Descriptor{*dataDesc}, packOptions)
+	desc, err := oras.Pack(ctx, fileStore, []v1.Descriptor{*dataDesc}, packOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate manifest for config layer %s and data layer %s: %w", configDesc.MediaType, dataDesc.MediaType, err)
 	}
