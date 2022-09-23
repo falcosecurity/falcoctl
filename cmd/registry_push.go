@@ -122,7 +122,11 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 
 	pusher := ocipusher.NewPusher(client, newPushProgressTracker(o.Printer))
 
-	res, err := pusher.Push(ctx, o.ArtifactType, path, ref, o.Platform, o.Dependencies...)
+	res, err := pusher.Push(
+		ctx, o.ArtifactType, path, ref,
+		ocipusher.WithPlatform(o.Platform),
+		ocipusher.WithDependencies(o.Dependencies...),
+	)
 	if err != nil {
 		return err
 	}
