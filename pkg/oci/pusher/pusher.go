@@ -36,6 +36,13 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
+const (
+	// ConfigLayerName is the name of config layers.
+	ConfigLayerName = "config"
+	// ArtifactsIndexName is the name of the index containing all manifests.
+	ArtifactsIndexName = "index"
+)
+
 var (
 	// ErrNotFound it is wrapped in not found errors returned by the ORAS library.
 	ErrNotFound = errNotFound()
@@ -68,7 +75,7 @@ func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
 // artifactPath path of the artifact blob on the disk.
 // ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
 func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
-	artifactPath, ref string, options ...Option) (*oci.RegistryResult, error) {
+	ref string, options ...Option) (*oci.RegistryResult, error) {
 	var dataDesc, configDesc, manifestDesc, rootDesc *v1.Descriptor
 	var err error
 
@@ -84,23 +91,38 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	}
 	repo.Client = p.Client
 
-	// Prepare data layer.
-	if dataDesc, err = p.storeMainLayer(ctx, artifactType, artifactPath); err != nil {
-		return nil, err
+	manifestDescs := make([]*v1.Descriptor, len(o.Filepaths))
+	for i, artifactPath := range o.Filepaths {
+		platform := ""
+		if len(o.Platforms) > i {
+			platform = o.Platforms[i]
+		}
+
+		// Prepare data layer.
+		if dataDesc, err = p.storeMainLayer(ctx, artifactType, artifactPath); err != nil {
+			return nil, err
+		}
+
+		// Prepare configuration layer.
+		if configDesc, err = p.storeConfigLayer(ctx, artifactType, o.Dependencies); err != nil {
+			return nil, err
+		}
+
+		// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
+		if manifestDescs[i], err = p.packManifest(ctx, configDesc, dataDesc, platform); err != nil {
+			return nil, err
+		}
 	}
 
-	// Prepare configuration layer.
-	if configDesc, err = p.storeConfigLayer(ctx, artifactType, o.Dependencies); err != nil {
-		return nil, err
-	}
-
-	// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
-	if manifestDesc, err = p.packManifest(ctx, configDesc, dataDesc, o.Platform); err != nil {
-		return nil, err
-	}
-
-	if rootDesc, err = p.packIndex(ctx, artifactType, manifestDesc, repo); err != nil {
-		return nil, err
+	switch len(manifestDescs) {
+	case 0:
+		panic("should never happen")
+	case 1:
+		rootDesc = manifestDescs[0]
+	default:
+		if rootDesc, err = p.storeArtifactsIndex(ctx, manifestDescs); err != nil {
+			return nil, err
+		}
 	}
 
 	// Tag the manifest desc locally.
@@ -183,7 +205,7 @@ func (p *Pusher) storeMainLayer(ctx context.Context, artifactType oci.ArtifactTy
 	}
 
 	// Add the content of the principal layer to the file store.
-	desc, err := p.fileStore.Add(ctx, filepath.Clean(artifactPath), layerMediaType, artifactPath)
+	desc, err := p.fileStore.Add(ctx, filepath.Base(artifactPath), layerMediaType, filepath.Clean(artifactPath))
 	if err != nil {
 		return nil, fmt.Errorf("unable to store artifact %s of type %s: %w", artifactPath, artifactType, err)
 	}
@@ -208,7 +230,22 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, artifactType oci.Artifact
 		layerMediaType = oci.FalcoPluginConfigMediaType
 	}
 
-	return p.toFileStore(ctx, layerMediaType, "config", artifactConfig)
+	return p.toFileStore(ctx, layerMediaType, ConfigLayerName, artifactConfig)
+}
+
+func (p *Pusher) storeArtifactsIndex(ctx context.Context, manifestDescs []*v1.Descriptor) (*v1.Descriptor, error) {
+	// fat manifest
+	index := &v1.Index{
+		Versioned: specs.Versioned{SchemaVersion: 2},
+		MediaType: v1.MediaTypeImageIndex,
+	}
+
+	// copy manifests
+	for _, manifestDesc := range manifestDescs {
+		index.Manifests = append(index.Manifests, *manifestDesc)
+	}
+
+	return p.toFileStore(ctx, index.MediaType, ArtifactsIndexName, index)
 }
 
 func (p *Pusher) toFileStore(ctx context.Context, mediaType, name string, data interface{}) (*v1.Descriptor, error) {
@@ -256,35 +293,4 @@ func (p *Pusher) packManifest(ctx context.Context, configDesc, dataDesc *v1.Desc
 	}
 
 	return &desc, nil
-}
-
-func (p *Pusher) packIndex(ctx context.Context, artifactType oci.ArtifactType,
-	manifestDesc *v1.Descriptor, repo *remote.Repository) (*v1.Descriptor, error) {
-	ref := repo.Reference.String()
-
-	// If we are handling an artifact of type "plugin" then we need to pull the image
-	// index (https://github.com/opencontainers/image-spec/blob/main/image-index.md)
-	if artifactType == oci.Plugin {
-		index, err := p.retrieveIndex(ctx, repo)
-		// In case of error return.
-		if err != nil && !errors.Is(err, ErrNotFound) {
-			return nil, fmt.Errorf("unable to retrieve index with ref %q from remote repo: %w", ref, err)
-		}
-
-		// If not index is present than create one.
-		if errors.Is(err, ErrNotFound) {
-			index = &v1.Index{
-				Versioned: specs.Versioned{SchemaVersion: 2},
-				MediaType: v1.MediaTypeImageIndex,
-			}
-		}
-
-		index = p.updateIndex(index, manifestDesc)
-		newIndexDesc, err := p.toFileStore(ctx, v1.MediaTypeImageIndex, "index", index)
-		if err != nil {
-			return nil, fmt.Errorf("unable to add index content to the file store: %w", err)
-		}
-		return newIndexDesc, nil
-	}
-	return manifestDesc, nil
 }
