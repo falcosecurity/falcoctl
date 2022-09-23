@@ -17,7 +17,6 @@ package options
 import (
 	"fmt"
 	"regexp"
-	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -29,7 +28,7 @@ import (
 // may embed this struct in their options.
 type ArtifactOptions struct {
 	ArtifactType oci.ArtifactType
-	Platform     string
+	Platforms    []string // orders matter (same as args)
 	Dependencies []string
 }
 
@@ -39,9 +38,15 @@ var platformRgx = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
 func (art *ArtifactOptions) Validate() error {
 	switch art.ArtifactType {
 	case oci.Plugin:
-		if ok := platformRgx.MatchString(art.Platform); !ok {
-			return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
-				"and to satisfy the following regexp %s", art.Platform, platformRgx.String())
+		for _, platform := range art.Platforms {
+			if ok := platformRgx.MatchString(platform); !ok {
+				return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
+					"and to satisfy the following regexp %s", platform, platformRgx.String())
+			}
+		}
+	case oci.Rulesfile:
+		if len(art.Platforms) > 0 {
+			return fmt.Errorf("--platform can be used only for plugins artifacts")
 		}
 	default:
 		// should never happen since we already validate the artifact type ad parsing time.
@@ -60,26 +65,33 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
 	}
 
-	cmd.Flags().StringVar(&art.Platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		"os and architecture of the artifact in OS/ARCH format(only for plugins artifacts)")
+	cmd.Flags().StringArrayVar(&art.Platforms, "platform", nil,
+		"os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)")
+	if err := cmd.MarkFlagRequired("platform"); err != nil {
+		// this should never happen.
+		return fmt.Errorf("unable to mark flag \"platform\" as required: %w", err)
+	}
 
-	// If the command is the pull one, then do not add the "depends-on" flag.
-	if cmd.Name() != "pull" {
+	// Add the "depends-on" flag for "push" command only.
+	switch cmd.Name() {
+	case "push":
 		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", []string{},
 			`set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"`)
+	case "pull":
+		if len(art.Platforms) > 1 {
+			return fmt.Errorf("--platform can be specified only one time for pull")
+		}
 	}
 
 	return nil
 }
 
-// GetOS return the operating system taken from platform.
-func (art *ArtifactOptions) GetOS() string {
-	tokens := strings.Split(art.Platform, "/")
-	return tokens[0]
-}
+// OSArch returns the OS and the ARCH of the platform at index-th position.
+func (art *ArtifactOptions) OSArch(index int) (os, arch string) {
+	if index >= len(art.Platforms) || index < 0 {
+		return "", ""
+	}
 
-// GetArch return the architecture taken from platform.
-func (art *ArtifactOptions) GetArch() string {
-	tokens := strings.Split(art.Platform, "/")
-	return tokens[1]
+	tokens := strings.Split(art.Platforms[index], "/")
+	return tokens[0], tokens[1]
 }
