@@ -16,7 +16,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	k8s.io/kubectl v0.24.3
-	oras.land/oras-go/v2 v2.0.0-rc.2
+	oras.land/oras-go/v2 v2.0.0-rc.3
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/oras-project/artifacts-spec v1.0.0-rc.2 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
+	golang.org/x/sync v0.0.0-20220907140024-f12130a52804 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
