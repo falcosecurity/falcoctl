@@ -167,7 +167,10 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	defer rootReader.Close()
 
 	// Tag the root descriptor remotely.
-	repo.PushReference(ctx, *rootDesc, rootReader, repo.Reference.Reference)
+	err = repo.PushReference(ctx, *rootDesc, rootReader, repo.Reference.Reference)
+	if err != nil {
+		return nil, err
+	}
 	if len(o.Tags) > 0 {
 		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, oras.DefaultTagNOptions); err != nil {
 			return nil, err
@@ -225,7 +228,8 @@ func (p *Pusher) updateIndex(indexDesc *v1.Index, manifestDesc *v1.Descriptor) *
 	return indexDesc
 }
 
-func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store, artifactType oci.ArtifactType, artifactPath string) (*v1.Descriptor, error) {
+func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store,
+	artifactType oci.ArtifactType, artifactPath string) (*v1.Descriptor, error) {
 	var layerMediaType string
 
 	switch artifactType {
@@ -244,7 +248,8 @@ func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store, arti
 	return &desc, nil
 }
 
-func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store, artifactType oci.ArtifactType, dependencies []string) (*v1.Descriptor, error) {
+func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
+	artifactType oci.ArtifactType, dependencies []string) (*v1.Descriptor, error) {
 	var layerMediaType string
 	// Create config and fill common fields of the config (empty for now).
 	artifactConfig := oci.ArtifactConfig{}
@@ -307,7 +312,8 @@ func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaTy
 	return &desc, nil
 }
 
-func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store, configDesc, dataDesc *v1.Descriptor, platform string) (*v1.Descriptor, error) {
+func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store,
+	configDesc, dataDesc *v1.Descriptor, platform string) (*v1.Descriptor, error) {
 	// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
 	packOptions := oras.PackOptions{ConfigDescriptor: configDesc}
 	desc, err := oras.Pack(ctx, fileStore, []v1.Descriptor{*dataDesc}, packOptions)
