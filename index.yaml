@@ -129,6 +129,17 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
+- name: k8saudit-eks
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/k8saudit-eks
+  description: Read Kubernetes Audit Events from AWS EKS Clusters
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit-eks
+  keywords: []
+  license: Apache-2.0
+  maintainers: []
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit-eks
 - name: k8saudit-rules
   type: rulesfile
   registry: ghcr.io
