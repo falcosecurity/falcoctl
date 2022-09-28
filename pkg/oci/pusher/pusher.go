@@ -19,10 +19,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/opencontainers/image-spec/specs-go"
@@ -180,52 +178,6 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	return &oci.RegistryResult{
 		Digest: string(rootDesc.Digest),
 	}, nil
-}
-
-func (p *Pusher) retrieveIndex(ctx context.Context, repo *remote.Repository) (*v1.Index, error) {
-	var indexBytes []byte
-	var index v1.Index
-
-	ref := repo.Reference.String()
-	indexDesc, reader, err := repo.FetchReference(ctx, repo.Reference.Reference)
-	if err != nil {
-		if strings.Contains(err.Error(), fmt.Sprintf("%s: not found", repo.Reference.Reference)) {
-			return nil, fmt.Errorf("unable to download image index for ref %s, %w", ref, ErrNotFound)
-		}
-		return nil, fmt.Errorf("unable to download image index for ref %s: %w", ref, err)
-	}
-
-	// Check if the descriptor has media type image index.
-	if indexDesc.MediaType != v1.MediaTypeImageIndex {
-		return nil, fmt.Errorf("the pulled descriptor for ref %q has media type %q while expecting %q",
-			ref, indexDesc.MediaType, v1.MediaTypeImageIndex)
-	}
-
-	if indexBytes, err = io.ReadAll(reader); err != nil {
-		return nil, fmt.Errorf("unable to read index from reader for ref %q: %w", ref, err)
-	}
-
-	if err = json.Unmarshal(indexBytes, &index); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal index for ref %q: %w", ref, err)
-	}
-	return &index, nil
-}
-
-func (p *Pusher) updateIndex(indexDesc *v1.Index, manifestDesc *v1.Descriptor) *v1.Index {
-	// Check if the index already contains the manifest for the given platform.
-	for i, m := range indexDesc.Manifests {
-		// If we find a manifest in the index that has the same platform as the artifact that we are currently
-		// processing it means that we are going to overwrite it with the current version. Only if the digests are
-		// different.
-		if reflect.DeepEqual(m.Platform, manifestDesc.Platform) {
-			// Remove manifest from the index.
-			indexDesc.Manifests = append(indexDesc.Manifests[:i], indexDesc.Manifests[i+1:]...)
-			break
-		}
-	}
-
-	indexDesc.Manifests = append(indexDesc.Manifests, *manifestDesc)
-	return indexDesc
 }
 
 func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store,
