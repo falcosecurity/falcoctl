@@ -95,6 +95,7 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch descriptor with digest %q: %w", desc.Digest, err)
 	}
+	defer descReader.Close()
 
 	var manifest v1.Manifest
 	descBytes, err := io.ReadAll(descReader)
