@@ -20,9 +20,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2/registry"
 
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
@@ -97,25 +97,33 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	// Install artifacts
 	for _, name := range args {
 		var ref string
-		if strings.ContainsAny(name, ":@") {
-			ref = name
-		} else {
+
+		parsedRef, err := registry.ParseReference(name)
+
+		switch {
+		case err != nil:
+			fmt.Println(parsedRef)
 			entry, ok := mergedIndexes.EntryByName(name)
 			if !ok {
 				o.Printer.Warning.Printf("cannot find %s among the configured indexes, skipping\n", name)
 				continue
 			}
-			ref = fmt.Sprintf("%s/%s:latest", entry.Registry, entry.Repository)
+			ref = fmt.Sprintf("%s/%s:%s", entry.Registry, entry.Repository, oci.DefaultTag)
+		case parsedRef.Reference == "":
+			parsedRef.Reference = oci.DefaultTag
+			ref = parsedRef.String()
+		default:
+			ref = parsedRef.String()
 		}
 
 		o.Printer.Info.Printfln("Preparing to pull %q", ref)
 
-		registry, err := utils.GetRegistryFromRef(ref)
+		reg, err := utils.GetRegistryFromRef(ref)
 		if err != nil {
 			return err
 		}
 
-		puller, err := o.getPuller(ctx, registry)
+		puller, err := o.getPuller(ctx, reg)
 		if err != nil {
 			return err
 		}
@@ -159,15 +167,15 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	return nil
 }
 
-func (o *artifactInstallOptions) getPuller(ctx context.Context, registry string) (*ocipuller.Puller, error) {
-	cred, err := o.credentialStore.Credential(ctx, registry)
+func (o *artifactInstallOptions) getPuller(ctx context.Context, reg string) (*ocipuller.Puller, error) {
+	cred, err := o.credentialStore.Credential(ctx, reg)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := utils.CheckRegistryConnection(ctx, &cred, registry, o.Printer); err != nil {
+	if err := utils.CheckRegistryConnection(ctx, &cred, reg, o.Printer); err != nil {
 		o.Printer.Verbosef("%s", err.Error())
-		return nil, fmt.Errorf("unable to connect to registry %q", registry)
+		return nil, fmt.Errorf("unable to connect to registry %q", reg)
 	}
 
 	client := authn.NewClient(cred)
