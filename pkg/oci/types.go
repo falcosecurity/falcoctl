@@ -59,9 +59,10 @@ func (e *ArtifactType) Type() string {
 // RegistryResult represents a generic result that is generated when
 // interacting with a remote OCI registry.
 type RegistryResult struct {
-	Digest string
-	Config ArtifactConfig
-	Type   ArtifactType
+	Digest   string
+	Config   ArtifactConfig
+	Type     ArtifactType
+	Filename string
 }
 
 // ArtifactConfig is the struct stored in the config layer of rulesfile and plugin artifacts. Each type fills only the fields of interest.
