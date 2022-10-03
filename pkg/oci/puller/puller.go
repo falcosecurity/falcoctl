@@ -16,7 +16,9 @@ package puller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
@@ -47,7 +49,7 @@ func NewPuller(client *auth.Client, tracker ProgressTracker) *Puller {
 
 // Pull an artifact from a remote registry.
 // Ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
-func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, destDir, os, arch string) (*oci.RegistryResult, error) {
+func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.RegistryResult, error) {
 	fileStore := file.New(destDir)
 
 	repo, err := remote.NewRepository(ref)
@@ -56,6 +58,12 @@ func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, d
 	}
 	repo.Client = p.Client
 
+	// if no tag was specified, "latest" is used
+	if repo.Reference.Reference == "" {
+		ref += ":" + oci.DefaultTag
+		repo.Reference.Reference = oci.DefaultTag
+	}
+
 	refDesc, _, err := repo.FetchReference(ctx, ref)
 	if err != nil {
 		return nil, err
@@ -63,7 +71,7 @@ func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, d
 
 	copyOpts := oras.CopyOptions{}
 	copyOpts.Concurrency = 1
-	if artifactType == oci.Plugin && refDesc.MediaType == v1.MediaTypeImageIndex {
+	if refDesc.MediaType == v1.MediaTypeImageIndex {
 		plt := &v1.Platform{
 			OS:           os,
 			Architecture: arch,
@@ -83,7 +91,37 @@ func (p *Puller) Pull(ctx context.Context, artifactType oci.ArtifactType, ref, d
 			repo.Reference.Repository, repo.Reference.Reference, repo.Reference.Repository, err)
 	}
 
+	descReader, err := repo.Fetch(ctx, desc)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch descriptor with digest %q: %w", desc.Digest, err)
+	}
+
+	var manifest v1.Manifest
+	descBytes, err := io.ReadAll(descReader)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read bytes from descriptor: %w", err)
+	}
+
+	if err = json.Unmarshal(descBytes, &manifest); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
+	}
+
+	if len(manifest.Layers) < 1 {
+		return nil, fmt.Errorf("no layers in manifest")
+	}
+
+	var artifactType oci.ArtifactType
+	switch manifest.Layers[0].MediaType {
+	case oci.FalcoPluginLayerMediaType:
+		artifactType = oci.Plugin
+	case oci.FalcoRulesfileLayerMediaType:
+		artifactType = oci.Rulesfile
+	default:
+		return nil, fmt.Errorf("unknown media type: %q", manifest.Layers[0].MediaType)
+	}
+
 	return &oci.RegistryResult{
 		Digest: string(desc.Digest),
+		Type:   artifactType,
 	}, nil
 }
