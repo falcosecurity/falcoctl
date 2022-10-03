@@ -37,45 +37,35 @@ var platformRgx = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
 
 // Validate validates the options passed by the user.
 func (art *ArtifactOptions) Validate() error {
-	switch art.ArtifactType {
-	case oci.Plugin:
-		for _, platform := range art.Platforms {
-			if ok := platformRgx.MatchString(platform); !ok {
-				return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
-					"and to satisfy the following regexp %s", platform, platformRgx.String())
-			}
+	for _, platform := range art.Platforms {
+		if ok := platformRgx.MatchString(platform); !ok {
+			return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
+				"and to satisfy the following regexp %s", platform, platformRgx.String())
 		}
-		// TODO: cannot check that len(platforms) matches len(filepaths) here
-	case oci.Rulesfile:
-		if len(art.Platforms) > 0 {
-			return fmt.Errorf("--platform can be used only for plugins")
-		}
-	default:
-		// should never happen since we already validate the artifact type ad parsing time.
-		return fmt.Errorf("unsupported artifact type: must be one of rule or plugin")
 	}
+	// TODO: cannot check that len(platforms) matches len(filepaths) here
 
 	return nil
 }
 
 // AddFlags registers the artifacts flags.
 func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
-	cmd.Flags().Var(&art.ArtifactType, "type",
-		`type of artifact to be pushed. Allowed values: "rulesfile", "plugin"`)
-	if err := cmd.MarkFlagRequired("type"); err != nil {
-		// this should never happen.
-		return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
-	}
-
-	cmd.Flags().StringArrayVarP(&art.Tags, "tag", "t", nil,
-		"additional artifact tag. Can be repeated multiple times")
-
 	cmd.Flags().StringArrayVar(&art.Platforms, "platform", nil,
 		"os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)")
 
 	// Add the "depends-on" flag for "push" command only.
 	switch cmd.Name() {
 	case "push":
+		cmd.Flags().StringArrayVarP(&art.Tags, "tag", "t", nil,
+			"additional artifact tag. Can be repeated multiple times")
+
+		cmd.Flags().Var(&art.ArtifactType, "type",
+			`type of artifact to be pushed. Allowed values: "rulesfile", "plugin"`)
+		if err := cmd.MarkFlagRequired("type"); err != nil {
+			// this should never happen.
+			return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
+		}
+
 		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", []string{},
 			`set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"`)
 	case "pull":
