@@ -32,6 +32,7 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 	}
 
 	cmd.AddCommand(NewArtifactSearchCmd(ctx, opt))
+	cmd.AddCommand(NewArtifactInstallCmd(ctx, opt))
 
 	return cmd
 }
