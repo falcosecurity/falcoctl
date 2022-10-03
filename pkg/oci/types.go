@@ -61,6 +61,7 @@ func (e *ArtifactType) Type() string {
 type RegistryResult struct {
 	Digest string
 	Config ArtifactConfig
+	Type   ArtifactType
 }
 
 // ArtifactConfig is the struct stored in the config layer of rulesfile and plugin artifacts. Each type fills only the fields of interest.
