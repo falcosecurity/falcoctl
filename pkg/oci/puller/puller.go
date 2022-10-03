@@ -91,7 +91,7 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 			repo.Reference.Repository, repo.Reference.Reference, repo.Reference.Repository, err)
 	}
 
-	manifest, err := manifestFromDesc(ctx, localTarget, desc)
+	manifest, err := manifestFromDesc(ctx, localTarget, &desc)
 	if err != nil {
 		return nil, err
 	}
@@ -115,10 +115,10 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 	}, nil
 }
 
-func manifestFromDesc(ctx context.Context, target oras.Target, desc v1.Descriptor) (*v1.Manifest, error) {
+func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descriptor) (*v1.Manifest, error) {
 	var manifest v1.Manifest
 
-	descReader, err := target.Fetch(ctx, desc)
+	descReader, err := target.Fetch(ctx, *desc)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch descriptor with digest %q: %w", desc.Digest, err)
 	}
