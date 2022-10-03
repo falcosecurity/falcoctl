@@ -89,7 +89,7 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 // RunPull executes the business logic for the pull command.
 func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 	ref := args[0]
-	o.Printer.Info.Printfln("Preparing to pull artifact %q of type %q", args[0], o.ArtifactType)
+	o.Printer.Info.Printfln("Preparing to pull artifact %q", args[0])
 
 	registry, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
@@ -125,12 +125,13 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 	if len(o.ArtifactOptions.Platforms) > 0 {
 		os, arch = o.OSArch(0)
 	}
-	res, err := puller.Pull(ctx, o.ArtifactType, ref, o.destDir, os, arch)
+
+	res, err := puller.Pull(ctx, ref, o.destDir, os, arch)
 	if err != nil {
 		return err
 	}
 
-	o.Printer.Success.Printfln("Artifact pulled. Digest: %q", res.Digest)
+	o.Printer.Success.Printfln("Artifact of type %q pulled. Digest: %q", res.Type, res.Digest)
 
 	return nil
 }
