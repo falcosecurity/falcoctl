@@ -17,7 +17,6 @@ package pusher
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,13 +39,6 @@ const (
 	// ArtifactsIndexName is the name of the index containing all manifests.
 	ArtifactsIndexName = "index"
 )
-
-var (
-	// ErrNotFound it is wrapped in not found errors returned by the ORAS library.
-	ErrNotFound = errNotFound()
-)
-
-func errNotFound() error { return errors.New("not found") }
 
 // ProgressTracker type of the tracker that the pusher accepts. It implements the tracker logic.
 type ProgressTracker func(target oras.Target) oras.Target
