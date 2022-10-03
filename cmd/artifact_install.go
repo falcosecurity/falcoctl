@@ -77,24 +77,10 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		return err
 	}
 
-	var allIndexes []*index.Index
-
-	o.Printer.Info.Println("Loading index files ...")
-	for _, indexConfigEntry := range indexConfig.Configs {
-		nameYaml := fmt.Sprintf("%s%s", indexConfigEntry.Name, ".yaml")
-		o.Printer.Verbosef("Loading index: %q", nameYaml)
-		i := index.New(indexConfigEntry.Name)
-		err := i.Read(filepath.Join(falcoctlPath, nameYaml))
-		if err != nil {
-			return fmt.Errorf("cannot load index %s: %w", i.Name, err)
-		}
-		allIndexes = append(allIndexes, i)
+	mergedIndexes, err := utils.Indexes(indexConfig, falcoctlPath)
+	if err != nil {
+		return err
 	}
-
-	o.Printer.Info.Println("Merging all configured indexes ...")
-	mergedIndexes := index.NewMergedIndexes()
-	mergedIndexes.Merge(allIndexes...)
-	o.Printer.Verbosef("All configured indexes have been merged: %d", len(allIndexes))
 
 	o.credentialStore, err = authn.NewStore([]string{}...)
 	if err != nil {
