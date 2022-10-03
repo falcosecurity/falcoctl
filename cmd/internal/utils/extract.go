@@ -17,6 +17,7 @@ package utils
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -32,10 +33,10 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) error {
 
 	tarReader := tar.NewReader(uncompressedStream)
 
-	for true {
+	for {
 		header, err := tarReader.Next()
 
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 
@@ -45,19 +46,36 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			return fmt.Errorf("unexepected dir inside the archive. Expected to find only files without any tree structure.")
+			return fmt.Errorf("unexepected dir inside the archive, expected to find only files without any tree structure")
 		case tar.TypeReg:
-			outFile, err := os.Create(filepath.Join(destDir, header.Name))
+			outFile, err := os.Create(filepath.Clean(filepath.Join(destDir, filepath.Clean(header.Name))))
 			if err != nil {
 				return err
 			}
-			if _, err := io.Copy(outFile, tarReader); err != nil {
+			if err := copyInChunks(outFile, tarReader); err != nil {
 				return err
 			}
-			outFile.Close()
+			err = outFile.Close()
+			if err != nil {
+				return err
+			}
 
 		default:
 			return fmt.Errorf("extractTarGz: uknown type: %b in %s", header.Typeflag, header.Name)
+		}
+	}
+
+	return nil
+}
+
+func copyInChunks(dst io.Writer, src io.Reader) error {
+	for {
+		_, err := io.CopyN(dst, src, 1024)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return err
 		}
 	}
 
