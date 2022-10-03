@@ -91,7 +91,7 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 			repo.Reference.Repository, repo.Reference.Reference, repo.Reference.Repository, err)
 	}
 
-	descReader, err := repo.Fetch(ctx, desc)
+	descReader, err := localTarget.Fetch(ctx, desc)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch descriptor with digest %q: %w", desc.Digest, err)
 	}
