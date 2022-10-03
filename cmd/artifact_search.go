@@ -16,11 +16,10 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -56,21 +55,10 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 		return err
 	}
 
-	var allIndexes []*index.Index
-
-	// When reading from this file, entries are already ordered by added time.
-	for _, indexConfigEntry := range indexConfig.Configs {
-		nameYaml := fmt.Sprintf("%s%s", indexConfigEntry.Name, ".yaml")
-		i := index.New(indexConfigEntry.Name)
-		err := i.Read(filepath.Join(falcoctlPath, nameYaml))
-		if err != nil {
-			return fmt.Errorf("cannot search: %w", err)
-		}
-		allIndexes = append(allIndexes, i)
+	mergedIndexes, err := utils.Indexes(indexConfig, falcoctlPath)
+	if err != nil {
+		return err
 	}
-
-	mergedIndexes := index.NewMergedIndexes()
-	mergedIndexes.Merge(allIndexes...)
 
 	resultEntries := mergedIndexes.SearchByKeywords(args...)
 
