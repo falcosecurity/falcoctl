@@ -91,13 +91,39 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 			repo.Reference.Repository, repo.Reference.Reference, repo.Reference.Repository, err)
 	}
 
-	descReader, err := localTarget.Fetch(ctx, desc)
+	manifest, err := manifestFromDesc(ctx, localTarget, desc)
+	if err != nil {
+		return nil, err
+	}
+
+	var artifactType oci.ArtifactType
+	switch manifest.Layers[0].MediaType {
+	case oci.FalcoPluginLayerMediaType:
+		artifactType = oci.Plugin
+	case oci.FalcoRulesfileLayerMediaType:
+		artifactType = oci.Rulesfile
+	default:
+		return nil, fmt.Errorf("unknown media type: %q", manifest.Layers[0].MediaType)
+	}
+
+	filename := manifest.Layers[0].Annotations[v1.AnnotationTitle]
+
+	return &oci.RegistryResult{
+		Digest:   string(desc.Digest),
+		Type:     artifactType,
+		Filename: filename,
+	}, nil
+}
+
+func manifestFromDesc(ctx context.Context, target oras.Target, desc v1.Descriptor) (*v1.Manifest, error) {
+	var manifest v1.Manifest
+
+	descReader, err := target.Fetch(ctx, desc)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch descriptor with digest %q: %w", desc.Digest, err)
 	}
 	defer descReader.Close()
 
-	var manifest v1.Manifest
 	descBytes, err := io.ReadAll(descReader)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read bytes from descriptor: %w", err)
@@ -111,18 +137,5 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 		return nil, fmt.Errorf("no layers in manifest")
 	}
 
-	var artifactType oci.ArtifactType
-	switch manifest.Layers[0].MediaType {
-	case oci.FalcoPluginLayerMediaType:
-		artifactType = oci.Plugin
-	case oci.FalcoRulesfileLayerMediaType:
-		artifactType = oci.Rulesfile
-	default:
-		return nil, fmt.Errorf("unknown media type: %q", manifest.Layers[0].MediaType)
-	}
-
-	return &oci.RegistryResult{
-		Digest: string(desc.Digest),
-		Type:   artifactType,
-	}, nil
+	return &manifest, nil
 }
