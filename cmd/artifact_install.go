@@ -22,7 +22,6 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
@@ -96,24 +95,9 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 	// Install artifacts
 	for _, name := range args {
-		var ref string
-
-		parsedRef, err := registry.ParseReference(name)
-
-		switch {
-		case err != nil:
-			fmt.Println(parsedRef)
-			entry, ok := mergedIndexes.EntryByName(name)
-			if !ok {
-				o.Printer.Warning.Printf("cannot find %s among the configured indexes, skipping\n", name)
-				continue
-			}
-			ref = fmt.Sprintf("%s/%s:%s", entry.Registry, entry.Repository, oci.DefaultTag)
-		case parsedRef.Reference == "":
-			parsedRef.Reference = oci.DefaultTag
-			ref = parsedRef.String()
-		default:
-			ref = parsedRef.String()
+		ref, err := utils.ParseReference(mergedIndexes, name)
+		if err != nil {
+			return err
 		}
 
 		o.Printer.Info.Printfln("Preparing to pull %q", ref)
@@ -142,8 +126,8 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			destDir = o.rulesfilesDir
 		}
 
-		result.Filename = filepath.Join(tmpDir, result.Filename)
 		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("Extracting and installing %q %q", result.Type, result.Filename))
+		result.Filename = filepath.Join(tmpDir, result.Filename)
 
 		f, err := os.Open(result.Filename)
 		if err != nil {
