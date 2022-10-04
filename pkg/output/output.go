@@ -33,6 +33,8 @@ const (
 	ArtifactSearch TableHeader = iota
 	// IndexList identifies the header for index list.
 	IndexList
+	// ArtifactInfo identifies the header for artifact info
+	ArtifactInfo
 )
 
 var spinnerCharset = []string{"⠈⠁", "⠈⠑", "⠈⠱", "⠈⡱", "⢀⡱", "⢄⡱", "⢄⡱", "⢆⡱", "⢎⡱", "⢎⡰", "⢎⡠", "⢎⡀", "⢎⠁", "⠎⠁", "⠊⠁"}
@@ -176,6 +178,8 @@ func (p *Printer) PrintTable(header TableHeader, data [][]string) error {
 		table = [][]string{{"INDEX", "ARTIFACT", "TYPE", "REGISTRY", "REPOSITORY"}}
 	case IndexList:
 		table = [][]string{{"NAME", "URL", "ADDED", "UPDATED"}}
+	case ArtifactInfo:
+		table = [][]string{{"REF", "TAGS"}}
 	default:
 		return fmt.Errorf("unsupported output table")
 	}
