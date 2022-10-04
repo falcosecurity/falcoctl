@@ -81,6 +81,10 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		return err
 	}
 
+	if len(mergedIndexes.Entries) < 1 {
+		o.Printer.Warning.Println("No configured index. Consider to configure one using the 'index add' command.")
+	}
+
 	o.credentialStore, err = authn.NewStore([]string{}...)
 	if err != nil {
 		return err
@@ -137,7 +141,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		// Extract artifact and move it to its destination directory
 		err = utils.ExtractTarGz(f, destDir)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot extract %q to %q: %w", result.Filename, destDir, err)
 		}
 
 		err = os.Remove(result.Filename)

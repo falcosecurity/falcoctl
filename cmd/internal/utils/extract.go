@@ -52,11 +52,10 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) error {
 			if err != nil {
 				return err
 			}
-			if err := copyInChunks(outFile, tarReader); err != nil {
+			if err = copyInChunks(outFile, tarReader); err != nil {
 				return err
 			}
-			err = outFile.Close()
-			if err != nil {
+			if err = outFile.Close(); err != nil {
 				return err
 			}
 
