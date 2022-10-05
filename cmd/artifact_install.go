@@ -43,7 +43,7 @@ type artifactInstallOptions struct {
 	pluginsDir      string
 }
 
-// NewArtifactInstallCmd returns the artifact search command.
+// NewArtifactInstallCmd returns the artifact install command.
 func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := artifactInstallOptions{
 		CommonOptions: opt,
