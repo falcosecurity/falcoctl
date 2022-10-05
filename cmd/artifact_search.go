@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -31,6 +32,15 @@ const (
 
 type artifactSearchOptions struct {
 	*options.CommonOptions
+	minScore float64
+}
+
+func (o *artifactSearchOptions) Validate() error {
+	if o.minScore <= 0 || o.minScore > 1 {
+		return fmt.Errorf("minScore must be a number within (0,1]")
+	}
+
+	return nil
 }
 
 // NewArtifactSearchCmd returns the artifact search command.
@@ -45,10 +55,16 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		Short:                 "Search an artifact by keywords",
 		Long:                  "Search an artifact by keywords",
 		Args:                  cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			o.Printer.CheckErr(o.Validate())
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunArtifactSearch(ctx, args))
 		},
 	}
+
+	cmd.Flags().Float64VarP(&o.minScore, "min-score", "", minScore,
+		"the minimum score used to match artifact names with search keywords")
 
 	return cmd
 }
@@ -64,7 +80,7 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 		return err
 	}
 
-	resultEntries := mergedIndexes.SearchByKeywords(minScore, args...)
+	resultEntries := mergedIndexes.SearchByKeywords(o.minScore, args...)
 
 	var data [][]string
 	for _, entry := range resultEntries {
