@@ -21,6 +21,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
+// Tags returns the list of all available tags of an artifact given a reference to a repository.
 func Tags(ctx context.Context, ref string, client *auth.Client) ([]string, error) {
 	repository, err := remote.NewRepository(ref)
 	if err != nil {
