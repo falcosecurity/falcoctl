@@ -25,6 +25,10 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
+const (
+	minScore = 0.65
+)
+
 type artifactSearchOptions struct {
 	*options.CommonOptions
 }
@@ -60,7 +64,7 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 		return err
 	}
 
-	resultEntries := mergedIndexes.SearchByKeywords(args...)
+	resultEntries := mergedIndexes.SearchByKeywords(minScore, args...)
 
 	var data [][]string
 	for _, entry := range resultEntries {
