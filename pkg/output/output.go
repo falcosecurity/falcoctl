@@ -33,7 +33,7 @@ const (
 	ArtifactSearch TableHeader = iota
 	// IndexList identifies the header for index list.
 	IndexList
-	// ArtifactInfo identifies the header for artifact info
+	// ArtifactInfo identifies the header for artifact info.
 	ArtifactInfo
 )
 

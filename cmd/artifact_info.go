@@ -19,14 +19,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2/registry"
+
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
-	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry"
 )
 
 type artifactInfoOptions struct {
@@ -85,12 +86,12 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			ref = parsedRef.String()
 		}
 
-		registry, err := utils.GetRegistryFromRef(ref)
+		reg, err := utils.GetRegistryFromRef(ref)
 		if err != nil {
 			return err
 		}
 
-		cred, err := credentialStore.Credential(ctx, registry)
+		cred, err := credentialStore.Credential(ctx, reg)
 		if err != nil {
 			return err
 		}
@@ -103,7 +104,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			continue
 		}
 
-		joinedTags := strings.Join(tags[:], " ")
+		joinedTags := strings.Join(tags, " ")
 		data = append(data, []string{ref, joinedTags})
 	}
 
