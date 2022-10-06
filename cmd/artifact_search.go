@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	minScore = 0.65
+	defaultMinScore = 0.65
 )
 
 type artifactSearchOptions struct {
@@ -63,7 +63,7 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		},
 	}
 
-	cmd.Flags().Float64VarP(&o.minScore, "min-score", "", minScore,
+	cmd.Flags().Float64VarP(&o.minScore, "min-score", "", defaultMinScore,
 		"the minimum score used to match artifact names with search keywords")
 
 	return cmd
