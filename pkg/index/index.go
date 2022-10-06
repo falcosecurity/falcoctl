@@ -193,7 +193,7 @@ func (m *MergedIndexes) Merge(indexes ...*Index) {
 // minScore is the minimum score to consider a match between a name of an artifact and a keyword.
 // if minScore is not reached, we fallback to a simple partial matching on keywords.
 func (i *Index) SearchByKeywords(minScore float64, keywords ...string) []*Entry {
-	var matches []*Entry
+	matches := make(map[*Entry]struct{})
 
 	for _, entry := range i.Entries {
 		entryKeywords := strings.Join(entry.Keywords, " ")
@@ -202,27 +202,16 @@ func (i *Index) SearchByKeywords(minScore float64, keywords ...string) []*Entry 
 			// Compute score between the keyword and entry name.
 			score := score(entry.Name, keyword)
 
-			if score >= minScore {
-				matches = append(matches, entry)
-				break
-			}
-
-			// Fallback to partial match on keywords.
-			if strings.Contains(entryKeywords, keyword) {
-				matches = append(matches, entry)
+			if score >= minScore || strings.Contains(entryKeywords, keyword) {
+				matches[entry] = struct{}{}
 				break
 			}
 		}
 	}
 
-	// Remove possible duplicates from result.
-	duplicatesMap := make(map[*Entry]bool)
-	var result []*Entry
-	for _, entry := range matches {
-		if _, ok := duplicatesMap[entry]; !ok {
-			duplicatesMap[entry] = true
-			result = append(result, entry)
-		}
+	result := make([]*Entry, 0, len(matches))
+	for k := range matches {
+		result = append(result, k)
 	}
 
 	return result
