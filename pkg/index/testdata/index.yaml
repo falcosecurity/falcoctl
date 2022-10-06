@@ -1,0 +1,182 @@
+- name: cloudtrail
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/cloudtrail
+  description: Reads Cloudtrail JSON logs from files/S3 and injects as events
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail
+  keywords:
+    - audit
+    - user-activity
+    - api-usage
+    - aws
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail
+- name: cloudtrail-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/plugins/cloudtrail-rules
+  description: Reads Cloudtrail JSON logs from files/S3 and injects as events
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail
+  keywords:
+    - audit
+    - user-activity
+    - api-usage
+    - aws
+    - cloudtrail-rules
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail/rules
+- name: dummy
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/dummy
+  description: Reference plugin used to document interface
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/dummy
+  keywords: []
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/dummy
+- name: dummy_c
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/dummy_c
+  description: Like dummy, but written in C++
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/dummy_c
+  keywords: []
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/dummy_c
+- name: github
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/github
+  description: Github Webhook Events
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/github
+  keywords:
+    - audit
+    - log-events
+    - webhook
+    - github-activity
+    - github
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/github
+- name: github-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/plugins/github-rules
+  description: Github Webhook Events
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/github
+  keywords:
+    - audit
+    - log-events
+    - webhook
+    - github-activity
+    - github
+    - github-rules
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/github/rules
+- name: json
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/json
+  description: Extract values from any JSON payload
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/json
+  keywords:
+    - json-events
+    - json-payload
+    - extractor
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/json
+- name: k8saudit
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/k8saudit
+  description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
+- name: k8saudit-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/plugins/k8saudit-rules
+  description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+    - k8saudit-rules
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit/rules
+- name: okta
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/okta
+  description: Okta Log Events
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
+  keywords:
+    - audit
+    - log-events
+    - okta
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/okta
+- name: okta-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/plugins/okta-rules
+  description: Okta Log Events
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
+  keywords:
+    - audit
+    - log-events
+    - okta
+    - okta-rules
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/okta/rules
