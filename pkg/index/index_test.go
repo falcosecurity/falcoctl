@@ -15,8 +15,12 @@
 package index
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -215,4 +219,27 @@ func TestNormalize(t *testing.T) {
 		t.Error("Index not normalized as expected", string(indexBytes))
 	}
 
+}
+
+func TestFetch(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("invalid request")
+		}
+
+		bytes, err := os.ReadFile("testdata/index.yaml")
+		if err != nil {
+			t.Error(err)
+		}
+
+		if _, err := w.Write(bytes); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer ts.Close()
+
+	_, err := FetchIndex(context.Background(), ts.URL, "falcosecurity")
+	if err != nil {
+		t.Errorf("cannot fetch index")
+	}
 }
