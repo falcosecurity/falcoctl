@@ -1,0 +1,9 @@
+configs:
+    - added_timestamp: "2022-10-07 10:53:40"
+      name: falcosecurity
+      updated_timestamp: "2022-10-07 10:53:40"
+      url: https://falcosecurity.github.io/falcoctl/index.yaml
+    - added_timestamp: "2022-10-07 10:53:40"
+      name: test
+      updated_timestamp: "2022-10-07 12:06:21"
+      url: https://falcosecurity.github.io/test/index.yaml
