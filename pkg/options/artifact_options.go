@@ -66,7 +66,7 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 			return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
 		}
 
-		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", []string{},
+		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", nil,
 			`set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"`)
 	case "pull":
 		if len(art.Platforms) > 1 {

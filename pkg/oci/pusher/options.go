@@ -54,9 +54,10 @@ func WithFilepathsAndPlatforms(filepaths, platforms []string) Option {
 	return func(o *opts) error {
 		if len(filepaths) != len(platforms) {
 			return fmt.Errorf(
-				`"filepaths" length (%d) must match "platforms" length (%d)`,
+				`"filepaths" length (%d) must match "platforms" length (%d): %w`,
 				len(filepaths),
 				len(platforms),
+				ErrMismatchFilepathAndPlatform,
 			)
 		}
 		o.Filepaths = filepaths
