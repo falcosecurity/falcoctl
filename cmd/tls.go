@@ -18,17 +18,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewInstall creates the `install` command
-func NewInstallCmd() *cobra.Command {
+// NewTLSCmd return the tls command.
+func NewTLSCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                   "install",
+		Use:                   "tls",
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
-		Short:                 "Install a component with falcoctl",
-		Long:                  `Install a component with falcoctl`,
+		Short:                 "Generate and install TLS material for Falco",
+		Long:                  `Generate and install TLS material for Falco`,
 	}
 
-	cmd.AddCommand(NewInstallTLSCmd())
+	cmd.AddCommand(NewTLSInstallCmd())
 
 	return cmd
 }

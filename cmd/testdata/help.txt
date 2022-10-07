@@ -8,8 +8,8 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
   index       Interact with index
-  install     Install a component with falcoctl
   registry    Interact with OCI registries
+  tls         Generate and install TLS material for Falco
   version     Print the falcoctl version information
 
 Flags:
