@@ -23,8 +23,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// FetchIndex retrieves a remote index using its URL.
-func FetchIndex(ctx context.Context, url, name string) (*Index, error) {
+// Fetch retrieves a remote index using its URL.
+func Fetch(ctx context.Context, url, name string) (*Index, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("cannot fetch index: %w", err)
