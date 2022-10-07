@@ -243,3 +243,25 @@ func TestFetch(t *testing.T) {
 		t.Errorf("cannot fetch index")
 	}
 }
+
+func TestConfig(t *testing.T) {
+	c, err := NewConfig("testdata/config.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+
+	c.Add(ConfigEntry{
+		Name: "test",
+		URL:  "https://test.com/index.yaml",
+	})
+
+	_, err = c.Get("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = c.Remove("test")
+	if err != nil {
+		t.Error(err)
+	}
+}
