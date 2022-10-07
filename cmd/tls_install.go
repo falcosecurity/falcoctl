@@ -29,12 +29,12 @@ const (
 	defaultCertsDays    = 365
 )
 
-// NewInstallTLS creates the `install tls` command
-func NewInstallTLSCmd() *cobra.Command {
+// NewTLSInstallCmd returns the tls install command.
+func NewTLSInstallCmd() *cobra.Command {
 	options := tls.Options{}
 
 	cmd := &cobra.Command{
-		Use:                   "tls",
+		Use:                   "install",
 		DisableFlagsInUseLine: true,
 		Short:                 "Generate and install TLS material to be used with the Falco gRPC server",
 		Long: `Falco gRPC server runs with mutually encrypted TLS by default.
