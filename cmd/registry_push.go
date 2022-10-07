@@ -127,16 +127,15 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 
 	client := authn.NewClient(cred)
 
-	pusher := ocipusher.NewPusher(client, newPushProgressTracker(o.Printer))
+	pusher := ocipusher.NewPusher(client, false, newPushProgressTracker(o.Printer))
 
 	opts := ocipusher.Options{
-		ocipusher.WithDependencies(o.Dependencies...),
 		ocipusher.WithTags(o.Tags...),
 	}
 
 	switch o.ArtifactType {
 	case oci.Plugin:
-		opts = append(opts, ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms))
+		opts = append(opts, ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms), ocipusher.WithDependencies(o.Dependencies...))
 	case oci.Rulesfile:
 		opts = append(opts, ocipusher.WithFilepaths(paths))
 	}

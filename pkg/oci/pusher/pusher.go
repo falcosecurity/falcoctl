@@ -17,6 +17,7 @@ package pusher
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,20 +41,33 @@ const (
 	ArtifactsIndexName = "index"
 )
 
+var (
+	// ErrInvalidPlatformFormat error when the platform is invalid.
+	ErrInvalidPlatformFormat = errors.New("invalid platform format")
+	// ErrMismatchFilepathAndPlatform error when the number of filepaths and platforms is not the same.
+	ErrMismatchFilepathAndPlatform = errors.New("number of filepaths and platform should be the same")
+	// ErrInvalidNumberRulesfiles error when the number of rulesfiles is not the one expected.
+	ErrInvalidNumberRulesfiles = errors.New("invalid number of rulesfiles")
+	// ErrInvalidDependenciesFormat error when the dependencies are invalid.
+	ErrInvalidDependenciesFormat = errors.New("invalid dependency format")
+)
+
 // ProgressTracker type of the tracker that the pusher accepts. It implements the tracker logic.
 type ProgressTracker func(target oras.Target) oras.Target
 
 // Pusher implements push operations.
 type Pusher struct {
-	Client  *auth.Client
-	tracker ProgressTracker
+	Client    *auth.Client
+	tracker   ProgressTracker
+	plainHTTP bool
 }
 
 // NewPusher create a new pusher that can be used for push operations.
-func NewPusher(client *auth.Client, tracker ProgressTracker) *Pusher {
+func NewPusher(client *auth.Client, plainHTTP bool, tracker ProgressTracker) *Pusher {
 	return &Pusher{
-		Client:  client,
-		tracker: tracker,
+		Client:    client,
+		tracker:   tracker,
+		plainHTTP: plainHTTP,
 	}
 }
 
@@ -72,11 +86,22 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, err
 	}
 
+	// First thing check that we do not have multiple rulesfiles.
+	if artifactType == oci.Rulesfile && len(o.Filepaths) != 1 {
+		return nil, fmt.Errorf("expecting 1 rulesfile object received %d: %w", len(o.Filepaths), ErrInvalidNumberRulesfiles)
+	}
+
 	// Create the object to interact with the remote repo.
+	// If handling plugins check that no dependencies have been configured.
+	if artifactType == oci.Plugin && len(o.Dependencies) != 0 {
+		return nil, fmt.Errorf("expecting no dependencies for plugin artifacts but received %s", o.Dependencies)
+	}
 	repo, err := remote.NewRepository(ref)
 	if err != nil {
 		return nil, err
 	}
+	// If plain http has been set, then set it.
+	repo.PlainHTTP = p.plainHTTP
 	repo.Client = p.Client
 
 	// Using ":latest" by default if no tag was provided.
@@ -135,12 +160,11 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 	}
 
-	switch len(manifestDescs) {
-	case 0:
-		panic("should never happen")
-	case 1:
+	if artifactType == oci.Rulesfile {
+		// We should have only one manifestDesc.
 		rootDesc = manifestDescs[0]
-	default:
+	} else {
+		// Here we are in the case when we are dealing with a plugin.
 		// Assuming this filestore to be memory only (size of the index should be less than 4MiB)
 		fileStore = file.New("")
 		if rootDesc, err = p.storeArtifactsIndex(ctx, fileStore, manifestDescs); err != nil {
@@ -148,19 +172,17 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 	}
 
-	// If we have only one manifest descriptor, fileStore points to the first and only file.Store we created.
-	// Otherwise, it points to the filestore containing the
 	rootReader, err := fileStore.Fetch(ctx, *rootDesc)
 	if err != nil {
 		return nil, err
 	}
 	defer rootReader.Close()
-
 	// Tag the root descriptor remotely.
 	err = repo.PushReference(ctx, *rootDesc, rootReader, repo.Reference.Reference)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(o.Tags) > 0 {
 		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, oras.DefaultTagNOptions); err != nil {
 			return nil, err
@@ -200,7 +222,7 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
 
 	err := artifactConfig.ParseDependencies(dependencies...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", err.Error(), ErrInvalidDependenciesFormat)
 	}
 
 	switch artifactType {
@@ -267,6 +289,9 @@ func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store,
 
 	if dataDesc.MediaType == oci.FalcoPluginLayerMediaType {
 		tokens := strings.Split(platform, "/")
+		if len(tokens) != 2 {
+			return nil, fmt.Errorf("platform %q: %w", platform, ErrInvalidPlatformFormat)
+		}
 		desc.Platform = &v1.Platform{
 			OS:           tokens[0],
 			Architecture: tokens[1],
