@@ -132,7 +132,7 @@ func TestMerge(t *testing.T) {
 
 	if mergedIndex.IndexByEntry(cloudtrail).Name != "index1" ||
 		mergedIndex.IndexByEntry(okta).Name != "index2" {
-		t.Errorf("cannot correctly retireve original index from merged index")
+		t.Errorf("cannot correctly retrieve original index from merged index")
 	}
 }
 
@@ -145,14 +145,14 @@ func TestSearchByKeywords(t *testing.T) {
 	})
 
 	// Test exact name.
-	exact_name := i.SearchByKeywords(1, "cloudtrail")
-	if len(exact_name) != 1 {
+	exactName := i.SearchByKeywords(1, "cloudtrail")
+	if len(exactName) != 1 {
 		t.Errorf("error in SearchByKeywords, expected to find one exact match")
 	}
 
 	// Test mistyped name.
-	mistyped_name := i.SearchByKeywords(0.8, "cloudtrailz")
-	if len(mistyped_name) != 1 {
+	mistypedName := i.SearchByKeywords(0.8, "cloudtrailz")
+	if len(mistypedName) != 1 {
 		t.Errorf("error in SearchByKeywords, expected to find a match even if keyword is mistyped")
 	}
 
@@ -161,20 +161,20 @@ func TestSearchByKeywords(t *testing.T) {
 		Name:     "github",
 		Keywords: []string{"webhook", "security", "audit"},
 	})
-	perfect_keyword_match := i.SearchByKeywords(1, "webhook")
-	if len(perfect_keyword_match) != 1 {
+	perfectKeyword := i.SearchByKeywords(1, "webhook")
+	if len(perfectKeyword) != 1 {
 		t.Errorf("error in SearchByKeywords, expected to find a perfect match with keyword")
 	}
 
 	// Test partial match
-	partial_keyword_match := i.SearchByKeywords(1, "web")
-	if len(partial_keyword_match) != 1 {
+	partialKeywordMatch := i.SearchByKeywords(1, "web")
+	if len(partialKeywordMatch) != 1 {
 		t.Errorf("error in SearchByKeywords, expected to find a partial match with keyword")
 	}
 
 	// Check that no duplicates are returned
-	no_duplicates := i.SearchByKeywords(1, "github", "webhook")
-	if len(no_duplicates) != 1 {
+	noDuplicates := i.SearchByKeywords(1, "github", "webhook")
+	if len(noDuplicates) != 1 {
 		t.Errorf("error in SearchByKeywords, not expecting duplicates")
 	}
 
@@ -238,7 +238,7 @@ func TestFetch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := FetchIndex(context.Background(), ts.URL, "falcosecurity")
+	_, err := Fetch(context.Background(), ts.URL, "falcosecurity")
 	if err != nil {
 		t.Errorf("cannot fetch index")
 	}

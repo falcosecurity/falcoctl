@@ -82,7 +82,7 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 		return nil
 	}
 
-	remoteIndex, err := index.FetchIndex(ctx, url, name)
+	remoteIndex, err := index.Fetch(ctx, url, name)
 	if err != nil {
 		return err
 	}
