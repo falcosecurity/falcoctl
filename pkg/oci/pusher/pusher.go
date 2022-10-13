@@ -151,7 +151,8 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 
 		// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
-		if manifestDescs[i], err = p.packManifest(ctx, fileStore, configDesc, dataDesc, platform); err != nil {
+		if manifestDescs[i], err = p.packManifest(ctx, fileStore, configDesc,
+			dataDesc, platform, o.AnnotationSource); err != nil {
 			return nil, err
 		}
 
@@ -167,7 +168,7 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		// Here we are in the case when we are dealing with a plugin.
 		// Assuming this filestore to be memory only (size of the index should be less than 4MiB)
 		fileStore = file.New("")
-		if rootDesc, err = p.storeArtifactsIndex(ctx, fileStore, manifestDescs); err != nil {
+		if rootDesc, err = p.storeArtifactsIndex(ctx, fileStore, manifestDescs, o.AnnotationSource); err != nil {
 			return nil, err
 		}
 	}
@@ -235,11 +236,17 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
 	return p.toFileStore(ctx, fileStore, layerMediaType, ConfigLayerName, artifactConfig)
 }
 
-func (p *Pusher) storeArtifactsIndex(ctx context.Context, fileStore *file.Store, manifestDescs []*v1.Descriptor) (*v1.Descriptor, error) {
+func (p *Pusher) storeArtifactsIndex(ctx context.Context, fileStore *file.Store,
+	manifestDescs []*v1.Descriptor, annotationSource string) (*v1.Descriptor, error) {
 	// fat manifest
 	index := &v1.Index{
 		Versioned: specs.Versioned{SchemaVersion: 2},
 		MediaType: v1.MediaTypeImageIndex,
+	}
+
+	if annotationSource != "" {
+		index.Annotations = make(map[string]string)
+		index.Annotations[v1.AnnotationSource] = annotationSource
 	}
 
 	// copy manifests
@@ -279,9 +286,18 @@ func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaTy
 }
 
 func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store,
-	configDesc, dataDesc *v1.Descriptor, platform string) (*v1.Descriptor, error) {
+	configDesc, dataDesc *v1.Descriptor, platform, annotationSource string) (*v1.Descriptor, error) {
 	// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
-	packOptions := oras.PackOptions{ConfigDescriptor: configDesc}
+	// In case annotation source is passed, we put it in the ManifestAnnotations.
+	var packOptions oras.PackOptions
+	if annotationSource != "" {
+		annotations := make(map[string]string)
+		annotations[v1.AnnotationSource] = annotationSource
+		packOptions = oras.PackOptions{ConfigDescriptor: configDesc, ManifestAnnotations: annotations}
+	} else {
+		packOptions = oras.PackOptions{ConfigDescriptor: configDesc}
+	}
+
 	desc, err := oras.Pack(ctx, fileStore, []v1.Descriptor{*dataDesc}, packOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate manifest for config layer %s and data layer %s: %w", configDesc.MediaType, dataDesc.MediaType, err)
