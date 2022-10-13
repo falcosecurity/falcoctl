@@ -131,6 +131,7 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 
 	opts := ocipusher.Options{
 		ocipusher.WithTags(o.Tags...),
+		ocipusher.WithAnnotationSource(o.AnnotationSource),
 	}
 
 	switch o.ArtifactType {
