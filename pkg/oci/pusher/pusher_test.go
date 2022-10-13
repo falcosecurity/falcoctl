@@ -39,6 +39,7 @@ var _ = Describe("Pusher", func() {
 		filePaths             ocipusher.Option
 		tags                  ocipusher.Option
 		dependencies          ocipusher.Option
+		annotationSource      ocipusher.Option
 		options               []ocipusher.Option
 		repoAndTag            = "/generic-repo:tag"
 		repo                  registry.Repository
@@ -46,6 +47,8 @@ var _ = Describe("Pusher", func() {
 		artifactType          oci.ArtifactType
 		listTags              []string
 		fetchedTags           []string
+		sourceKey             = v1.AnnotationSource
+		sourceValue           string
 		plainHTTP             = true
 		err                   error
 	)
@@ -103,14 +106,18 @@ var _ = Describe("Pusher", func() {
 			})
 
 			When("correct number of filepaths and platforms", func() {
-				Context("pushing only one plugin: 1 filepath, 1 platform with multiple tags", func() {
+				Context("pushing only one plugin: 1 filepath, 1 platform with multiple tags and with annotation source", func() {
 					BeforeEach(func() {
 						// Additional tags to be added to the artifact.
 						listTags = []string{"tag1", "tag2", "tag3"}
 						tags = ocipusher.WithTags(listTags...)
 						// One version of the artifact for a single platform.
 						filePathsAndPlatforms = ocipusher.WithFilepathsAndPlatforms([]string{testPluginTarball}, []string{testPluginPlatform1})
-						options = []ocipusher.Option{tags, filePathsAndPlatforms}
+						// Adding annotation source to the index.
+						sourceValue = "https://plugins/source/test"
+						annotationSource = ocipusher.WithAnnotationSource(sourceValue)
+						options = []ocipusher.Option{tags, filePathsAndPlatforms, annotationSource}
+
 						// Repo and default tag for the artifact
 						repoAndTag = "/plugin-test:latest"
 						repo, err = localRegistry.Repository(ctx, "plugin-test")
@@ -129,6 +136,9 @@ var _ = Describe("Pusher", func() {
 						Expect(d.Digest.String()).To(Equal(result.Digest))
 						Expect(index.Manifests).To(HaveLen(1))
 						Expect(fmt.Sprintf("%s/%s", index.Manifests[0].Platform.OS, index.Manifests[0].Platform.Architecture)).To(Equal(testPluginPlatform1))
+
+						// Check that annotation source is present and contains right value.
+						Expect(index.Annotations).To(HaveKeyWithValue(sourceKey, sourceValue))
 
 						// Check that the tags have also been pushed.
 						err = repo.Tags(ctx, "", func(tags []string) error {
