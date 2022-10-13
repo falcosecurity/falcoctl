@@ -17,10 +17,11 @@ package pusher
 import "fmt"
 
 type opts struct {
-	Filepaths    []string
-	Platforms    []string
-	Dependencies []string
-	Tags         []string
+	Filepaths        []string
+	Platforms        []string
+	Dependencies     []string
+	Tags             []string
+	AnnotationSource string
 }
 
 // Option is a functional option for pusher.
@@ -81,6 +82,14 @@ func WithDependencies(deps ...string) Option {
 func WithTags(tags ...string) Option {
 	return func(o *opts) error {
 		o.Tags = tags
+		return nil
+	}
+}
+
+// WithAnnotationSource sets the annotation source option.
+func WithAnnotationSource(annotationSource string) Option {
+	return func(o *opts) error {
+		o.AnnotationSource = annotationSource
 		return nil
 	}
 }
