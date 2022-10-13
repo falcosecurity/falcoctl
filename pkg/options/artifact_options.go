@@ -27,10 +27,11 @@ import (
 // ArtifactOptions artifact specific options. Commands that need these options
 // may embed this struct in their options.
 type ArtifactOptions struct {
-	ArtifactType oci.ArtifactType
-	Platforms    []string // orders matter (same as args)
-	Dependencies []string
-	Tags         []string
+	ArtifactType     oci.ArtifactType
+	Platforms        []string // orders matter (same as args)
+	Dependencies     []string
+	Tags             []string
+	AnnotationSource string
 }
 
 var platformRgx = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
@@ -68,6 +69,9 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 
 		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", nil,
 			`set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"`)
+
+		cmd.Flags().StringVar(&art.AnnotationSource, "annotation-source", "",
+			`set annotation source for the artifact`)
 	case "pull":
 		if len(art.Platforms) > 1 {
 			return fmt.Errorf("--platform can be specified only one time for pull")
