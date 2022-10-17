@@ -16,7 +16,9 @@ package oci
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/blang/semver"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
@@ -38,6 +40,42 @@ func Tags(ctx context.Context, ref string, client *auth.Client) ([]string, error
 	err = repository.Tags(ctx, "", tagRetriever)
 	if err != nil {
 		return nil, err
+	}
+
+	result, err = sortTags(result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func sortTags(tags []string) ([]string, error) {
+	var parsedVersions []semver.Version
+	var latest bool
+	for _, t := range tags {
+		if t == DefaultTag {
+			latest = true
+			continue
+		}
+
+		parsedVersion, err := semver.Parse(t)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse version %q", t)
+		}
+
+		parsedVersions = append(parsedVersions, parsedVersion)
+	}
+
+	semver.Sort(parsedVersions)
+
+	var result []string
+	for _, parsedVersion := range parsedVersions {
+		result = append(result, parsedVersion.String())
+	}
+
+	if latest {
+		result = append(result, DefaultTag)
 	}
 
 	return result, nil
