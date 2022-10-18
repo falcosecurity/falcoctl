@@ -1,7 +1,7 @@
 - name: cloudtrail
   type: plugin
   registry: ghcr.io
-  repository: falcosecurity/plugins/ruleset/cloudtrail
+  repository: falcosecurity/plugins/plugin/cloudtrail
   description: Reads Cloudtrail JSON logs from files/S3 and injects as events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail
   keywords:
@@ -35,8 +35,8 @@
     - https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail/rules
 - name: dummy
   type: plugin
-  registry: ""
-  repository: ""
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/dummy
   description: Reference plugin used to document interface
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/dummy
   keywords: []
@@ -48,9 +48,9 @@
     - https://github.com/falcosecurity/plugins/tree/master/plugins/dummy
 - name: dummy_c
   type: plugin
-  registry: ""
-  repository: ""
-  description: like dummy, but written in C++
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/dummy_c
+  description: Like dummy, but written in C++
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/dummy_c
   keywords: []
   license: Apache-2.0
@@ -62,7 +62,7 @@
 - name: github
   type: plugin
   registry: ghcr.io
-  repository: falcosecurity/plugins/ruleset/github
+  repository: falcosecurity/plugins/plugin/github
   description: Github Webhook Events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/github
   keywords:
@@ -98,8 +98,8 @@
     - https://github.com/falcosecurity/plugins/tree/master/plugins/github/rules
 - name: json
   type: plugin
-  registry: ""
-  repository: ""
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/json
   description: Extract values from any JSON payload
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/json
   keywords:
@@ -115,7 +115,7 @@
 - name: k8saudit
   type: plugin
   registry: ghcr.io
-  repository: falcosecurity/plugins/ruleset/k8saudit
+  repository: falcosecurity/plugins/plugin/k8saudit
   description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
   keywords:
@@ -161,7 +161,7 @@
 - name: okta
   type: plugin
   registry: ghcr.io
-  repository: falcosecurity/plugins/ruleset/okta
+  repository: falcosecurity/plugins/plugin/okta
   description: Okta Log Events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
   keywords:
