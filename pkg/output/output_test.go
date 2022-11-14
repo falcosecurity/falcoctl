@@ -31,7 +31,7 @@ var _ = Describe("Output", func() {
 	)
 
 	JustBeforeEach(func() {
-		printer = NewPrinter(scope, verbose, writer)
+		printer = NewPrinter(scope, false, verbose, writer)
 	})
 
 	JustAfterEach(func() {

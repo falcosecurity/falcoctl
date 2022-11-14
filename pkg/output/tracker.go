@@ -42,8 +42,14 @@ func NewProgressTracker(printer *Printer, target oras.Target, msg string) *Progr
 
 // Push reimplements the Push function of the oras.Target interface adding the needed logic for the progress bar.
 func (t *ProgressTracker) Push(ctx context.Context, expected v1.Descriptor, content io.Reader) error { //nolint:gocritic,lll // needed to implement the oras.Target interface
+	var progressBar *pterm.ProgressbarPrinter
 	d := expected.Digest.Encoded()[:12]
-	progressBar, _ := t.ProgressBar.WithTotal(int(expected.Size)).WithTitle(fmt.Sprintf(" INFO  %s %s:", t.msg, d)).WithShowCount(false).Start()
+
+	if !t.Printer.DisableStyling {
+		progressBar, _ = t.ProgressBar.WithTotal(int(expected.Size)).WithTitle(fmt.Sprintf(" INFO  %s %s:", t.msg, d)).WithShowCount(false).Start()
+	} else {
+		fmt.Printf("INFO: %s %s \n", t.msg, d)
+	}
 
 	reader := &trackedReader{
 		Reader:      content,
@@ -51,7 +57,9 @@ func (t *ProgressTracker) Push(ctx context.Context, expected v1.Descriptor, cont
 		progressBar: progressBar,
 	}
 	err := t.Target.Push(ctx, expected, reader)
-	_, _ = progressBar.Stop()
+	if !t.Printer.DisableStyling {
+		_, _ = progressBar.Stop()
+	}
 	if err != nil {
 		t.Error.Printfln("unable to push artifact %s", err)
 		return err
@@ -81,7 +89,7 @@ type trackedReader struct {
 // Read implements the logic of the progress bar.
 func (tr *trackedReader) Read(p []byte) (n int, err error) {
 	n, err = tr.Reader.Read(p)
-	if tr.progressBar.IsActive {
+	if tr.progressBar != nil && tr.progressBar.IsActive {
 		tr.progressBar = tr.progressBar.Add(n)
 	}
 	return n, err

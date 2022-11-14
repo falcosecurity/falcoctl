@@ -35,6 +35,8 @@ type CommonOptions struct {
 	writer io.Writer
 	// Used to store the verbose flag, and then passed to the printer.
 	verbose bool
+	// Disable the styling if set to true.
+	disableStyling bool
 }
 
 // NewOptions returns a new CommonOptions struct.
@@ -67,10 +69,12 @@ func (o *CommonOptions) Initialize(cfgs ...Configs) {
 	}
 
 	// create the printer. The value of verbose is a flag value.
-	o.Printer = output.NewPrinter(o.printerScope, o.verbose, o.writer)
+	o.Printer = output.NewPrinter(o.printerScope, o.disableStyling, o.verbose, o.writer)
 }
 
 // AddFlags registers the common flags.
 func (o *CommonOptions) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&o.verbose, "verbose", "v", false, "Enable verbose logs (default false)")
+	flags.BoolVar(&o.disableStyling, "disable-styling", false, "Disable output styling such as spinners, progress bars and colors. "+
+		"Styling is automatically disabled if not attacched to a tty (default false)")
 }

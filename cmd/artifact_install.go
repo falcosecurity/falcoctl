@@ -130,7 +130,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			destDir = o.rulesfilesDir
 		}
 
-		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("Extracting and installing %q %q", result.Type, result.Filename))
+		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("INFO: Extracting and installing %q %q", result.Type, result.Filename))
 		result.Filename = filepath.Join(tmpDir, result.Filename)
 
 		f, err := os.Open(result.Filename)
