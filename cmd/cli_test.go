@@ -17,7 +17,7 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -95,7 +95,7 @@ func run(t *testing.T, test testCase) {
 		}
 	}
 
-	out, err := ioutil.ReadAll(o)
+	out, err := io.ReadAll(o)
 	if err != nil {
 		t.Fatalf("error reading CLI output: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestCLI(t *testing.T) {
 			test.descr = strings.TrimSuffix(filepath.Base(test.expect.out), ".txt")
 		}
 		if test.expect.out != "" {
-			out, err := ioutil.ReadFile(test.expect.out)
+			out, err := os.ReadFile(test.expect.out)
 			if err != nil {
 				t.Fatalf("output fixture not found: %v", err)
 			}
