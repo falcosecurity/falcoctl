@@ -13,7 +13,8 @@ Available Commands:
   version     Print the falcoctl version information
 
 Flags:
-  -h, --help      help for falcoctl
-  -v, --verbose   Enable verbose logs (default false)
+      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
+  -h, --help              help for falcoctl
+  -v, --verbose           Enable verbose logs (default false)
 
 Use "falcoctl [command] --help" for more information about a command.

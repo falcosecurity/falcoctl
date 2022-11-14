@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	isatty "github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	"k8s.io/kubectl/pkg/cmd/util"
 )
@@ -54,11 +55,24 @@ type Printer struct {
 
 	Spinner *pterm.SpinnerPrinter
 
-	verbose bool
+	DisableStyling bool
+	verbose        bool
 }
 
 // NewPrinter returns a printer ready to be used.
-func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
+func NewPrinter(scope string, disableStyling, verbose bool, writer io.Writer) *Printer {
+	// If we are not in a tty then make sure that the disableStyling variable is set to true since
+	// we use it elsewhere to check if we are in a tty or not. We force the disableStyling to true
+	// only if it is set to false and we are not in a tty. Otherwise let it as it is, false if the
+	// user has not set it (default) otherwise true.
+	if !disableStyling && !isatty.IsTerminal(os.Stdout.Fd()) {
+		disableStyling = true
+	}
+	// We disable styling when the program is not attached to a tty or when requested by the user.
+	if disableStyling {
+		pterm.DisableStyling()
+	}
+
 	generic := &pterm.PrefixPrinter{MessageStyle: pterm.NewStyle(pterm.FgDefault)}
 	basicText := &pterm.BasicTextPrinter{}
 	progressBar := pterm.DefaultProgressbar.
@@ -120,6 +134,8 @@ func NewPrinter(scope string, verbose bool, writer io.Writer) *Printer {
 		TablePrinter: tablePrinter,
 
 		Spinner: spinner,
+
+		DisableStyling: disableStyling,
 	}
 
 	// Populate the printers for the spinner. We use the same one define in the printer.

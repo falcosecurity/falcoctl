@@ -107,7 +107,7 @@ func ParseReference(mergedIndexes *index.MergedIndexes, name string) (string, er
 // CheckRegistryConnection checks whether the registry implement Docker Registry API V2 or
 // OCI Distribution Specification. It also checks authentication if credentials are not empty.
 func CheckRegistryConnection(ctx context.Context, cred *auth.Credential, regName string, printer *output.Printer) error {
-	sp, _ := printer.Spinner.Start(fmt.Sprintf("Checking connection to remote registry %q", regName))
+	sp, _ := printer.Spinner.Start(fmt.Sprintf("INFO: Checking connection to remote registry %q", regName))
 
 	if reflect.DeepEqual(*cred, auth.EmptyCredential) {
 		if err := checkRegistryUnauthenticated(ctx, regName); err != nil {

@@ -47,7 +47,7 @@ func New(ctx context.Context) *cobra.Command {
 	}
 
 	// Global flags
-	opt.AddFlags(rootCmd.Flags())
+	opt.AddFlags(rootCmd.PersistentFlags())
 
 	// Commands
 	rootCmd.AddCommand(NewTLSCmd())
