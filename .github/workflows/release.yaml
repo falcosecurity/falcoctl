@@ -34,3 +34,6 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  docker-image:
+    uses: ./.github/workflows/docker-image.yaml
+    secrets: inherit
