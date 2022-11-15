@@ -28,7 +28,7 @@ jobs:
 
     - name: Build Falcoctl
       run: >
-        go build -o falcoctl-${{ matrix.goos }}-${{ matrix.goarch }} .
+        go build -ldflags="-s -w" -o falcoctl-${{ matrix.goos }}-${{ matrix.goarch }} .
       env:
         CGO_ENABLED: 0
         GOOS: ${{ matrix.goos }}
