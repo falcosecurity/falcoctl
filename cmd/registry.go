@@ -21,6 +21,7 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/registry/login"
 	"github.com/falcosecurity/falcoctl/internal/registry/logout"
+	"github.com/falcosecurity/falcoctl/internal/registry/oauth"
 	"github.com/falcosecurity/falcoctl/internal/registry/pull"
 	"github.com/falcosecurity/falcoctl/internal/registry/push"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
@@ -39,6 +40,7 @@ func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 	cmd.AddCommand(logout.NewLogoutCmd(opt))
 	cmd.AddCommand(push.NewPushCmd(ctx, opt))
 	cmd.AddCommand(pull.NewPullCmd(ctx, opt))
+	cmd.AddCommand(oauth.NewOauthCmd(ctx, opt))
 
 	return cmd
 }
