@@ -132,7 +132,7 @@
 - name: k8saudit-eks
   type: plugin
   registry: ghcr.io
-  repository: falcosecurity/plugins/k8saudit-eks
+  repository: falcosecurity/plugins/plugin/k8saudit-eks
   description: Read Kubernetes Audit Events from AWS EKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit-eks
   keywords: []
