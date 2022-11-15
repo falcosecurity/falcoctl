@@ -7,6 +7,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 GO ?= go
+DOCKER ?= docker
 
 # version settings
 RELEASE?=$(shell git rev-parse --short HEAD)
@@ -68,3 +69,6 @@ endif
 # "--new-from-rev REV Show only new issues created after git revision REV"
 lint: golangci-lint
 	$(GOLANGCILINT) run --new-from-rev main
+
+docker:
+	$(DOCKER) build -f ./build/Dockerfile .
