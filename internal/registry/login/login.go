@@ -15,21 +15,16 @@
 package login
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 type loginOptions struct {
@@ -79,7 +74,7 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		registry = oci.DefaultRegistry
 	}
 
-	user, token, err := getCredentials(o.Printer)
+	user, token, err := utils.GetCredentials(o.Printer)
 	if err != nil {
 		return err
 	}
@@ -102,25 +97,4 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 
 	o.Printer.Success.Println("Login succeeded")
 	return nil
-}
-
-func getCredentials(p *output.Printer) (username, password string, err error) {
-	reader := bufio.NewReader(os.Stdin)
-
-	p.DefaultText.Print("Username: ")
-	username, err = reader.ReadString('\n')
-	if err != nil {
-		return "", "", err
-	}
-
-	p.DefaultText.Print("Password: ")
-	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
-	if err != nil {
-		return "", "", err
-	}
-
-	p.DefaultText.Println()
-
-	password = string(bytePassword)
-	return strings.TrimSpace(username), strings.TrimSpace(password), nil
 }
