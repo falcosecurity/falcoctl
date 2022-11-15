@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release
 
 permissions:
   # needed to upload archives as Github Releases.
@@ -34,3 +32,5 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  docker-images:
+    uses: ./github/workflows/docker-image.yaml

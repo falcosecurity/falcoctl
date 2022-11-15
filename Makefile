@@ -7,12 +7,17 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 GO ?= go
+DOCKER ?= docker
 
 # version settings
 RELEASE?=$(shell git rev-parse --short HEAD)
 COMMIT?=$(shell git rev-parse --short HEAD)
 BUILD_DATE?=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 PROJECT?=github.com/falcosecurity/falcoctl
+
+# docker image settings
+TAG ?= ""
+
 
 # todo(leogr): re-enable race when CLI tests can run with race enabled
 TEST_FLAGS ?= -v -cover# -race 
@@ -68,3 +73,6 @@ endif
 # "--new-from-rev REV Show only new issues created after git revision REV"
 lint: golangci-lint
 	$(GOLANGCILINT) run --new-from-rev main
+
+docker:
+	$(DOCKER) build -f ./build/Dockerfile .
