@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/falcosecurity/falcoctl/internal/artifact/list"
 
 	"github.com/spf13/cobra"
 
@@ -37,6 +38,7 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 
 	cmd.AddCommand(search.NewArtifactSearchCmd(ctx, opt))
 	cmd.AddCommand(install.NewArtifactInstallCmd(ctx, opt))
+	cmd.AddCommand(list.NewArtifactListCmd(ctx, opt))
 	cmd.AddCommand(info.NewArtifactInfoCmd(ctx, opt))
 	cmd.AddCommand(follow.NewArtifactFollowCmd(ctx, opt))
 
