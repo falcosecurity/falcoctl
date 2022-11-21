@@ -23,6 +23,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -33,7 +34,8 @@ const (
 
 type artifactSearchOptions struct {
 	*options.CommonOptions
-	minScore float64
+	minScore     float64
+	artifactType oci.ArtifactType
 }
 
 func (o *artifactSearchOptions) Validate() error {
@@ -67,6 +69,8 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 	cmd.Flags().Float64VarP(&o.minScore, "min-score", "", defaultMinScore,
 		"the minimum score used to match artifact names with search keywords")
 
+	cmd.Flags().Var(&o.artifactType, "type", `Only search artifacts with a specific type. Allowed values: "rulesfile", "plugin""`)
+
 	return cmd
 }
 
@@ -85,6 +89,9 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 
 	var data [][]string
 	for _, entry := range resultEntries {
+		if o.artifactType != "" && o.artifactType != oci.ArtifactType(entry.Type) {
+			continue
+		}
 		indexName := mergedIndexes.IndexByEntry(entry).Name
 		row := []string{indexName, entry.Name, entry.Type, entry.Registry, entry.Repository}
 		data = append(data, row)
