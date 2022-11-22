@@ -27,7 +27,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
-	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -85,11 +84,6 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		o.Printer.Warning.Println("No configured index. Consider to configure one using the 'index add' command.")
 	}
 
-	o.credentialStore, err = authn.NewStore([]string{}...)
-	if err != nil {
-		return err
-	}
-
 	// Create temp dir where to put pulled artifacts
 	tmpDir, err := os.MkdirTemp("", "falcoctl")
 	if err != nil {
@@ -111,7 +105,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		puller, err := o.getPuller(ctx, reg)
+		puller, err := utils.PullerForRegistry(ctx, reg, o.Printer)
 		if err != nil {
 			return err
 		}
@@ -153,22 +147,4 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	}
 
 	return nil
-}
-
-func (o *artifactInstallOptions) getPuller(ctx context.Context, reg string) (*ocipuller.Puller, error) {
-	cred, err := o.credentialStore.Credential(ctx, reg)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := utils.CheckRegistryConnection(ctx, &cred, reg, o.Printer); err != nil {
-		o.Printer.Verbosef("%s", err.Error())
-		return nil, fmt.Errorf("unable to connect to registry %q", reg)
-	}
-
-	client := authn.NewClient(cred)
-
-	puller := ocipuller.NewPuller(client, newPullProgressTracker(o.Printer))
-
-	return puller, nil
 }

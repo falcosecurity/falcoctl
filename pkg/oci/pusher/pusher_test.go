@@ -28,12 +28,13 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 var _ = Describe("Pusher", func() {
 	var (
 		pusher                *ocipusher.Pusher
-		tracker               ocipusher.ProgressTracker
+		tracker               output.Tracker
 		ref                   string
 		filePathsAndPlatforms ocipusher.Option
 		filePaths             ocipusher.Option

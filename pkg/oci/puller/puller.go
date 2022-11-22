@@ -27,20 +27,18 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
-
-// ProgressTracker type of the tracker that the puller accepts. It implements the tracker logic.
-type ProgressTracker func(target oras.Target) oras.Target
 
 // Puller implements pull operations.
 type Puller struct {
 	Client  *auth.Client
-	tracker ProgressTracker
+	tracker output.Tracker
 }
 
 // NewPuller create a new puller that can be used for pull operations.
 // The client must be ready to be used by the puller.
-func NewPuller(client *auth.Client, tracker ProgressTracker) *Puller {
+func NewPuller(client *auth.Client, tracker output.Tracker) *Puller {
 	return &Puller{
 		Client:  client,
 		tracker: tracker,
