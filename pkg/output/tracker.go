@@ -24,6 +24,16 @@ import (
 	"oras.land/oras-go/v2"
 )
 
+// Tracker get an oras.Target and returns a new target that implements the tracker logic.
+type Tracker func(target oras.Target) oras.Target
+
+// NewTracker returns a new Tracker.
+func NewTracker(printer *Printer, msg string) Tracker {
+	return func(target oras.Target) oras.Target {
+		return NewProgressTracker(printer, target, msg)
+	}
+}
+
 // ProgressTracker tracks the progress of pull and push operations.
 type ProgressTracker struct {
 	oras.Target

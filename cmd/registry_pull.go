@@ -20,13 +20,9 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2"
 
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
-	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	"github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 var longPull = `Pull Falco "rulefile" or "plugin" OCI artifacts from remote registry
@@ -52,12 +48,6 @@ type pullOptions struct {
 
 func (o *pullOptions) Validate() error {
 	return o.ArtifactOptions.Validate()
-}
-
-func newPullProgressTracker(printer *output.Printer) ocipuller.ProgressTracker {
-	return func(target oras.Target) oras.Target {
-		return output.NewProgressTracker(printer, target, "Pulling")
-	}
 }
 
 // NewPullCmd returns the pull command.
@@ -96,25 +86,11 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		return err
 	}
 
-	credentialStore, err := authn.NewStore([]string{}...)
+	puller, err := utils.PullerForRegistry(ctx, registry, o.Printer)
 	if err != nil {
-		return err
+		return fmt.Errorf("an error occurred while creating the puller for registry %s: %w", registry, err)
 	}
 
-	o.Printer.Verbosef("Retrieving credentials from local store")
-	cred, err := credentialStore.Credential(ctx, registry)
-	if err != nil {
-		return err
-	}
-
-	if err := utils.CheckRegistryConnection(ctx, &cred, registry, o.Printer); err != nil {
-		o.Printer.Verbosef("%s", err.Error())
-		return fmt.Errorf("unable to connect to registry %q", registry)
-	}
-
-	client := authn.NewClient(cred)
-
-	puller := ocipuller.NewPuller(client, newPullProgressTracker(o.Printer))
 	if o.destDir == "" {
 		o.Printer.Info.Printfln("Pulling artifact in the current directory")
 	} else {

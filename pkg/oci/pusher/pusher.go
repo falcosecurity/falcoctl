@@ -32,6 +32,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -52,18 +53,15 @@ var (
 	ErrInvalidDependenciesFormat = errors.New("invalid dependency format")
 )
 
-// ProgressTracker type of the tracker that the pusher accepts. It implements the tracker logic.
-type ProgressTracker func(target oras.Target) oras.Target
-
 // Pusher implements push operations.
 type Pusher struct {
 	Client    *auth.Client
-	tracker   ProgressTracker
+	tracker   output.Tracker
 	plainHTTP bool
 }
 
 // NewPusher create a new pusher that can be used for push operations.
-func NewPusher(client *auth.Client, plainHTTP bool, tracker ProgressTracker) *Pusher {
+func NewPusher(client *auth.Client, plainHTTP bool, tracker output.Tracker) *Pusher {
 	return &Pusher{
 		Client:    client,
 		tracker:   tracker,

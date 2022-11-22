@@ -19,14 +19,11 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2"
 
 	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
 	"github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 var longPush = `Push Falco "rulefile" or "plugin" OCI artifacts to remote registry
@@ -64,12 +61,6 @@ type pushOptions struct {
 
 func (o pushOptions) validate() error {
 	return o.ArtifactOptions.Validate()
-}
-
-func newPushProgressTracker(printer *output.Printer) ocipusher.ProgressTracker {
-	return func(target oras.Target) oras.Target {
-		return output.NewProgressTracker(printer, target, "Pushing")
-	}
 }
 
 // NewPushCmd returns the push command.
@@ -110,24 +101,10 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	o.Printer.Verbosef("Retrieving credentials from local store")
-	credentialStore, err := authn.NewStore([]string{}...)
+	pusher, err := utils.PusherForRegistry(ctx, false, registry, o.Printer)
 	if err != nil {
-		return err
+		return fmt.Errorf("an error occurred while creating the pusher for registry %s: %w", registry, err)
 	}
-	cred, err := credentialStore.Credential(ctx, registry)
-	if err != nil {
-		return err
-	}
-
-	if err := utils.CheckRegistryConnection(ctx, &cred, registry, o.Printer); err != nil {
-		o.Printer.Verbosef("%s", err.Error())
-		return fmt.Errorf("unable to connect to registry %q", registry)
-	}
-
-	client := authn.NewClient(cred)
-
-	pusher := ocipusher.NewPusher(client, false, newPushProgressTracker(o.Printer))
 
 	opts := ocipusher.Options{
 		ocipusher.WithTags(o.Tags...),
