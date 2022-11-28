@@ -34,7 +34,7 @@ test:
 # Install gci if not available
 gci:
 ifeq (, $(shell which gci))
-	@go install github.com/daixiang0/gci@v0.2.9
+	@go install github.com/daixiang0/gci@v0.9.0
 GCI=$(GOBIN)/gci
 else
 GCI=$(shell which gci)
