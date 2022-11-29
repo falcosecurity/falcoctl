@@ -68,10 +68,6 @@ func NewPrinter(scope string, disableStyling, verbose bool, writer io.Writer) *P
 	if !disableStyling && !isatty.IsTerminal(os.Stdout.Fd()) {
 		disableStyling = true
 	}
-	// We disable styling when the program is not attached to a tty or when requested by the user.
-	if disableStyling {
-		pterm.DisableStyling()
-	}
 
 	generic := &pterm.PrefixPrinter{MessageStyle: pterm.NewStyle(pterm.FgDefault)}
 	basicText := &pterm.BasicTextPrinter{}
@@ -93,19 +89,7 @@ func NewPrinter(scope string, disableStyling, verbose bool, writer io.Writer) *P
 		TimerStyle:          &pterm.ThemeDefault.TimerStyle,
 	}
 
-	if scope != "" {
-		generic = generic.WithScope(pterm.Scope{Text: scope, Style: pterm.NewStyle(pterm.FgGray)})
-	}
-
-	if writer != nil {
-		generic = generic.WithWriter(writer)
-		spinner = spinner.WithWriter(writer)
-		basicText = basicText.WithWriter(writer)
-		progressBar = progressBar.WithWriter(writer)
-		tablePrinter = tablePrinter.WithWriter(writer)
-	}
-
-	printer := &Printer{
+	printer := Printer{
 		verbose: verbose,
 		Info: generic.WithPrefix(pterm.Prefix{
 			Text:  "INFO",
@@ -142,8 +126,14 @@ func NewPrinter(scope string, disableStyling, verbose bool, writer io.Writer) *P
 	printer.Spinner.FailPrinter = printer.Error
 	printer.Spinner.WarningPrinter = printer.Warning
 	printer.Spinner.SuccessPrinter = printer.Info
+	printer.Spinner.InfoPrinter = printer.Info
 
-	return printer
+	// We disable styling when the program is not attached to a tty or when requested by the user.
+	if disableStyling {
+		pterm.DisableStyling()
+	}
+
+	return printer.WithScope(scope).WithWriter(writer)
 }
 
 // CheckErr prints a user-friendly error and exits with a non-zero exit code.
@@ -205,6 +195,49 @@ func (p *Printer) PrintTable(header TableHeader, data [][]string) error {
 	}
 
 	return p.TablePrinter.WithData(table).Render()
+}
+
+// WithWriter sets the writer for the current printer.
+func (p Printer) WithWriter(writer io.Writer) *Printer {
+	if writer != nil {
+		p.Info = p.Info.WithWriter(writer)
+		p.Warning = p.Warning.WithWriter(writer)
+		p.Error = p.Error.WithWriter(writer)
+		p.Spinner = p.Spinner.WithWriter(writer)
+		p.DefaultText = p.DefaultText.WithWriter(writer)
+		p.ProgressBar = p.ProgressBar.WithWriter(writer)
+		p.TablePrinter = p.TablePrinter.WithWriter(writer)
+	}
+
+	return &p
+}
+
+// WithScope sets the scope for the current printer.
+func (p Printer) WithScope(scope string) *Printer {
+	if scope != "" {
+		s := pterm.Scope{Text: scope, Style: pterm.NewStyle(pterm.FgGray)}
+
+		p.Info = p.Info.WithScope(s)
+		p.Error = p.Error.WithScope(s)
+		p.Warning = p.Warning.WithScope(s)
+
+		p.Spinner.FailPrinter = p.Error
+		p.Spinner.InfoPrinter = p.Info
+		p.Spinner.SuccessPrinter = p.Info
+		p.Spinner.WarningPrinter = p.Warning
+	}
+
+	return &p
+}
+
+// DisableStylingf disables styling globally for all existing printers.
+func (p *Printer) DisableStylingf() {
+	pterm.DisableStyling()
+}
+
+// EnableStyling enables styling globally for all existing printers.
+func (p *Printer) EnableStyling() {
+	pterm.EnableStyling()
 }
 
 // ExitOnErr aborts the execution in case of errors, without printing any error message.
