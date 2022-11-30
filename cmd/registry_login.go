@@ -25,7 +25,7 @@ import (
 	"golang.org/x/term"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
-	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
+	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/options"
