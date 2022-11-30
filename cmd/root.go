@@ -26,11 +26,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-const (
-	defaultRepoPath = ".falcoctl"
-	defaultRepoFile = "sources.yaml"
-)
-
 // New instantiates the root command and initializes the tree of commands.
 func New(ctx context.Context) *cobra.Command {
 	opt := options.NewOptions()
