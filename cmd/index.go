@@ -16,19 +16,14 @@ package cmd
 
 import (
 	"context"
-	"path/filepath"
 
-	"github.com/docker/docker/pkg/homedir"
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/index/add"
+	"github.com/falcosecurity/falcoctl/internal/index/list"
+	"github.com/falcosecurity/falcoctl/internal/index/remove"
+	"github.com/falcosecurity/falcoctl/internal/index/update"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
-)
-
-var (
-	configDir    = filepath.Join(homedir.Get(), ".config")
-	falcoctlPath = filepath.Join(configDir, "falcoctl")
-	indexesFile  = filepath.Join(falcoctlPath, "indexes.yaml")
-	timeFormat   = "2006-01-02 15:04:05"
 )
 
 // NewIndexCmd returns the index command.
@@ -40,10 +35,10 @@ func NewIndexCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.C
 		Long:                  "Interact with index",
 	}
 
-	cmd.AddCommand(NewIndexAddCmd(ctx, opt))
-	cmd.AddCommand(NewIndexRemoveCmd(ctx, opt))
-	cmd.AddCommand(NewIndexUpdateCmd(ctx, opt))
-	cmd.AddCommand(NewIndexListCmd(ctx, opt))
+	cmd.AddCommand(add.NewIndexAddCmd(ctx, opt))
+	cmd.AddCommand(remove.NewIndexRemoveCmd(ctx, opt))
+	cmd.AddCommand(update.NewIndexUpdateCmd(ctx, opt))
+	cmd.AddCommand(list.NewIndexListCmd(ctx, opt))
 
 	return cmd
 }

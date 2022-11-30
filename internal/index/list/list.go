@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package list
 
 import (
 	"context"
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -50,7 +51,7 @@ func NewIndexListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Com
 }
 
 func (o *indexListOptions) RunIndexList(ctx context.Context, args []string) error {
-	indexConfig, err := index.NewConfig(indexesFile)
+	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
 	}
