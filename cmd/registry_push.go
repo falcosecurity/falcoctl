@@ -20,7 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/cmd/internal/utils"
+	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
 	"github.com/falcosecurity/falcoctl/pkg/options"
