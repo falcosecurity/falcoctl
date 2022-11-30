@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package add
 
 import (
 	"context"
@@ -23,6 +23,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/consts"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -33,8 +35,8 @@ type indexAddOptions struct {
 
 func (o *indexAddOptions) Validate(args []string) error {
 	// TODO(loresuso): we should move this logic elsewhere
-	if _, err := os.Stat(falcoctlPath); os.IsNotExist(err) {
-		err = os.Mkdir(falcoctlPath, 0o700)
+	if _, err := os.Stat(config.FalcoctlPath); os.IsNotExist(err) {
+		err = os.Mkdir(config.FalcoctlPath, 0o700)
 		if err != nil {
 			return err
 		}
@@ -70,9 +72,9 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 	nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 	url := args[1]
 
-	indexFile := filepath.Join(falcoctlPath, nameYaml)
+	indexFile := filepath.Join(config.FalcoctlPath, nameYaml)
 
-	indexConfig, err := index.NewConfig(indexesFile)
+	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
 	}
@@ -94,7 +96,7 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 	}
 
 	// Keep track of the newly created index file in indexes.yaml.
-	ts := time.Now().Format(timeFormat)
+	ts := time.Now().Format(consts.TimeFormat)
 	entry := index.ConfigEntry{
 		Name:             name,
 		AddedTimestamp:   ts,
@@ -104,7 +106,7 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 
 	indexConfig.Add(entry)
 
-	if err := indexConfig.Write(indexesFile); err != nil {
+	if err := indexConfig.Write(config.IndexesFile); err != nil {
 		return err
 	}
 

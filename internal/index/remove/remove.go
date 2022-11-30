@@ -12,91 +12,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package remove
 
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-type indexUpdateOptions struct {
+type indexRemoveOptions struct {
 	*options.CommonOptions
 	indexConfig *index.Config
 }
 
-func (o *indexUpdateOptions) Validate(args []string) error {
+func (o *indexRemoveOptions) Validate(args []string) error {
 	// Check that all the index names are actually stored in the system.
 	var err error
-	o.indexConfig, err = index.NewConfig(indexesFile)
+	o.indexConfig, err = index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
 	}
 
 	for _, name := range args {
 		if _, err := o.indexConfig.Get(name); err != nil {
-			return fmt.Errorf("cannot update %s: %w. Check that each passed index is cached in the system", name, err)
+			return fmt.Errorf("cannot remove %s: %w. Check that each passed index is cached in the system", name, err)
 		}
 	}
 
 	return nil
 }
 
-// NewIndexUpdateCmd returns the index update command.
-func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
-	o := indexUpdateOptions{
+// NewIndexRemoveCmd returns the index remove command.
+func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+	o := indexRemoveOptions{
 		CommonOptions: opt,
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "update [INDEX1 [INDEX2 ...]] [flags]",
+		Use:                   "remove [INDEX1 [INDEX2 ...]] [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Update an existing index",
-		Long:                  "Update an existing index",
+		Short:                 "Remove an index from the local falcoctl configuration",
+		Long:                  "Remove an index from the local falcoctl configuration",
 		Args:                  cobra.MinimumNArgs(1),
+		Aliases:               []string{"rm"},
 		PreRun: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.Validate(args))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunIndexUpdate(ctx, args))
+			o.Printer.CheckErr(o.RunIndexRemove(ctx, args))
 		},
 	}
 
 	return cmd
 }
 
-func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) error {
-	ts := time.Now().Format(timeFormat)
-
+func (o *indexRemoveOptions) RunIndexRemove(ctx context.Context, args []string) error {
 	for _, name := range args {
 		nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
-		indexFile := filepath.Join(falcoctlPath, nameYaml)
-
-		indexConfigEntry, err := o.indexConfig.Get(name)
-		if err != nil {
-			return fmt.Errorf("cannot update index %s: not found", name)
-		}
-
-		remoteIndex, err := index.Fetch(ctx, indexConfigEntry.URL, name)
-		if err != nil {
+		indexFile := filepath.Join(config.FalcoctlPath, nameYaml)
+		if err := o.indexConfig.Remove(name); err != nil {
 			return err
 		}
 
-		err = remoteIndex.Write(indexFile)
-		if err != nil {
+		if err := os.Remove(indexFile); err != nil {
 			return err
 		}
-
-		indexConfigEntry.UpdatedTimestamp = ts
 	}
 
-	if err := o.indexConfig.Write(indexesFile); err != nil {
+	if err := o.indexConfig.Write(config.IndexesFile); err != nil {
 		return err
 	}
 
