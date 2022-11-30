@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package install
 
 import (
 	"context"
@@ -23,10 +23,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -37,9 +37,8 @@ const (
 
 type artifactInstallOptions struct {
 	*options.CommonOptions
-	credentialStore *authn.Store
-	rulesfilesDir   string
-	pluginsDir      string
+	rulesfilesDir string
+	pluginsDir    string
 }
 
 // NewArtifactInstallCmd returns the artifact install command.
@@ -69,13 +68,13 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 
 // RunArtifactInstall executes the business logic for the artifact install command.
 func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []string) error {
-	o.Printer.Info.Printfln("Reading all configured index files from %q", indexesFile)
-	indexConfig, err := index.NewConfig(indexesFile)
+	o.Printer.Info.Printfln("Reading all configured index files from %q", config.IndexesFile)
+	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
 	}
 
-	mergedIndexes, err := utils.Indexes(indexConfig, falcoctlPath)
+	mergedIndexes, err := utils.Indexes(indexConfig, config.FalcoctlPath)
 	if err != nil {
 		return err
 	}
