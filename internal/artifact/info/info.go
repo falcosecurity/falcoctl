@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package info
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
@@ -55,12 +56,12 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 }
 
 func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string) error {
-	indexConfig, err := index.NewConfig(indexesFile)
+	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
 	}
 
-	mergedIndexes, err := utils.Indexes(indexConfig, falcoctlPath)
+	mergedIndexes, err := utils.Indexes(indexConfig, config.FalcoctlPath)
 	if err != nil {
 		return err
 	}

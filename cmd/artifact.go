@@ -19,6 +19,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/artifact/info"
+	"github.com/falcosecurity/falcoctl/internal/artifact/install"
+	"github.com/falcosecurity/falcoctl/internal/artifact/search"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -31,9 +34,9 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 		Long:                  "Interact with Falco artifacts",
 	}
 
-	cmd.AddCommand(NewArtifactSearchCmd(ctx, opt))
-	cmd.AddCommand(NewArtifactInstallCmd(ctx, opt))
-	cmd.AddCommand(NewArtifactInfoCmd(ctx, opt))
+	cmd.AddCommand(search.NewArtifactSearchCmd(ctx, opt))
+	cmd.AddCommand(install.NewArtifactInstallCmd(ctx, opt))
+	cmd.AddCommand(info.NewArtifactInfoCmd(ctx, opt))
 
 	return cmd
 }
