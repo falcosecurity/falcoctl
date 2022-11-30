@@ -29,6 +29,13 @@ var (
 	IndexesFile string
 )
 
+const (
+	// PluginsDir default path where plugins are installed.
+	PluginsDir = "/usr/share/falco/plugins"
+	// RulesfilesDir default path where rulesfiles are installed.
+	RulesfilesDir = "/etc/falco"
+)
+
 func init() {
 	ConfigDir = filepath.Join(homedir.Get(), ".config")
 	FalcoctlPath = filepath.Join(ConfigDir, "falcoctl")
