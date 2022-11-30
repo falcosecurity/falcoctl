@@ -21,9 +21,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/version"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
-	"github.com/falcosecurity/falcoctl/pkg/version"
 )
 
 const (
