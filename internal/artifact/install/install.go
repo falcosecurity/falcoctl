@@ -30,11 +30,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-const (
-	defaultPluginsDir    = "/usr/share/falco/plugins"
-	defaultRulesfilesDir = "/etc/falco"
-)
-
 type artifactInstallOptions struct {
 	*options.CommonOptions
 	rulesfilesDir string
@@ -58,9 +53,9 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		},
 	}
 
-	cmd.Flags().StringVarP(&o.rulesfilesDir, "rulesfiles-dir", "", defaultRulesfilesDir,
+	cmd.Flags().StringVarP(&o.rulesfilesDir, "rulesfiles-dir", "", config.RulesfilesDir,
 		"directory where to install rules. Defaults to /etc/falco")
-	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", defaultPluginsDir,
+	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
 		"directory where to install plugins. Defaults to /usr/share/falco/plugins")
 
 	return cmd
