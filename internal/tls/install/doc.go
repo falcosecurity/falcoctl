@@ -12,25 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
-
-import (
-	"github.com/spf13/cobra"
-
-	"github.com/falcosecurity/falcoctl/internal/tls/install"
-)
-
-// NewTLSCmd return the tls command.
-func NewTLSCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                   "tls",
-		TraverseChildren:      true,
-		DisableFlagsInUseLine: true,
-		Short:                 "Generate and install TLS material for Falco",
-		Long:                  `Generate and install TLS material for Falco`,
-	}
-
-	cmd.AddCommand(install.NewTLSInstallCmd())
-
-	return cmd
-}
+// Package install defines the logic to generate and install TLS certificates.
+package install
