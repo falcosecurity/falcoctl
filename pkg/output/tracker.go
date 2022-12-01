@@ -29,6 +29,10 @@ type Tracker func(target oras.Target) oras.Target
 
 // NewTracker returns a new Tracker.
 func NewTracker(printer *Printer, msg string) Tracker {
+	if printer == nil {
+		return nil
+	}
+
 	return func(target oras.Target) oras.Target {
 		return NewProgressTracker(printer, target, msg)
 	}
@@ -58,7 +62,7 @@ func (t *ProgressTracker) Push(ctx context.Context, expected v1.Descriptor, cont
 	if !t.Printer.DisableStyling {
 		progressBar, _ = t.ProgressBar.WithTotal(int(expected.Size)).WithTitle(fmt.Sprintf(" INFO  %s %s:", t.msg, d)).WithShowCount(false).Start()
 	} else {
-		fmt.Printf("INFO: %s %s \n", t.msg, d)
+		t.Info.Printfln("%s %s", t.msg, d)
 	}
 
 	reader := &trackedReader{
