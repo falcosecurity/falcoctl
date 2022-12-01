@@ -16,6 +16,7 @@ package config
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/docker/docker/pkg/homedir"
 )
@@ -34,6 +35,9 @@ const (
 	PluginsDir = "/usr/share/falco/plugins"
 	// RulesfilesDir default path where rulesfiles are installed.
 	RulesfilesDir = "/etc/falco"
+	// FollowResync time interval how often it checks for newer version of the artifact.
+	// Default values is set every 24 hours.
+	FollowResync = time.Hour * 24
 )
 
 func init() {
