@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os/signal"
 	"syscall"
 
@@ -61,6 +62,7 @@ func Execute() {
 	// If the ctx is marked as done then we reset the signals.
 	go func() {
 		<-ctx.Done()
+		fmt.Printf("\nreceived signal, terminating...\n")
 		stop()
 	}()
 
