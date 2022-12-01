@@ -72,6 +72,11 @@ func (o *CommonOptions) Initialize(cfgs ...Configs) {
 	o.Printer = output.NewPrinter(o.printerScope, o.disableStyling, o.verbose, o.writer)
 }
 
+// IsVerbose used to check if the verbose flag is set or not.
+func (o *CommonOptions) IsVerbose() bool {
+	return o.verbose
+}
+
 // AddFlags registers the common flags.
 func (o *CommonOptions) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&o.verbose, "verbose", "v", false, "Enable verbose logs (default false)")
