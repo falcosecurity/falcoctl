@@ -111,6 +111,21 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 	}, nil
 }
 
+// Descriptor retrieves the descriptor of an artifact from a remote repository.
+func (p *Puller) Descriptor(ctx context.Context, ref string) (*v1.Descriptor, error) {
+	repo, err := remote.NewRepository(ref)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create new repository with ref %s: %w", ref, err)
+	}
+	repo.Client = p.Client
+
+	desc, _, err := repo.FetchReference(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	return &desc, nil
+}
+
 func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descriptor) (*v1.Manifest, error) {
 	var manifest v1.Manifest
 
