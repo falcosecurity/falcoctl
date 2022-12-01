@@ -25,10 +25,13 @@ import (
 )
 
 // ExtractTarGz extracts a *.tar.gz compressed archive and moves its content to destDir.
-func ExtractTarGz(gzipStream io.Reader, destDir string) error {
+// Returns a slice containing the full path of the extracted files.
+func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
+	var files []string
+
 	uncompressedStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tarReader := tar.NewReader(uncompressedStream)
@@ -41,30 +44,32 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) error {
 		}
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			return fmt.Errorf("unexepected dir inside the archive, expected to find only files without any tree structure")
+			return nil, fmt.Errorf("unexepected dir inside the archive, expected to find only files without any tree structure")
 		case tar.TypeReg:
-			outFile, err := os.Create(filepath.Clean(filepath.Join(destDir, filepath.Clean(header.Name))))
+			f := filepath.Join(destDir, filepath.Clean(header.Name))
+			outFile, err := os.Create(filepath.Clean(f))
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if err = copyInChunks(outFile, tarReader); err != nil {
-				return err
+				return nil, err
 			}
 			if err = outFile.Close(); err != nil {
-				return err
+				return nil, err
 			}
+			files = append(files, f)
 
 		default:
-			return fmt.Errorf("extractTarGz: uknown type: %b in %s", header.Typeflag, header.Name)
+			return nil, fmt.Errorf("extractTarGz: uknown type: %b in %s", header.Typeflag, header.Name)
 		}
 	}
 
-	return nil
+	return files, nil
 }
 
 func copyInChunks(dst io.Writer, src io.Reader) error {
