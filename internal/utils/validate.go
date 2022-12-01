@@ -41,6 +41,16 @@ func GetRegistryFromRef(ref string) (string, error) {
 	return ref[0:index], nil
 }
 
+// TagFromRef extracts the tag values from a ref string.
+func TagFromRef(ref string) (string, error) {
+	i := strings.Index(ref, ":")
+	if i <= 0 {
+		return "", fmt.Errorf("cannot extract tag name from ref %q", ref)
+	}
+
+	return ref[i+1:], nil
+}
+
 // ParseReference is a helper function that parse with the followig logic:
 //
 //  1. if name is the name of an artifact, it will use the merged index to compute
