@@ -22,6 +22,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -94,8 +95,11 @@ func (o *oauthOptions) RunOauth(ctx context.Context) error {
 		return fmt.Errorf("unable to retrieve tokens: %w", err)
 	}
 
-	o.Printer.DefaultText.Printfln("access token: %s, refresh token: %s",
-		token.AccessToken, token.RefreshToken)
+	if err = writeToken(token); err != nil {
+		return fmt.Errorf("unable to save token: %w", err)
+	}
+
+	o.Printer.Success.Printfln("access token correctly saved in %q", config.TokensFile)
 
 	return nil
 }
