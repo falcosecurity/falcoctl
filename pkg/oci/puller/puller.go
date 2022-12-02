@@ -23,7 +23,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
-	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
@@ -50,11 +49,10 @@ func NewPuller(client *auth.Client, tracker output.Tracker) *Puller {
 func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.RegistryResult, error) {
 	fileStore := file.New(destDir)
 
-	repo, err := remote.NewRepository(ref)
+	repo, err := oci.NewRepository(ref, oci.WithClient(p.Client))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create new repository with ref %s: %w", ref, err)
+		return nil, err
 	}
-	repo.Client = p.Client
 
 	// if no tag was specified, "latest" is used
 	if repo.Reference.Reference == "" {

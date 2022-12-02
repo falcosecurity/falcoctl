@@ -21,17 +21,15 @@ import (
 	"io"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
 // Platforms returns a list of all available platforms for a given ref.
 func Platforms(ctx context.Context, ref string, client *auth.Client) (map[string]struct{}, error) {
-	repo, err := remote.NewRepository(ref)
+	repo, err := NewRepository(ref, WithClient(client))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create new repository with ref %s: %w", ref, err)
+		return nil, err
 	}
-	repo.Client = client
 
 	refDesc, _, err := repo.FetchReference(ctx, ref)
 	if err != nil {
