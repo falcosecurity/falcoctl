@@ -28,7 +28,6 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
-	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
@@ -94,13 +93,13 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	if artifactType == oci.Plugin && len(o.Dependencies) != 0 {
 		return nil, fmt.Errorf("expecting no dependencies for plugin artifacts but received %s", o.Dependencies)
 	}
-	repo, err := remote.NewRepository(ref)
+
+	repo, err := oci.NewRepository(ref,
+		oci.WithClient(p.Client),
+		oci.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}
-	// If plain http has been set, then set it.
-	repo.PlainHTTP = p.plainHTTP
-	repo.Client = p.Client
 
 	// Using ":latest" by default if no tag was provided.
 	if repo.Reference.Reference == "" {
