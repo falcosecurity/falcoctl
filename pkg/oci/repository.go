@@ -17,8 +17,8 @@ package oci
 import (
 	"fmt"
 
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"oras.land/oras-go/v2/registry/remote"
-	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
 // Repository is an HTTP client to a remote repository.
@@ -46,7 +46,7 @@ func NewRepository(ref string, options ...func(*Repository)) (*Repository, error
 }
 
 // WithClient sets the underlying HTTP client to be used for requests.
-func WithClient(client *auth.Client) func(r *Repository) {
+func WithClient(client *authn.Client) func(r *Repository) {
 	return func(r *Repository) {
 		r.Client = client
 	}

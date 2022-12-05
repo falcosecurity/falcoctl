@@ -97,7 +97,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			return err
 		}
 
-		client := authn.NewClient(cred)
+		client := authn.NewClient(authn.WithCredentials(&cred))
 
 		tags, err := oci.Tags(ctx, ref, client)
 		if err != nil {
