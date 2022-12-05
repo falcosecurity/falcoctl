@@ -19,25 +19,20 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 const (
-	longOauth = `Retrieve access and refresh tokens for OAuth2.0 client credentials flow authentication
+	longOauth = `Store client credentials for later OAuth2.0 authentication
 
-With this command it is possible to interact with registries supporting OAuth2.0. 
-This specific command implements the client credentials OAuh2.0 flow.
+Client credentials will be saved in the ~/.config directory.
 
-For more information, please visit:
-https://www.rfc-editor.org/rfc/rfc6749#section-1.3
-
-Example - Generate access and refresh tokens using "client_credentials" grant type:
+Example 
 	falcoctl registry oauth \
-		--auth-url="http://localhost:9096/authorize" \
 		--token-url="http://localhost:9096/token" \
 		--client-id=000000 \
 		--client-secret=999999  --scopes="my-scope"
@@ -46,10 +41,7 @@ Example - Generate access and refresh tokens using "client_credentials" grant ty
 
 type oauthOptions struct {
 	*options.CommonOptions
-	tokenURL     string
-	clientID     string
-	clientSecret string
-	scopes       []string
+	conf clientcredentials.Config
 }
 
 // NewOauthCmd returns the oauth command.
@@ -69,54 +61,39 @@ func NewOauthCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 		},
 	}
 
-	cmd.Flags().StringVar(&o.tokenURL, "token-url", "", "token URL used to get access and refresh tokens")
+	cmd.Flags().StringVar(&o.conf.TokenURL, "token-url", "", "token URL used to get access and refresh tokens")
 	if err := cmd.MarkFlagRequired("token-url"); err != nil {
 		o.Printer.Error.Println("unable to mark flag \"token-url\" as required")
 		return nil
 	}
-	cmd.Flags().StringVar(&o.clientID, "client-id", "", "client ID of the OAuth2.0 app")
+	cmd.Flags().StringVar(&o.conf.ClientID, "client-id", "", "client ID of the OAuth2.0 app")
 	if err := cmd.MarkFlagRequired("client-id"); err != nil {
 		o.Printer.Error.Println("unable to mark flag \"client-id\" as required")
 		return nil
 	}
-	cmd.Flags().StringVar(&o.clientSecret, "client-secret", "", "client secret of the OAuth2.0 app")
+	cmd.Flags().StringVar(&o.conf.ClientSecret, "client-secret", "", "client secret of the OAuth2.0 app")
 	if err := cmd.MarkFlagRequired("client-secret"); err != nil {
 		o.Printer.Error.Println("unable to mark flag \"client-secret\" as required")
 		return nil
 	}
-	cmd.Flags().StringSliceVar(&o.scopes, "scopes", nil, "comma separeted list of scopes for which requesting access")
+	cmd.Flags().StringSliceVar(&o.conf.Scopes, "scopes", nil, "comma separeted list of scopes for which requesting access")
 
 	return cmd
 }
 
 func (o *oauthOptions) RunOauth(ctx context.Context) error {
-	token, err := o.runOauthClientCredentials(ctx)
+	// Check that we can retrieve token using the passed credentials.
+	_, err := o.conf.Token(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to retrieve tokens: %w", err)
+		return fmt.Errorf("wrong client credentials, unable to retrieve token: %w", err)
 	}
 
-	if err = writeToken(token); err != nil {
+	// Save client credentials to file.
+	if err = utils.WriteClientCredentials(&o.conf); err != nil {
 		return fmt.Errorf("unable to save token: %w", err)
 	}
 
-	o.Printer.Success.Printfln("access token correctly saved in %q", config.TokensFile)
+	o.Printer.Success.Printfln("client credentials correctly saved in %q", config.ClientCredentialsFile)
 
 	return nil
-}
-
-// runOauthClientCredentials implements the client_credentials flow.
-func (o *oauthOptions) runOauthClientCredentials(ctx context.Context) (*oauth2.Token, error) {
-	conf := clientcredentials.Config{
-		ClientID:     o.clientID,
-		ClientSecret: o.clientSecret,
-		TokenURL:     o.tokenURL,
-		Scopes:       o.scopes,
-	}
-
-	token, err := conf.Token(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve token: %w", err)
-	}
-
-	return token, nil
 }

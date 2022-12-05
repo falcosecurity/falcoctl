@@ -16,11 +16,15 @@ package utils
 
 import (
 	"bufio"
+	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 
+	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/term"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -44,4 +48,34 @@ func GetCredentials(p *output.Printer) (username, password string, err error) {
 
 	password = string(bytePassword)
 	return strings.TrimSpace(username), strings.TrimSpace(password), nil
+}
+
+// WriteClientCredentials writes client credentials to config file.
+func WriteClientCredentials(cred *clientcredentials.Config) error {
+	data, err := json.Marshal(cred)
+	if err != nil {
+		return fmt.Errorf("unanle to marshal %+v", cred)
+	}
+
+	if err = os.WriteFile(config.ClientCredentialsFile, data, 0o600); err != nil {
+		return fmt.Errorf("unable to write to %s: %w", config.ClientCredentialsFile, err)
+	}
+
+	return nil
+}
+
+// ReadClientCredentials reads client credentials from config file.
+func ReadClientCredentials() (*clientcredentials.Config, error) {
+	data, err := os.ReadFile(config.ClientCredentialsFile)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read from %s: %w", config.ClientCredentialsFile, err)
+	}
+
+	var cred clientcredentials.Config
+	err = json.Unmarshal(data, &cred)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal client credentials: %w", err)
+	}
+
+	return &cred, nil
 }
