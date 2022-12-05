@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
+
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 

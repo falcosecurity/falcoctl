@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
 // Platforms returns a list of all available platforms for a given ref.
