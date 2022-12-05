@@ -28,8 +28,8 @@ var (
 	FalcoctlPath string
 	// IndexesFile name of the file where the indexes info is stored. It lives under FalcoctlPath.
 	IndexesFile string
-	// TokensFile name of the file where oauth tokens are stored. It lives under FalcoctlPath.
-	TokensFile string
+	// ClientCredentialsFile name of the file where oauth client credentials are stored. It lives under FalcoctlPath.
+	ClientCredentialsFile string
 )
 
 const (
@@ -46,5 +46,5 @@ func init() {
 	ConfigDir = filepath.Join(homedir.Get(), ".config")
 	FalcoctlPath = filepath.Join(ConfigDir, "falcoctl")
 	IndexesFile = filepath.Join(FalcoctlPath, "indexes.yaml")
-	TokensFile = filepath.Join(FalcoctlPath, "tokens.json")
+	ClientCredentialsFile = filepath.Join(FalcoctlPath, "clientcredentials.json")
 }
