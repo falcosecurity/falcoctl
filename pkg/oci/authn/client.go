@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/oauth2/clientcredentials"
+	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
@@ -27,33 +29,78 @@ const (
 	falcoctlUserAgent = "falcoctl"
 )
 
+// Client is an HTTP client that can authenticate with auth.Credentials or via OAuth2.0 Client Credentials flow.
+type Client struct {
+	remote.Client
+	Ctx               context.Context
+	Credentials       *auth.Credential
+	Oauth             bool
+	ClientCredentials *clientcredentials.Config
+}
+
 // NewClient creates a new authenticated client to interact with a remote registry.
-func NewClient(cred auth.Credential) *auth.Client {
-	client := &auth.Client{
-		Client: &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).DialContext,
-				ForceAttemptHTTP2:     true,
-				MaxIdleConns:          100,
-				IdleConnTimeout:       90 * time.Second,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-				// TODO(loresuso, alacuku): tls config.
-			},
-		},
-		Cache: auth.NewCache(),
-		Credential: func(ctx context.Context, registry string) (auth.Credential, error) {
-			return cred, nil
-		},
+func NewClient(options ...func(*Client)) (*Client, error) {
+	client := &Client{}
+
+	for _, o := range options {
+		o(client)
 	}
 
-	client.SetUserAgent(falcoctlUserAgent)
+	if client.Oauth && client.ClientCredentials != nil {
+		client.Client = client.ClientCredentials.Client(client.Ctx)
+	} else {
+		authClient := auth.Client{
+			Client: &http.Client{
+				Transport: &http.Transport{
+					Proxy: http.ProxyFromEnvironment,
+					DialContext: (&net.Dialer{
+						Timeout:   30 * time.Second,
+						KeepAlive: 30 * time.Second,
+					}).DialContext,
+					ForceAttemptHTTP2:     true,
+					MaxIdleConns:          100,
+					IdleConnTimeout:       90 * time.Second,
+					TLSHandshakeTimeout:   10 * time.Second,
+					ExpectContinueTimeout: 1 * time.Second,
+					// TODO(loresuso, alacuku): tls config.
+				},
+			},
+			Cache: auth.NewCache(),
+			Credential: func(ctx context.Context, registry string) (auth.Credential, error) {
+				return *client.Credentials, nil
+			},
+		}
 
-	return client
+		authClient.SetUserAgent(falcoctlUserAgent)
+
+		client.Client = &authClient
+	}
+
+	return client, nil
+}
+
+func WithContext(ctx context.Context) func(c *Client) {
+	return func(c *Client) {
+		c.Ctx = ctx
+	}
+}
+
+func WithCredentials(cred *auth.Credential) func(c *Client) {
+	return func(c *Client) {
+		c.Credentials = cred
+	}
+}
+
+func WithOauth(oauth bool) func(c *Client) {
+	return func(c *Client) {
+		c.Oauth = oauth
+	}
+}
+
+func WithClientCredentials(cred *clientcredentials.Config) func(c *Client) {
+	return func(c *Client) {
+		c.ClientCredentials = cred
+	}
 }
 
 // Login to remote registry.
