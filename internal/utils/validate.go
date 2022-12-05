@@ -128,7 +128,7 @@ func CheckRegistryConnection(ctx context.Context, cred *auth.Credential, regName
 		return nil
 	}
 
-	client := authn.NewClient(*cred)
+	client := authn.NewClient(authn.WithCredentials(cred))
 
 	// Ensure credentials are valid.
 	registry, err := remote.NewRegistry(regName)

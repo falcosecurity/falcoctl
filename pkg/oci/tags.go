@@ -19,11 +19,11 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
-	"oras.land/oras-go/v2/registry/remote/auth"
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
 // Tags returns the list of all available tags of an artifact given a reference to a repository.
-func Tags(ctx context.Context, ref string, client *auth.Client) ([]string, error) {
+func Tags(ctx context.Context, ref string, client *authn.Client) ([]string, error) {
 	repository, err := NewRepository(ref, WithClient(client))
 	if err != nil {
 		return nil, err

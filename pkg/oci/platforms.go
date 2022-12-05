@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
 // Platforms returns a list of all available platforms for a given ref.
-func Platforms(ctx context.Context, ref string, client *auth.Client) (map[string]struct{}, error) {
+func Platforms(ctx context.Context, ref string, client *authn.Client) (map[string]struct{}, error) {
 	repo, err := NewRepository(ref, WithClient(client))
 	if err != nil {
 		return nil, err

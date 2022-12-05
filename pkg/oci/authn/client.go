@@ -39,7 +39,7 @@ type Client struct {
 }
 
 // NewClient creates a new authenticated client to interact with a remote registry.
-func NewClient(options ...func(*Client)) (*Client, error) {
+func NewClient(options ...func(*Client)) *Client {
 	client := &Client{}
 
 	for _, o := range options {
@@ -76,27 +76,31 @@ func NewClient(options ...func(*Client)) (*Client, error) {
 		client.Client = &authClient
 	}
 
-	return client, nil
+	return client
 }
 
+// WithContext sets the context for the client.
 func WithContext(ctx context.Context) func(c *Client) {
 	return func(c *Client) {
 		c.Ctx = ctx
 	}
 }
 
+// WithCredentials sets the credentials for the client.
 func WithCredentials(cred *auth.Credential) func(c *Client) {
 	return func(c *Client) {
 		c.Credentials = cred
 	}
 }
 
+// WithOauth is used to enable OAuth2.0 Client Credentials flow.
 func WithOauth(oauth bool) func(c *Client) {
 	return func(c *Client) {
 		c.Oauth = oauth
 	}
 }
 
+// WithClientCredentials sets the client ID, client secret, token URL and scopes for OAuth2.0 client.
 func WithClientCredentials(cred *clientcredentials.Config) func(c *Client) {
 	return func(c *Client) {
 		c.ClientCredentials = cred

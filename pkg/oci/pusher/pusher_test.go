@@ -54,7 +54,7 @@ var _ = Describe("Pusher", func() {
 		err                   error
 	)
 	JustBeforeEach(func() {
-		pusher = ocipusher.NewPusher(authn.NewClient(auth.EmptyCredential), plainHTTP, tracker)
+		pusher = ocipusher.NewPusher(authn.NewClient(authn.WithCredentials(&auth.EmptyCredential)), plainHTTP, tracker)
 		ref = localRegistryHost + repoAndTag
 		result, err = pusher.Push(ctx, artifactType, ref, options...)
 	})

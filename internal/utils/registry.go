@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"oras.land/oras-go/v2/registry/remote/auth"
-
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
@@ -47,7 +45,7 @@ func PusherForRegistry(ctx context.Context, plainHTTP bool, registry string, pri
 
 // ClientForRegistry returns a new auth.Client for the given registry.
 // It authenticates the client if credentials are found in the system.
-func ClientForRegistry(ctx context.Context, registry string, printer *output.Printer) (*auth.Client, error) {
+func ClientForRegistry(ctx context.Context, registry string, printer *output.Printer) (*authn.Client, error) {
 	credentialStore, err := authn.NewStore([]string{}...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create new store: %w", err)
@@ -64,5 +62,5 @@ func ClientForRegistry(ctx context.Context, registry string, printer *output.Pri
 		return nil, fmt.Errorf("unable to connect to registry %q: %w", registry, err)
 	}
 
-	return authn.NewClient(cred), err
+	return authn.NewClient(authn.WithCredentials(&cred)), err
 }

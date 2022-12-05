@@ -28,9 +28,9 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
-	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -54,13 +54,13 @@ var (
 
 // Pusher implements push operations.
 type Pusher struct {
-	Client    *auth.Client
+	Client    *authn.Client
 	tracker   output.Tracker
 	plainHTTP bool
 }
 
 // NewPusher create a new pusher that can be used for push operations.
-func NewPusher(client *auth.Client, plainHTTP bool, tracker output.Tracker) *Pusher {
+func NewPusher(client *authn.Client, plainHTTP bool, tracker output.Tracker) *Pusher {
 	return &Pusher{
 		Client:    client,
 		tracker:   tracker,
