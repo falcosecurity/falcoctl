@@ -69,6 +69,7 @@ func ClientForRegistry(ctx context.Context, registry string, oauth bool, printer
 		if err != nil {
 			return nil, fmt.Errorf("unable to retrieve credentials for registry %s: %w", registry, err)
 		}
+	}
 
 	if err := CheckRegistryConnection(ctx, &cred, registry, printer); err != nil {
 		printer.Verbosef("%s", err.Error())
