@@ -43,6 +43,7 @@ Example - Pull artifact "myrulesfile" of type "rulesfile":
 type pullOptions struct {
 	*options.CommonOptions
 	*options.ArtifactOptions
+	*options.RegistryOptions
 	destDir string
 }
 
@@ -55,6 +56,7 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 	o := pullOptions{
 		CommonOptions:   opt,
 		ArtifactOptions: &options.ArtifactOptions{},
+		RegistryOptions: &options.RegistryOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -71,6 +73,7 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		},
 	}
 	o.CommonOptions.AddFlags(cmd.Flags())
+	o.RegistryOptions.AddFlags(cmd)
 	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
 	cmd.Flags().StringVarP(&o.destDir, "dest-dir", "o", "", "destination dir where to save the artifacts(default: current directory)")
 	return cmd
@@ -86,7 +89,7 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		return err
 	}
 
-	puller, err := utils.PullerForRegistry(ctx, registry, true, true, o.Printer)
+	puller, err := utils.PullerForRegistry(ctx, registry, o.PlainHTTP, o.Oauth, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the puller for registry %s: %w", registry, err)
 	}

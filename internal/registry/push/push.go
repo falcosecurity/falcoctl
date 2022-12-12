@@ -57,6 +57,7 @@ Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with multiple d
 type pushOptions struct {
 	*options.CommonOptions
 	*options.ArtifactOptions
+	*options.RegistryOptions
 }
 
 func (o pushOptions) validate() error {
@@ -68,6 +69,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 	o := pushOptions{
 		CommonOptions:   opt,
 		ArtifactOptions: &options.ArtifactOptions{},
+		RegistryOptions: &options.RegistryOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -85,6 +87,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		},
 	}
 	o.CommonOptions.AddFlags(cmd.Flags())
+	o.RegistryOptions.AddFlags(cmd)
 	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
 
 	return cmd
@@ -101,7 +104,7 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	pusher, err := utils.PusherForRegistry(ctx, true, true, registry, o.Printer)
+	pusher, err := utils.PusherForRegistry(ctx, o.PlainHTTP, o.Oauth, registry, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the pusher for registry %s: %w", registry, err)
 	}
