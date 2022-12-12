@@ -113,11 +113,10 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 
 // Descriptor retrieves the descriptor of an artifact from a remote repository.
 func (p *Puller) Descriptor(ctx context.Context, ref string) (*v1.Descriptor, error) {
-	repo, err := remote.NewRepository(ref)
+	repo, err := oci.NewRepository(ref, oci.WithClient(p.Client))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create new repository with ref %s: %w", ref, err)
+		return nil, err
 	}
-	repo.Client = p.Client
 
 	desc, _, err := repo.FetchReference(ctx, ref)
 	if err != nil {
