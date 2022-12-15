@@ -91,7 +91,7 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 
 	if err := utils.CheckRegistryConnection(ctx, cred, registry, o.Printer); err != nil {
 		o.Printer.Verbosef("%s", err.Error())
-		return fmt.Errorf("unable to connect to registry %q", registry)
+		return fmt.Errorf("unable to connect to registry %q: %w", registry, err)
 	}
 
 	// Store validated credentials

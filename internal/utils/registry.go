@@ -61,7 +61,7 @@ func ClientForRegistry(ctx context.Context, registry string, printer *output.Pri
 
 	if err := CheckRegistryConnection(ctx, &cred, registry, printer); err != nil {
 		printer.Verbosef("%s", err.Error())
-		return nil, fmt.Errorf("unable to connect to registry %q", registry)
+		return nil, fmt.Errorf("unable to connect to registry %q: %w", registry, err)
 	}
 
 	return authn.NewClient(cred), err
