@@ -71,7 +71,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "push file hostname/repo[:tag|@digest] [flags]",
+		Use:                   "push hostname/repo[:tag|@digest] file [flags]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Push a Falco OCI artifact to remote registry",
 		Long:                  longPush,
