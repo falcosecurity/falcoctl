@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oci
+package repository
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
-// Repository is an HTTP client to a remote repository.
+// Repository is an HTTP client to interact with a remote repository.
 type Repository struct {
 	*remote.Repository
 }

@@ -21,11 +21,12 @@ import (
 	"github.com/blang/semver"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
+	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
 )
 
 // Tags returns the list of all available tags of an artifact given a reference to a repository.
 func Tags(ctx context.Context, ref string, client *authn.Client) ([]string, error) {
-	repository, err := NewRepository(ref, WithClient(client))
+	repository, err := repository.NewRepository(ref, repository.WithClient(client))
 	if err != nil {
 		return nil, err
 	}

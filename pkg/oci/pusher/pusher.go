@@ -31,6 +31,7 @@ import (
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
+	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -94,9 +95,9 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, fmt.Errorf("expecting no dependencies for plugin artifacts but received %s", o.Dependencies)
 	}
 
-	repo, err := oci.NewRepository(ref,
-		oci.WithClient(p.Client),
-		oci.WithPlainHTTP(p.plainHTTP))
+	repo, err := repository.NewRepository(ref,
+		repository.WithClient(p.Client),
+		repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}
