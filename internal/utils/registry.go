@@ -24,12 +24,13 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
+	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 // PullerForRegistry returns a new ocipuller.Puller ready to be used for the given registry.
 func PullerForRegistry(ctx context.Context, registry string, plainHTTP, oauth bool, printer *output.Printer) (*ocipuller.Puller, error) {
-	client, err := ClientForRegistry(ctx, registry, oauth, printer)
+	client, err := ClientForRegistry(ctx, registry, plainHTTP, oauth, printer)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func PullerForRegistry(ctx context.Context, registry string, plainHTTP, oauth bo
 
 // PusherForRegistry returns ane ocipusher.Pusher ready to be used for the given registry.
 func PusherForRegistry(ctx context.Context, plainHTTP, oauth bool, registry string, printer *output.Printer) (*ocipusher.Pusher, error) {
-	client, err := ClientForRegistry(ctx, registry, oauth, printer)
+	client, err := ClientForRegistry(ctx, registry, plainHTTP, oauth, printer)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func PusherForRegistry(ctx context.Context, plainHTTP, oauth bool, registry stri
 
 // ClientForRegistry returns a new auth.Client for the given registry.
 // It authenticates the client if credentials are found in the system.
-func ClientForRegistry(ctx context.Context, registry string, oauth bool, printer *output.Printer) (*authn.Client, error) {
+func ClientForRegistry(ctx context.Context, reg string, plainHTTP, oauth bool, printer *output.Printer) (*authn.Client, error) {
 	var cred auth.Credential
 	var conf *clientcredentials.Config
 	var err error
@@ -65,20 +66,23 @@ func ClientForRegistry(ctx context.Context, registry string, oauth bool, printer
 		}
 
 		printer.Verbosef("Retrieving credentials from local store")
-		cred, err = credentialStore.Credential(ctx, registry)
+		cred, err = credentialStore.Credential(ctx, reg)
 		if err != nil {
-			return nil, fmt.Errorf("unable to retrieve credentials for registry %s: %w", registry, err)
+			return nil, fmt.Errorf("unable to retrieve credentials for registry %s: %w", reg, err)
 		}
 	}
 
-	if err := CheckRegistryConnection(ctx, &cred, registry, printer); err != nil {
-		printer.Verbosef("%s", err.Error())
-		return nil, fmt.Errorf("unable to connect to registry %q: %w", registry, err)
-	}
-
-	return authn.NewClient(
+	client := authn.NewClient(
 		authn.WithContext(ctx),
 		authn.WithClientCredentials(conf),
 		authn.WithOauth(oauth),
-		authn.WithCredentials(&cred)), err
+		authn.WithCredentials(&cred))
+
+	r, err := registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(plainHTTP))
+
+	if err := r.CheckConnection(ctx); err != nil {
+		return nil, fmt.Errorf("unable to connect to remote registry %q: %w", reg, err)
+	}
+
+	return client, nil
 }

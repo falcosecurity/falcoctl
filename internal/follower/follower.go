@@ -74,7 +74,7 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 		return nil, fmt.Errorf("unable to extract tag from ref %q: %w", ref, err)
 	}
 
-	client, err := utils.ClientForRegistry(ctx, reg, false, printer)
+	client, err := utils.ClientForRegistry(ctx, reg, false, false, printer)
 	if err != nil {
 		return nil, err
 	}
