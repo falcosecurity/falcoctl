@@ -16,13 +16,13 @@ package cmd
 
 import (
 	"context"
-	"github.com/falcosecurity/falcoctl/internal/artifact/list"
 
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/artifact/follow"
 	"github.com/falcosecurity/falcoctl/internal/artifact/info"
 	"github.com/falcosecurity/falcoctl/internal/artifact/install"
+	"github.com/falcosecurity/falcoctl/internal/artifact/list"
 	"github.com/falcosecurity/falcoctl/internal/artifact/search"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )

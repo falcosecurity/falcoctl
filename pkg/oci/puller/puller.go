@@ -26,6 +26,7 @@ import (
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
+	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -51,9 +52,9 @@ func NewPuller(client *authn.Client, plainHTTP bool, tracker output.Tracker) *Pu
 func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.RegistryResult, error) {
 	fileStore := file.New(destDir)
 
-	repo, err := oci.NewRepository(ref,
-		oci.WithClient(p.Client),
-		oci.WithPlainHTTP(p.plainHTTP))
+	repo, err := repository.NewRepository(ref,
+		repository.WithClient(p.Client),
+		repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 
 // Descriptor retrieves the descriptor of an artifact from a remote repository.
 func (p *Puller) Descriptor(ctx context.Context, ref string) (*v1.Descriptor, error) {
-	repo, err := oci.NewRepository(ref, oci.WithClient(p.Client))
+	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client))
 	if err != nil {
 		return nil, err
 	}
