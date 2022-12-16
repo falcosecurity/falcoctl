@@ -17,6 +17,7 @@ package login
 import (
 	"context"
 	"fmt"
+	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -66,12 +67,12 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 
 // RunLogin executes the business logic for the login command.
 func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
-	var registry string
+	var reg string
 
 	if n := len(args); n == 1 {
-		registry = args[0]
+		reg = args[0]
 	} else {
-		registry = oci.DefaultRegistry
+		reg = oci.DefaultRegistry
 	}
 
 	user, token, err := utils.GetCredentials(o.Printer)
@@ -84,9 +85,12 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		Password: token,
 	}
 
-	if err := utils.CheckRegistryConnection(ctx, cred, registry, o.Printer); err != nil {
+	client := authn.NewClient(authn.WithCredentials(cred))
+	r, err := registry.NewRegistry(reg, registry.WithClient(client))
+
+	if err := r.CheckConnection(ctx); err != nil {
 		o.Printer.Verbosef("%s", err.Error())
-		return fmt.Errorf("unable to connect to registry %q: %w", registry, err)
+		return fmt.Errorf("unable to connect to reg %q: %w", reg, err)
 	}
 
 	// Store validated credentials
