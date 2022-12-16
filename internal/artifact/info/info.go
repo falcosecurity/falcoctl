@@ -25,8 +25,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
-	"github.com/falcosecurity/falcoctl/pkg/oci"
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
+	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -66,11 +65,6 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		return err
 	}
 
-	credentialStore, err := authn.NewStore([]string{}...)
-	if err != nil {
-		return err
-	}
-
 	var data [][]string
 	for _, name := range args {
 		var ref string
@@ -92,14 +86,17 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			return err
 		}
 
-		cred, err := credentialStore.Credential(ctx, reg)
+		client, err := utils.ClientForRegistry(ctx, reg, false, false, o.Printer)
 		if err != nil {
 			return err
 		}
 
-		client := authn.NewClient(authn.WithCredentials(&cred))
+		repo, err := repository.NewRepository(ref, repository.WithClient(client))
+		if err != nil {
+			return err
+		}
 
-		tags, err := oci.Tags(ctx, ref, client)
+		tags, err := repo.Tags(ctx, ref, client)
 		if err != nil {
 			o.Printer.Warning.Printfln("cannot retrieve tags from %q", ref)
 			continue
