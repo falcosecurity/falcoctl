@@ -15,10 +15,12 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 
 	"oras.land/oras-go/v2/registry/remote"
 
+	"github.com/blang/semver"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
@@ -58,4 +60,56 @@ func WithPlainHTTP(plainHTTP bool) func(r *Repository) {
 	return func(r *Repository) {
 		r.PlainHTTP = plainHTTP
 	}
+}
+
+// Tags returns the list of all available tags of an artifact given a reference to a repository.
+func (r *Repository) Tags(ctx context.Context, ref string, client *authn.Client) ([]string, error) {
+	var result []string
+	var tagRetriever = func(tags []string) error {
+		result = tags
+		return nil
+	}
+
+	err := r.Repository.Tags(ctx, "", tagRetriever)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err = sortTags(result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func sortTags(tags []string) ([]string, error) {
+	var parsedVersions []semver.Version
+	var latest bool
+	for _, t := range tags {
+		if t == "latest" {
+			latest = true
+			continue
+		}
+
+		parsedVersion, err := semver.Parse(t)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse version %q", t)
+		}
+
+		parsedVersions = append(parsedVersions, parsedVersion)
+	}
+
+	semver.Sort(parsedVersions)
+
+	var result []string
+	for _, parsedVersion := range parsedVersions {
+		result = append(result, parsedVersion.String())
+	}
+
+	if latest {
+		result = append(result, "latest")
+	}
+
+	return result, nil
 }
