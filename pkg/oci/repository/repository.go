@@ -63,7 +63,7 @@ func WithPlainHTTP(plainHTTP bool) func(r *Repository) {
 }
 
 // Tags returns the list of all available tags of an artifact given a reference to a repository.
-func (r *Repository) Tags(ctx context.Context, ref string, client *authn.Client) ([]string, error) {
+func (r *Repository) Tags(ctx context.Context) ([]string, error) {
 	var result []string
 	var tagRetriever = func(tags []string) error {
 		result = tags

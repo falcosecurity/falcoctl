@@ -32,12 +32,14 @@ import (
 
 type artifactInfoOptions struct {
 	*options.CommonOptions
+	*options.RegistryOptions
 }
 
 // NewArtifactInfoCmd returns the artifact info command.
 func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := artifactInfoOptions{
-		CommonOptions: opt,
+		CommonOptions:   opt,
+		RegistryOptions: &options.RegistryOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -50,6 +52,8 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 			o.Printer.CheckErr(o.RunArtifactInfo(ctx, args))
 		},
 	}
+
+	o.RegistryOptions.AddFlags(cmd)
 
 	return cmd
 }
@@ -86,19 +90,21 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			return err
 		}
 
-		client, err := utils.ClientForRegistry(ctx, reg, false, false, o.Printer)
+		client, err := utils.ClientForRegistry(ctx, reg, o.PlainHTTP, o.Oauth, o.Printer)
 		if err != nil {
 			return err
 		}
 
-		repo, err := repository.NewRepository(ref, repository.WithClient(client))
+		repo, err := repository.NewRepository(ref,
+			repository.WithClient(client),
+			repository.WithPlainHTTP(o.PlainHTTP))
 		if err != nil {
 			return err
 		}
 
-		tags, err := repo.Tags(ctx, ref, client)
+		tags, err := repo.Tags(ctx)
 		if err != nil {
-			o.Printer.Warning.Printfln("cannot retrieve tags from %q", ref)
+			o.Printer.Warning.Printfln("cannot retrieve tags from %q, %w", ref, err)
 			continue
 		}
 

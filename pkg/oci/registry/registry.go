@@ -17,6 +17,7 @@ package registry
 import (
 	"context"
 	"fmt"
+
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"oras.land/oras-go/v2/registry/remote"
 )

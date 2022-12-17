@@ -32,6 +32,7 @@ import (
 
 type artifactInstallOptions struct {
 	*options.CommonOptions
+	*options.RegistryOptions
 	rulesfilesDir string
 	pluginsDir    string
 }
@@ -39,7 +40,8 @@ type artifactInstallOptions struct {
 // NewArtifactInstallCmd returns the artifact install command.
 func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := artifactInstallOptions{
-		CommonOptions: opt,
+		CommonOptions:   opt,
+		RegistryOptions: &options.RegistryOptions{},
 	}
 
 	cmd := &cobra.Command{
@@ -53,6 +55,7 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		},
 	}
 
+	o.RegistryOptions.AddFlags(cmd)
 	cmd.Flags().StringVarP(&o.rulesfilesDir, "rulesfiles-dir", "", config.RulesfilesDir,
 		"directory where to install rules. Defaults to /etc/falco")
 	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
@@ -99,7 +102,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		puller, err := utils.PullerForRegistry(ctx, reg, false, false, o.Printer)
+		puller, err := utils.PullerForRegistry(ctx, reg, o.PlainHTTP, o.Oauth, o.Printer)
 		if err != nil {
 			return err
 		}
