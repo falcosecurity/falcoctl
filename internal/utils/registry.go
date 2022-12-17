@@ -79,6 +79,9 @@ func ClientForRegistry(ctx context.Context, reg string, plainHTTP, oauth bool, p
 		authn.WithCredentials(&cred))
 
 	r, err := registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(plainHTTP))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create registry: %w", err)
+	}
 
 	if err := r.CheckConnection(ctx); err != nil {
 		return nil, fmt.Errorf("unable to connect to remote registry %q: %w", reg, err)

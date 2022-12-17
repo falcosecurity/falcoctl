@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/blang/semver"
 	"oras.land/oras-go/v2/registry/remote"
 
-	"github.com/blang/semver"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 

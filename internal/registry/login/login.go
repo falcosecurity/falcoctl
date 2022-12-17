@@ -17,7 +17,6 @@ package login
 import (
 	"context"
 	"fmt"
-	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -25,6 +24,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
+	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -87,6 +87,9 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 
 	client := authn.NewClient(authn.WithCredentials(cred))
 	r, err := registry.NewRegistry(reg, registry.WithClient(client))
+	if err != nil {
+		return fmt.Errorf("unable to create registry: %w", err)
+	}
 
 	if err := r.CheckConnection(ctx); err != nil {
 		o.Printer.Verbosef("%s", err.Error())
