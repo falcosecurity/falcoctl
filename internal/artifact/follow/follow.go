@@ -57,6 +57,7 @@ Example - Install and follow "cloudtrail" plugins using the full artifact refere
 
 type artifactFollowOptions struct {
 	*options.CommonOptions
+	*options.RegistryOptions
 	rulesfilesDir string
 	pluginsDir    string
 	every         time.Duration
@@ -66,8 +67,9 @@ type artifactFollowOptions struct {
 // NewArtifactFollowCmd returns the artifact follow command.
 func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := artifactFollowOptions{
-		CommonOptions: opt,
-		closeChan:     make(chan bool),
+		CommonOptions:   opt,
+		RegistryOptions: &options.RegistryOptions{},
+		closeChan:       make(chan bool),
 	}
 
 	cmd := &cobra.Command{
@@ -80,6 +82,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		},
 	}
 
+	o.RegistryOptions.AddFlags(cmd)
 	cmd.Flags().DurationVarP(&o.every, "every", "e", config.FollowResync, "Time interval how often it checks for a new version of the "+
 		"artifact")
 	// TODO (alacuku): move it in a dedicate data structure since they are in common with artifactInstall command.
@@ -126,6 +129,8 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			RulefilesDir:      o.rulesfilesDir,
 			PluginsDir:        o.pluginsDir,
 			ArtifactReference: ref,
+			PlainHTTP:         o.PlainHTTP,
+			Oauth:             o.Oauth,
 			Verbose:           o.IsVerbose(),
 			CloseChan:         o.closeChan,
 		}
