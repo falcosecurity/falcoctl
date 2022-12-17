@@ -18,8 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"oras.land/oras-go/v2/registry/remote"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
 // Registry is an HTTP client to interact with a remote registry.

@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"strings"
 
+	"oras.land/oras-go/v2/registry"
+
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
-	"oras.land/oras-go/v2/registry"
 )
 
 // GetRegistryFromRef extracts the registry from a ref string.
