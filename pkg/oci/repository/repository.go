@@ -51,7 +51,7 @@ func NewRepository(ref string, options ...func(*Repository)) (*Repository, error
 // WithClient sets the underlying HTTP client to be used for requests.
 func WithClient(client *authn.Client) func(r *Repository) {
 	return func(r *Repository) {
-		r.Client = client
+		r.Client = client.Client
 	}
 }
 

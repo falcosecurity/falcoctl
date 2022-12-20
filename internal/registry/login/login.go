@@ -88,12 +88,12 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 	client := authn.NewClient(authn.WithCredentials(cred))
 	r, err := registry.NewRegistry(reg, registry.WithClient(client))
 	if err != nil {
-		return fmt.Errorf("unable to create registry: %w", err)
+		return err
 	}
 
 	if err := r.CheckConnection(ctx); err != nil {
 		o.Printer.Verbosef("%s", err.Error())
-		return fmt.Errorf("unable to connect to reg %q: %w", reg, err)
+		return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
 	}
 
 	// Store validated credentials
