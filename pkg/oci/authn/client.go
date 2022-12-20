@@ -29,9 +29,8 @@ const (
 	falcoctlUserAgent = "falcoctl"
 )
 
-// Client is an HTTP client that can authenticate with auth.Credentials or via OAuth2.0 Client Credentials flow.
-type Client struct {
-	remote.Client
+// Options used for the HTTP client that can authenticate with auth.Credentials or via OAuth2.0 Options Credentials flow.
+type Options struct {
 	Ctx               context.Context
 	Credentials       *auth.Credential
 	Oauth             bool
@@ -39,15 +38,15 @@ type Client struct {
 }
 
 // NewClient creates a new authenticated client to interact with a remote registry.
-func NewClient(options ...func(*Client)) *Client {
-	client := &Client{}
+func NewClient(options ...func(*Options)) remote.Client {
+	opt := &Options{}
 
 	for _, o := range options {
-		o(client)
+		o(opt)
 	}
 
-	if client.Oauth && client.ClientCredentials != nil {
-		client.Client = client.ClientCredentials.Client(client.Ctx)
+	if opt.Oauth && opt.ClientCredentials != nil {
+		return opt.ClientCredentials.Client(opt.Ctx)
 	} else {
 		authClient := auth.Client{
 			Client: &http.Client{
@@ -67,42 +66,34 @@ func NewClient(options ...func(*Client)) *Client {
 			},
 			Cache: auth.NewCache(),
 			Credential: func(ctx context.Context, registry string) (auth.Credential, error) {
-				return *client.Credentials, nil
+				return *opt.Credentials, nil
 			},
 		}
 
 		authClient.SetUserAgent(falcoctlUserAgent)
 
-		client.Client = &authClient
-	}
-
-	return client
-}
-
-// WithContext sets the context for the client.
-func WithContext(ctx context.Context) func(c *Client) {
-	return func(c *Client) {
-		c.Ctx = ctx
+		return &authClient
 	}
 }
 
 // WithCredentials sets the credentials for the client.
-func WithCredentials(cred *auth.Credential) func(c *Client) {
-	return func(c *Client) {
+func WithCredentials(cred *auth.Credential) func(c *Options) {
+	return func(c *Options) {
 		c.Credentials = cred
 	}
 }
 
-// WithOauth is used to enable OAuth2.0 Client Credentials flow.
-func WithOauth(oauth bool) func(c *Client) {
-	return func(c *Client) {
+// WithOauth is used to enable OAuth2.0 Options Credentials flow.
+func WithOauth(ctx context.Context, oauth bool) func(c *Options) {
+	return func(c *Options) {
 		c.Oauth = oauth
+		c.Ctx = ctx
 	}
 }
 
 // WithClientCredentials sets the client ID, client secret, token URL and scopes for OAuth2.0 client.
-func WithClientCredentials(cred *clientcredentials.Config) func(c *Client) {
-	return func(c *Client) {
+func WithClientCredentials(cred *clientcredentials.Config) func(c *Options) {
+	return func(c *Options) {
 		c.ClientCredentials = cred
 	}
 }

@@ -23,23 +23,23 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
+	"oras.land/oras-go/v2/registry/remote"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci"
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 // Puller implements pull operations.
 type Puller struct {
-	Client    *authn.Client
+	Client    remote.Client
 	tracker   output.Tracker
 	plainHTTP bool
 }
 
 // NewPuller create a new puller that can be used for pull operations.
 // The client must be ready to be used by the puller.
-func NewPuller(client *authn.Client, plainHTTP bool, tracker output.Tracker) *Puller {
+func NewPuller(client remote.Client, plainHTTP bool, tracker output.Tracker) *Puller {
 	return &Puller{
 		Client:    client,
 		tracker:   tracker,
