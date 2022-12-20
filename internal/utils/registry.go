@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"golang.org/x/oauth2/clientcredentials"
+	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
@@ -49,7 +50,7 @@ func PusherForRegistry(ctx context.Context, plainHTTP, oauth bool, registry stri
 
 // ClientForRegistry returns a new auth.Client for the given registry.
 // It authenticates the client if credentials are found in the system.
-func ClientForRegistry(ctx context.Context, reg string, plainHTTP, oauth bool, printer *output.Printer) (*authn.Client, error) {
+func ClientForRegistry(ctx context.Context, reg string, plainHTTP, oauth bool, printer *output.Printer) (remote.Client, error) {
 	var cred auth.Credential
 	var conf *clientcredentials.Config
 	var err error
@@ -73,9 +74,8 @@ func ClientForRegistry(ctx context.Context, reg string, plainHTTP, oauth bool, p
 	}
 
 	client := authn.NewClient(
-		authn.WithContext(ctx),
 		authn.WithClientCredentials(conf),
-		authn.WithOauth(oauth),
+		authn.WithOauth(ctx, oauth),
 		authn.WithCredentials(&cred))
 
 	r, err := registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(plainHTTP))

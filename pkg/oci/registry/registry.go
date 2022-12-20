@@ -22,8 +22,6 @@ import (
 
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
-
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
 // Registry is an HTTP client to interact with a remote registry.
@@ -51,9 +49,9 @@ func NewRegistry(ref string, options ...func(*Registry)) (*Registry, error) {
 }
 
 // WithClient sets the underlying HTTP client to be used for requests.
-func WithClient(client *authn.Client) func(r *Registry) {
+func WithClient(client remote.Client) func(r *Registry) {
 	return func(r *Registry) {
-		r.Client = client.Client
+		r.Client = client
 	}
 }
 

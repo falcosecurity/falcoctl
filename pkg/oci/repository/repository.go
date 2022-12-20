@@ -20,8 +20,6 @@ import (
 
 	"github.com/blang/semver"
 	"oras.land/oras-go/v2/registry/remote"
-
-	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
 // Repository is an HTTP client to interact with a remote repository.
@@ -49,9 +47,9 @@ func NewRepository(ref string, options ...func(*Repository)) (*Repository, error
 }
 
 // WithClient sets the underlying HTTP client to be used for requests.
-func WithClient(client *authn.Client) func(r *Repository) {
+func WithClient(client remote.Client) func(r *Repository) {
 	return func(r *Repository) {
-		r.Client = client.Client
+		r.Client = client
 	}
 }
 
