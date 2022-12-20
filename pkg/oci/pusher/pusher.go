@@ -183,7 +183,9 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	}
 
 	if len(o.Tags) > 0 {
-		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, oras.DefaultTagNOptions); err != nil {
+		tagNOptions := oras.DefaultTagNOptions
+		tagNOptions.Concurrency = 1
+		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, tagNOptions); err != nil {
 			return nil, err
 		}
 	}
