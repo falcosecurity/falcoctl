@@ -90,9 +90,9 @@ func sortTags(tags []string) ([]string, error) {
 			continue
 		}
 
-		parsedVersion, err := semver.Parse(t)
+		parsedVersion, err := semver.ParseTolerant(t)
 		if err != nil {
-			return nil, fmt.Errorf("cannot parse version %q", t)
+			return nil, fmt.Errorf("cannot parse version %q: %w", t, err)
 		}
 
 		parsedVersions = append(parsedVersions, parsedVersion)
