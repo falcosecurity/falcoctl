@@ -58,6 +58,9 @@ type Pusher struct {
 	Client    remote.Client
 	tracker   output.Tracker
 	plainHTTP bool
+	// workingDir is an internal temporary directory that the Pusher
+	// uses to create temporary files to add them to the filestore and push them.
+	workingDir string
 }
 
 // NewPusher create a new pusher that can be used for push operations.
@@ -118,16 +121,16 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	defaultCopyOptions.Concurrency = 1
 
 	// Initialize the file store for this artifact.
-	tmpDir, err := os.MkdirTemp("", "falcoctl")
+	p.workingDir, err = os.MkdirTemp("", "falcoctl")
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(p.workingDir)
 
 	manifestDescs := make([]*v1.Descriptor, len(o.Filepaths))
 	var fileStore *file.Store
 	for i, artifactPath := range o.Filepaths {
-		fileStore = file.New(tmpDir)
+		fileStore = file.New(p.workingDir)
 
 		platform := ""
 		if len(o.Platforms) > i {
@@ -264,7 +267,7 @@ func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaTy
 	}
 
 	// Create temporary common file. This is needed because we have to add it to the store.
-	configFile, err := os.CreateTemp("", "falcoctl")
+	configFile, err := os.CreateTemp(p.workingDir, "falcoctl")
 	if err != nil {
 		return nil, err
 	}
