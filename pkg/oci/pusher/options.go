@@ -74,7 +74,7 @@ func WithFilepathsAndPlatforms(filepaths, platforms []string) Option {
 // WithArtifactConfig sets the artifact configuration.
 //
 // Dependencies and requirements can be set by oci.ArtifactConfig.
-func WithArtifactConfig(config oci.ArtifactConfig) Option {
+func WithArtifactConfig(config oci.ArtifactConfig) Option { //nolint:gocritic,hugeParam // we want to avoid indirect modification
 	return func(o *opts) error {
 		o.ArtifactConfig = &config
 		return nil

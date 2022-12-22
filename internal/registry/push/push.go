@@ -111,7 +111,8 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 
 	// Setup OCI artifact configuration
 	config := oci.ArtifactConfig{
-		Name: o.Name,
+		Name:    o.Name,
+		Version: o.Version,
 	}
 	if config.Name == "" {
 		// extract artifact name from ref, if not provided by the user
