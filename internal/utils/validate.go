@@ -44,6 +44,18 @@ func TagFromRef(ref string) (string, error) {
 	return ref[i+1:], nil
 }
 
+// NameFromRef extracts the name of the artifact from a ref string.
+func NameFromRef(ref string) (string, error) {
+	// todo: check and improve parsing logic
+	parts := strings.Split(ref, "/")
+	parts = strings.Split(parts[len(parts)-1], "@")
+	parts = strings.Split(parts[0], ":")
+	if parts[0] == "" {
+		return "", fmt.Errorf(`cannot extract artifact name from reference: %q`, ref)
+	}
+	return "", nil
+}
+
 // ParseReference is a helper function that parse with the followig logic:
 //
 //  1. if name is the name of an artifact, it will use the merged index to compute
