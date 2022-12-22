@@ -110,7 +110,15 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	}
 
 	// Setup OCI artifact configuration
-	config := oci.ArtifactConfig{}
+	config := oci.ArtifactConfig{
+		Name: o.Name,
+	}
+	if config.Name == "" {
+		// extract artifact name from ref, if not provided by the user
+		if config.Name, err = utils.NameFromRef(ref); err != nil {
+			return err
+		}
+	}
 	if err := config.ParseDependencies(o.Dependencies...); err != nil {
 		return err
 	}

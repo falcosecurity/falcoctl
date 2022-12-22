@@ -67,6 +67,8 @@ type RegistryResult struct {
 
 // ArtifactConfig is the struct stored in the config layer of rulesfile and plugin artifacts. Each type fills only the fields of interest.
 type ArtifactConfig struct {
+	// It's the unique name used by the index
+	Name         string                `json:"name,omitempty"`
 	Dependencies []ArtifactDependency  `json:"dependencies,omitempty"`
 	Requirements []ArtifactRequirement `json:"requirements,omitempty"`
 }

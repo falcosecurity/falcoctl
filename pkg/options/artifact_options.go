@@ -28,6 +28,7 @@ import (
 // may embed this struct in their options.
 type ArtifactOptions struct {
 	ArtifactType     oci.ArtifactType
+	Name             string
 	Platforms        []string // orders matter (same as args)
 	Dependencies     []string
 	Requirements     []string
@@ -76,6 +77,10 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 
 		cmd.Flags().StringVar(&art.AnnotationSource, "annotation-source", "",
 			`set annotation source for the artifact`)
+
+		cmd.Flags().StringVar(&art.Name, "name", "",
+			`set the unique name of the artifact (if not set, the name is extracted from the reference)`)
+
 	case "pull":
 		if len(art.Platforms) > 1 {
 			return fmt.Errorf("--platform can be specified only one time for pull")
