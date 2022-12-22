@@ -69,6 +69,7 @@ type RegistryResult struct {
 type ArtifactConfig struct {
 	// It's the unique name used by the index
 	Name         string                `json:"name,omitempty"`
+	Version      string                `json:"version,omitempty"`
 	Dependencies []ArtifactDependency  `json:"dependencies,omitempty"`
 	Requirements []ArtifactRequirement `json:"requirements,omitempty"`
 }

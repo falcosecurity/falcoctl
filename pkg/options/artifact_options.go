@@ -29,6 +29,7 @@ import (
 type ArtifactOptions struct {
 	ArtifactType     oci.ArtifactType
 	Name             string
+	Version          string
 	Platforms        []string // orders matter (same as args)
 	Dependencies     []string
 	Requirements     []string
@@ -80,6 +81,14 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 
 		cmd.Flags().StringVar(&art.Name, "name", "",
 			`set the unique name of the artifact (if not set, the name is extracted from the reference)`)
+
+		cmd.Flags().StringVar(&art.Version, "version", "",
+			`set the version of the artifact`)
+
+		// todo: remove this if we can extract the version from the ref tag
+		if err := cmd.MarkFlagRequired("version"); err != nil {
+			return err
+		}
 
 	case "pull":
 		if len(art.Platforms) > 1 {
