@@ -67,7 +67,53 @@ type RegistryResult struct {
 
 // ArtifactConfig is the struct stored in the config layer of rulesfile and plugin artifacts. Each type fills only the fields of interest.
 type ArtifactConfig struct {
-	Dependencies []ArtifactDependency `json:"dependencies,omitempty"`
+	Dependencies []ArtifactDependency  `json:"dependencies,omitempty"`
+	Requirements []ArtifactRequirement `json:"requirements,omitempty"`
+}
+
+// ArtifactRequirement represents the artifact's requirement to be stored in the config.
+type ArtifactRequirement struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// SetRequirement stores an artifact dependency in the config.
+//
+// Return the insertion position.
+func (rc *ArtifactConfig) SetRequirement(name, version string) int {
+	for i, d := range rc.Requirements {
+		if d.Name == name {
+			rc.Requirements[i].Version = version
+			return i
+		}
+	}
+
+	// we could insert in the middle while looking for a dup...
+	// ...but we are lazy.
+	rc.Requirements = append(rc.Requirements, ArtifactRequirement{
+		Name:    name,
+		Version: version,
+	})
+	sort.Slice(rc.Requirements, func(i, j int) bool {
+		return rc.Requirements[i].Name < rc.Requirements[j].Name
+	})
+	return sort.Search(len(rc.Requirements), func(i int) bool {
+		return rc.Requirements[i].Name >= name
+	})
+}
+
+// ParseRequirements parses artifact requirements in the format "name:version" and set them in the config.
+func (rc *ArtifactConfig) ParseRequirements(requirements ...string) error {
+	for _, d := range requirements {
+		// todo: validate name
+		parts := strings.Split(d, ":")
+		if len(parts) != 2 {
+			return fmt.Errorf(`cannot parse "%s"`, d)
+		}
+
+		rc.SetRequirement(parts[0], parts[1])
+	}
+	return nil
 }
 
 type dependency struct {
