@@ -39,7 +39,7 @@ var _ = Describe("Pusher", func() {
 		filePathsAndPlatforms ocipusher.Option
 		filePaths             ocipusher.Option
 		tags                  ocipusher.Option
-		dependencies          ocipusher.Option
+		config                ocipusher.Option
 		annotationSource      ocipusher.Option
 		options               []ocipusher.Option
 		repoAndTag            = "/generic-repo:tag"
@@ -80,16 +80,18 @@ var _ = Describe("Pusher", func() {
 			})
 		})
 
-		Context("with dependencies", func() {
+		Context("with config", func() {
 			BeforeEach(func() {
-				filePathsAndPlatforms = ocipusher.WithFilepaths([]string{testPluginTarball})
-				dependencies = ocipusher.WithDependencies([]string{"myDep:1.2.3"}...)
-				options = []ocipusher.Option{filePathsAndPlatforms, dependencies}
+				filePathsAndPlatforms = ocipusher.WithFilepathsAndPlatforms([]string{testPluginTarball}, []string{testPluginPlatform1})
+				artConfig := oci.ArtifactConfig{}
+				Expect(artConfig.ParseDependencies("my-dep:1.2.3|my-alt-dep:1.4.5")).ToNot(HaveOccurred())
+				Expect(artConfig.ParseRequirements("my-req:7.8.9")).ToNot(HaveOccurred())
+				config = ocipusher.WithArtifactConfig(artConfig)
+				options = []ocipusher.Option{filePathsAndPlatforms, config}
 			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("expecting no dependencies for plugin artifacts but received"))
-				Expect(result).To(BeNil())
+			It("should succeed", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
 			})
 		})
 
@@ -244,8 +246,12 @@ var _ = Describe("Pusher", func() {
 			When("valid dependencies and default tag", func() {
 				BeforeEach(func() {
 					filePaths = ocipusher.WithFilepaths([]string{testRuleTarball})
-					dependencies = ocipusher.WithDependencies([]string{"dep1:1.2.3", "dep2:2.3.1"}...)
-					options = []ocipusher.Option{filePaths, dependencies}
+					artConfig := oci.ArtifactConfig{}
+					Expect(artConfig.ParseDependencies("dep1:1.2.3", "dep2:2.3.1")).ToNot(HaveOccurred())
+					options = []ocipusher.Option{
+						filePaths,
+						ocipusher.WithArtifactConfig(artConfig),
+					}
 					// Repo and default tag for the artifact
 					repoAndTag = "/rulesfile-dependencies"
 					repo, err = localRegistry.Repository(ctx, "rulesfile-dependencies")
@@ -273,19 +279,6 @@ var _ = Describe("Pusher", func() {
 					Expect(dep).ToNot(BeNil())
 					// Check that we have the same number of deps that we set before.
 					Expect(len(dep.Dependencies)).To(Equal(2))
-				})
-			})
-
-			When("invalid dependencies", func() {
-				BeforeEach(func() {
-					filePaths = ocipusher.WithFilepaths([]string{testRuleTarball})
-					dependencies = ocipusher.WithDependencies([]string{"dep1:wrongdep"}...)
-					options = []ocipusher.Option{filePaths, dependencies}
-				})
-				It("should error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(errors.Is(err, ocipusher.ErrInvalidDependenciesFormat)).To(BeTrue())
-					Expect(result).To(BeNil())
 				})
 			})
 		})

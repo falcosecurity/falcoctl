@@ -109,14 +109,24 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 		return fmt.Errorf("an error occurred while creating the pusher for registry %s: %w", registry, err)
 	}
 
+	// Setup OCI artifact configuration
+	config := oci.ArtifactConfig{}
+	if err := config.ParseDependencies(o.Dependencies...); err != nil {
+		return err
+	}
+	if err := config.ParseRequirements(o.Requirements...); err != nil {
+		return err
+	}
+
 	opts := ocipusher.Options{
 		ocipusher.WithTags(o.Tags...),
 		ocipusher.WithAnnotationSource(o.AnnotationSource),
+		ocipusher.WithArtifactConfig(config),
 	}
 
 	switch o.ArtifactType {
 	case oci.Plugin:
-		opts = append(opts, ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms), ocipusher.WithDependencies(o.Dependencies...))
+		opts = append(opts, ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms))
 	case oci.Rulesfile:
 		opts = append(opts, ocipusher.WithFilepaths(paths))
 	}
