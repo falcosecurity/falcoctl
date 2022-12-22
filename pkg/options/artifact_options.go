@@ -30,6 +30,7 @@ type ArtifactOptions struct {
 	ArtifactType     oci.ArtifactType
 	Platforms        []string // orders matter (same as args)
 	Dependencies     []string
+	Requirements     []string
 	Tags             []string
 	AnnotationSource string
 }
@@ -66,6 +67,9 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 			// this should never happen.
 			return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
 		}
+
+		cmd.Flags().StringArrayVarP(&art.Requirements, "requires", "r", nil,
+			`set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"`)
 
 		cmd.Flags().StringArrayVarP(&art.Dependencies, "depends-on", "d", nil,
 			`set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"`)

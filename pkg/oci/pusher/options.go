@@ -14,12 +14,16 @@
 
 package pusher
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci"
+)
 
 type opts struct {
 	Filepaths        []string
 	Platforms        []string
-	Dependencies     []string
+	ArtifactConfig   *oci.ArtifactConfig
 	Tags             []string
 	AnnotationSource string
 }
@@ -67,13 +71,12 @@ func WithFilepathsAndPlatforms(filepaths, platforms []string) Option {
 	}
 }
 
-// WithDependencies sets the dependencies option.
+// WithArtifactConfig sets the artifact configuration.
 //
-// Dependencies can be expressed in the format "artifact-name:1.0.0"
-// (use "|" to append alternatives, eg. "|alternative-a:1.0.0|alternative-b:1.0.0").
-func WithDependencies(deps ...string) Option {
+// Dependencies and requirements can be set by oci.ArtifactConfig.
+func WithArtifactConfig(config oci.ArtifactConfig) Option {
 	return func(o *opts) error {
-		o.Dependencies = deps
+		o.ArtifactConfig = &config
 		return nil
 	}
 }

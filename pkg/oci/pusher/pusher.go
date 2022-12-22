@@ -92,12 +92,6 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, fmt.Errorf("expecting 1 rulesfile object received %d: %w", len(o.Filepaths), ErrInvalidNumberRulesfiles)
 	}
 
-	// Create the object to interact with the remote repo.
-	// If handling plugins check that no dependencies have been configured.
-	if artifactType == oci.Plugin && len(o.Dependencies) != 0 {
-		return nil, fmt.Errorf("expecting no dependencies for plugin artifacts but received %s", o.Dependencies)
-	}
-
 	repo, err := repository.NewRepository(ref,
 		repository.WithClient(p.Client),
 		repository.WithPlainHTTP(p.plainHTTP))
@@ -147,7 +141,7 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 
 		// Prepare configuration layer.
-		if configDesc, err = p.storeConfigLayer(ctx, fileStore, artifactType, o.Dependencies); err != nil {
+		if configDesc, err = p.storeConfigLayer(ctx, fileStore, artifactType, o.ArtifactConfig); err != nil {
 			return nil, err
 		}
 
@@ -219,21 +213,18 @@ func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store,
 }
 
 func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
-	artifactType oci.ArtifactType, dependencies []string) (*v1.Descriptor, error) {
+	artifactType oci.ArtifactType, artifactConfig *oci.ArtifactConfig) (*v1.Descriptor, error) {
 	var layerMediaType string
-	// Create config and fill common fields of the config (empty for now).
-	artifactConfig := oci.ArtifactConfig{}
-
-	err := artifactConfig.ParseDependencies(dependencies...)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", err.Error(), ErrInvalidDependenciesFormat)
-	}
-
 	switch artifactType {
 	case oci.Rulesfile:
 		layerMediaType = oci.FalcoRulesfileConfigMediaType
 	case oci.Plugin:
 		layerMediaType = oci.FalcoPluginConfigMediaType
+	}
+
+	// todo: this is likely unnecessary, since the json marshaller should do that. double-check
+	if artifactConfig == nil {
+		artifactConfig = &oci.ArtifactConfig{}
 	}
 
 	return p.toFileStore(ctx, fileStore, layerMediaType, ConfigLayerName, artifactConfig)
