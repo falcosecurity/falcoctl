@@ -151,7 +151,7 @@ func (a *ArtifactDependency) SetAlternative(name, version string) {
 // SetDependency stores an artifact dependency in the config.
 //
 // Return the insertion position.
-func (rc *ArtifactConfig) SetDependency(name, version string) int {
+func (rc *ArtifactConfig) SetDependency(name, version string, alternatives []dependency) int {
 	for i, d := range rc.Dependencies {
 		if d.Name == name {
 			rc.Dependencies[i].Version = version
@@ -162,8 +162,9 @@ func (rc *ArtifactConfig) SetDependency(name, version string) int {
 	// we could insert in the middle while looking for a dup...
 	// ...but we are lazy.
 	rc.Dependencies = append(rc.Dependencies, ArtifactDependency{
-		Name:    name,
-		Version: version,
+		Name:         name,
+		Version:      version,
+		Alternatives: alternatives,
 	})
 	sort.Slice(rc.Dependencies, func(i, j int) bool {
 		return rc.Dependencies[i].Name < rc.Dependencies[j].Name
@@ -186,7 +187,7 @@ func (rc *ArtifactConfig) ParseDependencies(dependencies ...string) error {
 			// The first dependency is used to fill the "name" and "version" fields.
 			// All the other dependencies, if any, are set as alternatives.
 			if i == 0 {
-				insertPos = rc.SetDependency(parsedRef.Name, parsedRef.Version)
+				insertPos = rc.SetDependency(parsedRef.Name, parsedRef.Version, nil)
 			} else {
 				rc.Dependencies[insertPos].SetAlternative(parsedRef.Name, parsedRef.Version)
 			}
