@@ -53,7 +53,13 @@ func NameFromRef(ref string) (string, error) {
 	if parts[0] == "" {
 		return "", fmt.Errorf(`cannot extract artifact name from reference: %q`, ref)
 	}
-	return "", nil
+
+	// Remember to append "-rules" if the ref contained "ruleset"
+	if strings.Contains(ref, "ruleset") {
+		parts[0] = parts[0] + "-rules"
+	}
+
+	return parts[0], nil
 }
 
 // ParseReference is a helper function that parse with the followig logic:
