@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"runtime"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
@@ -153,4 +154,76 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 	}
 
 	return &manifest, nil
+}
+
+// PullConfig fetches only the config layer from a given ref.
+func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (io.Reader, error) {
+	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client))
+	if err != nil {
+		return nil, err
+	}
+
+	desc, manifestReader, err := repo.FetchReference(ctx, ref)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch reference %q", ref)
+	}
+	defer manifestReader.Close()
+
+	// Resolve to actual manifest if an index is found.
+	if desc.MediaType == v1.MediaTypeImageIndex {
+		var index v1.Index
+		_, indexReader, err := repo.FetchReference(ctx, ref)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch index for ref %q", ref)
+		}
+
+		indexBytes, err := io.ReadAll(indexReader)
+		if err = json.Unmarshal(indexBytes, &index); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
+		}
+
+		// todo: decide if goos or arch should be passed to this function
+		found := false
+		for _, manifest := range index.Manifests {
+			if manifest.Platform.OS == runtime.GOOS &&
+				manifest.Platform.Architecture == runtime.GOARCH {
+				desc = manifest
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return nil, fmt.Errorf("unable to find a manifest matching the given platform: %s %s", runtime.GOOS, runtime.GOARCH)
+		}
+
+		manifestReader, err = repo.Fetch(ctx, desc)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch manifest desc with digest %s: %w", desc.Digest.String(), err)
+		}
+	}
+
+	var manifest v1.Manifest
+	manifestBytes, err := io.ReadAll(manifestReader)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read bytes from manifest reader for ref %q", ref)
+	}
+
+	if err = json.Unmarshal(manifestBytes, &manifest); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
+	}
+
+	configRef := manifest.Config.Digest.String()
+
+	descriptor, err := repo.Blobs().Resolve(ctx, configRef)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve to get descriptor for config blob %q", configRef)
+	}
+
+	rc, err := repo.Fetch(ctx, descriptor)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch descriptor with digest: %s", desc.Digest.String())
+	}
+
+	return rc, nil
 }
