@@ -16,7 +16,9 @@ package install
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -88,9 +90,61 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	}
 	defer os.RemoveAll(tmpDir)
 
+	// Specify how to pull config layer for each artifact requested by user.
+	resolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+		ref, err := utils.ParseReference(mergedIndexes, ref)
+
+		reg, err := utils.GetRegistryFromRef(ref)
+		if err != nil {
+			return nil, err
+		}
+
+		puller, err := utils.PullerForRegistry(ctx, reg, o.PlainHTTP, o.Oauth, o.Printer)
+		if err != nil {
+			return nil, err
+		}
+
+		configReader, err := puller.PullConfigLayer(ctx, ref)
+		if err != nil {
+			return nil, err
+		}
+
+		configBytes, err := io.ReadAll(configReader)
+		if err != nil {
+			return nil, err
+		}
+
+		var artifactConfig oci.ArtifactConfig
+		if err = json.Unmarshal(configBytes, &artifactConfig); err != nil {
+			return nil, err
+		}
+
+		return &oci.RegistryResult{
+			Config: artifactConfig,
+		}, nil
+
+	})
+
+	// Compute input to install dependencies
+	for i, arg := range args {
+		args[i], err = utils.ParseReference(mergedIndexes, arg)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Solve dependencies
+	o.Printer.Info.Println("Resolving dependencies ...")
+	resolvedDepsRefs, err := ResolveDeps(resolver, args...)
+	if err != nil {
+		return err
+	}
+
+	o.Printer.Info.Printfln("Installing the following artifacts: %v", resolvedDepsRefs)
+
 	// Install artifacts
-	for _, name := range args {
-		ref, err := utils.ParseReference(mergedIndexes, name)
+	for _, ref := range resolvedDepsRefs {
+		ref, err := utils.ParseReference(mergedIndexes, ref)
 		if err != nil {
 			return err
 		}
