@@ -119,7 +119,7 @@ func (rc *ArtifactConfig) ParseRequirements(requirements ...string) error {
 	return nil
 }
 
-type dependency struct {
+type Dependency struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
@@ -128,7 +128,7 @@ type dependency struct {
 type ArtifactDependency struct {
 	Name         string       `json:"name"`
 	Version      string       `json:"version"`
-	Alternatives []dependency `json:"alternatives,omitempty"`
+	Alternatives []Dependency `json:"alternatives,omitempty"`
 }
 
 // SetAlternative sets an alternative dependency for an artifact dependency.
@@ -142,7 +142,7 @@ func (a *ArtifactDependency) SetAlternative(name, version string) {
 
 	// we could insert in the middle while looking for a dup...
 	// ...but we are lazy.
-	a.Alternatives = append(a.Alternatives, dependency{name, version})
+	a.Alternatives = append(a.Alternatives, Dependency{name, version})
 	sort.Slice(a.Alternatives, func(i, j int) bool {
 		return a.Alternatives[i].Name < a.Alternatives[j].Name
 	})
