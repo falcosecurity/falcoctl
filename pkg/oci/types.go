@@ -119,6 +119,7 @@ func (rc *ArtifactConfig) ParseRequirements(requirements ...string) error {
 	return nil
 }
 
+// Dependency represent a dependency with its own name and version.
 type Dependency struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`

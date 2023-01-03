@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ type artifactConfigResolver func(ref string) (*oci.RegistryResult, error)
 type depsMapType map[string]*depInfo
 
 var (
-	CannotSatisfyDependenciesErr = errors.New("cannot satisfy dependencies")
+	// ErrCannotSatisfyDependencies is the error returned when we cannot correctly resolve dependencies.
+	ErrCannotSatisfyDependencies = errors.New("cannot satisfy dependencies")
 )
 
 type depInfo struct {
@@ -106,7 +107,7 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 					if existing.ver.Major != requiredVer.Major {
 						return nil, fmt.Errorf(
 							`%w: %s depends on %s:%s but an incompatible version %s:%s is required by other artifacts`,
-							CannotSatisfyDependenciesErr, name, required.Name, required.Version, required.Name, existing.ver.String(),
+							ErrCannotSatisfyDependencies, name, required.Name, required.Version, required.Name, existing.ver.String(),
 						)
 					}
 
@@ -119,30 +120,33 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 				// Are alternatives already in the map?
 				var foundAlternative = false
 				for _, alternative := range required.Alternatives {
-					if existing, exists := depMap[alternative.Name]; exists {
-						foundAlternative = true
-
-						alternativeVer, err := semver.Parse(alternative.Version)
-						if err != nil {
-							return nil, fmt.Errorf(`invalid artifact config: version %q is not semver compatible`, required.Version)
-						}
-
-						// Is the alternative specified by the user compatible?
-						if existing.ver.Major != alternativeVer.Major {
-							return nil, fmt.Errorf(
-								`%w: %s depends on %s:%s but an incompatible version %s:%s is required by other artifacts`,
-								CannotSatisfyDependenciesErr, name, required.Name, required.Version, required.Name, existing.ver.String(),
-							)
-						}
-
-						if alternativeVer.Compare(*existing.ver) > 0 {
-							if err := upsertMap(alternative.Name, alternative.Name+":"+alternativeVer.String()); err != nil {
-								return nil, err
-							}
-						}
-
-						break
+					existing, exists := depMap[alternative.Name]
+					if !exists {
+						continue
 					}
+
+					foundAlternative = true
+
+					alternativeVer, err := semver.Parse(alternative.Version)
+					if err != nil {
+						return nil, fmt.Errorf(`invalid artifact config: version %q is not semver compatible`, required.Version)
+					}
+
+					// Is the alternative specified by the user compatible?
+					if existing.ver.Major != alternativeVer.Major {
+						return nil, fmt.Errorf(
+							`%w: %s depends on %s:%s but an incompatible version %s:%s is required by other artifacts`,
+							ErrCannotSatisfyDependencies, name, required.Name, required.Version, required.Name, existing.ver.String(),
+						)
+					}
+
+					if alternativeVer.Compare(*existing.ver) > 0 {
+						if err := upsertMap(alternative.Name, alternative.Name+":"+alternativeVer.String()); err != nil {
+							return nil, err
+						}
+					}
+
+					break
 				}
 				if foundAlternative {
 					continue
