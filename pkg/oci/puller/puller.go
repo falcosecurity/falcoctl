@@ -156,7 +156,7 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 	return &manifest, nil
 }
 
-// PullConfig fetches only the config layer from a given ref.
+// PullConfigLayer fetches only the config layer from a given ref.
 func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (io.Reader, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client))
 	if err != nil {
@@ -178,6 +178,9 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (io.Reader, er
 		}
 
 		indexBytes, err := io.ReadAll(indexReader)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read manifest: %w", err)
+		}
 		if err = json.Unmarshal(indexBytes, &index); err != nil {
 			return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
 		}

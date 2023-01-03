@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,40 +50,21 @@ func (t *testCase) checkOutRef(outRef []string) bool {
 }
 
 func TestResolveDeps(t *testing.T) {
+	const (
+		ref1           = "ref1:0.1.2"
+		ref2           = "ref2:4.5.6"
+		dep1           = "dep1:1.2.3"
+		dep1Compatible = "dep1:1.3.0"
+		alt1           = "alt1:2.5.0"
+	)
+
 	testCases := []testCase{
 		{
 			scenario:    "resolve one dependency",
 			description: "ref:0.1.2 --> dep1:1.2.3",
-			inRef:       []string{"ref:0.1.2"},
+			inRef:       []string{ref1},
 			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-				if ref == "ref:0.1.2" {
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:         "ref",
-							Version:      "0.1.2",
-							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
-						},
-					}, nil
-				} else {
-					splittedRef := strings.Split(ref, ":")
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    splittedRef[0],
-							Version: splittedRef[1],
-							// no dependencies here
-						},
-					}, nil
-				}
-			}),
-			expectedOutRef: []string{"ref:0.1.2", "dep1:1.2.3"},
-			expectedErr:    nil,
-		},
-		{
-			scenario:    "resolve common compatible dependency",
-			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:1.3.0",
-			inRef:       []string{"ref1:0.1.2", "ref2:4.5.6"},
-			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-				if ref == "ref:0.1.2" {
+				if ref == ref1 {
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
 							Name:         "ref1",
@@ -91,7 +72,36 @@ func TestResolveDeps(t *testing.T) {
 							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
 						},
 					}, nil
-				} else if ref == "ref2:4.5.6" {
+				}
+
+				splittedRef := strings.Split(ref, ":")
+				return &oci.RegistryResult{
+					Config: oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+						// no dependencies here
+					},
+				}, nil
+
+			}),
+			expectedOutRef: []string{ref1, dep1},
+			expectedErr:    nil,
+		},
+		{
+			scenario:    "resolve common compatible dependency",
+			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:1.3.0",
+			inRef:       []string{ref1, ref2},
+			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+				switch ref {
+				case ref1:
+					return &oci.RegistryResult{
+						Config: oci.ArtifactConfig{
+							Name:         "ref1",
+							Version:      "0.1.2",
+							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
+						},
+					}, nil
+				case ref2:
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
 							Name:         "ref2",
@@ -99,7 +109,7 @@ func TestResolveDeps(t *testing.T) {
 							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.3.0"}},
 						},
 					}, nil
-				} else {
+				default:
 					splittedRef := strings.Split(ref, ":")
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
@@ -110,15 +120,16 @@ func TestResolveDeps(t *testing.T) {
 					}, nil
 				}
 			}),
-			expectedOutRef: []string{"ref1:0.1.2", "ref2:4.5.6", "dep1:1.3.0"},
+			expectedOutRef: []string{ref1, ref2, dep1Compatible},
 			expectedErr:    nil,
 		},
 		{
 			scenario:    "resolve common but not compatible dependency",
 			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:2.3.0",
-			inRef:       []string{"ref1:0.1.2", "ref2:4.5.6"},
+			inRef:       []string{ref1, ref2},
 			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-				if ref == "ref1:0.1.2" {
+				switch ref {
+				case ref1:
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
 							Name:         "ref1",
@@ -126,7 +137,7 @@ func TestResolveDeps(t *testing.T) {
 							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
 						},
 					}, nil
-				} else if ref == "ref2:4.5.6" {
+				case ref2:
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
 							Name:         "ref2",
@@ -134,7 +145,7 @@ func TestResolveDeps(t *testing.T) {
 							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "2.3.0"}},
 						},
 					}, nil
-				} else {
+				default:
 					splittedRef := strings.Split(ref, ":")
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
@@ -146,14 +157,14 @@ func TestResolveDeps(t *testing.T) {
 				}
 			}),
 			expectedOutRef: nil,
-			expectedErr:    CannotSatisfyDependenciesErr,
+			expectedErr:    ErrCannotSatisfyDependencies,
 		},
 		{
 			scenario:    "resolve compatible alternative",
 			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:2.5.0",
-			inRef:       []string{"ref1:0.1.2", "alt1:2.5.0"},
+			inRef:       []string{ref1, alt1},
 			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-				if ref == "ref1:0.1.2" {
+				if ref == ref1 {
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
 							Name:    "ref1",
@@ -166,26 +177,27 @@ func TestResolveDeps(t *testing.T) {
 								}},
 						},
 					}, nil
-				} else {
-					splittedRef := strings.Split(ref, ":")
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    splittedRef[0],
-							Version: splittedRef[1],
-							// no dependencies here
-						},
-					}, nil
 				}
+
+				splittedRef := strings.Split(ref, ":")
+				return &oci.RegistryResult{
+					Config: oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+						// no dependencies here
+					},
+				}, nil
+
 			}),
-			expectedOutRef: []string{"ref1:0.1.2", "alt1:2.5.0"},
-			expectedErr:    CannotSatisfyDependenciesErr,
+			expectedOutRef: []string{ref1, alt1},
+			expectedErr:    ErrCannotSatisfyDependencies,
 		},
 		{
 			scenario:    "resolve not compatible alternative",
 			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:3.0.0",
-			inRef:       []string{"ref1:0.1.2", "alt1:3.0.0"},
+			inRef:       []string{ref1, "alt1:3.0.0"},
 			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-				if ref == "ref1:0.1.2" {
+				if ref == ref1 {
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
 							Name:    "ref1",
@@ -198,19 +210,20 @@ func TestResolveDeps(t *testing.T) {
 								}},
 						},
 					}, nil
-				} else {
-					splittedRef := strings.Split(ref, ":")
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    splittedRef[0],
-							Version: splittedRef[1],
-							// no dependencies here
-						},
-					}, nil
 				}
+
+				splittedRef := strings.Split(ref, ":")
+				return &oci.RegistryResult{
+					Config: oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+						// no dependencies here
+					},
+				}, nil
+
 			}),
 			expectedOutRef: nil,
-			expectedErr:    CannotSatisfyDependenciesErr,
+			expectedErr:    ErrCannotSatisfyDependencies,
 		},
 	}
 

@@ -56,7 +56,7 @@ func NameFromRef(ref string) (string, error) {
 
 	// Remember to append "-rules" if the ref contained "ruleset"
 	if strings.Contains(ref, "ruleset") {
-		parts[0] = parts[0] + "-rules"
+		parts[0] += "-rules"
 	}
 
 	return parts[0], nil
