@@ -33,14 +33,19 @@ var (
 )
 
 type depInfo struct {
+	// ref is the remote reference to this artifact
 	ref string
+	// res contains the config layer for this artifact
 	res *oci.RegistryResult
+	// ver represents the semver version of this artifact
 	ver *semver.Version
-	ok  bool
+	// ok is used to mark this dependency as fully processed, with its own
+	// dependencies and alternatives
+	ok bool
 }
 
 func copyDepsMap(in depsMapType) (out depsMapType) {
-	out = make(depsMapType)
+	out = make(depsMapType, len(in))
 	for k, v := range in {
 		out[k] = v
 	}
@@ -91,13 +96,15 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 
 	for {
 		allOk := true
+		// Since we are updating depMap in this for loop, let's copy the map for iterating it
+		// while we continue inserting new values in the real depMap map.
 		for name, info := range copyDepsMap(depMap) {
 			if info.ok {
 				continue
 			}
 			for _, required := range info.res.Config.Dependencies {
 				// Does already exist in the map?
-				if existing, exists := depMap[required.Name]; exists {
+				if existing, ok := depMap[required.Name]; ok {
 					requiredVer, err := semver.Parse(required.Version)
 					if err != nil {
 						return nil, fmt.Errorf(`invalid artifact config: version %q is not semver compatible`, required.Version)
@@ -120,8 +127,8 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 				// Are alternatives already in the map?
 				var foundAlternative = false
 				for _, alternative := range required.Alternatives {
-					existing, exists := depMap[alternative.Name]
-					if !exists {
+					existing, ok := depMap[alternative.Name]
+					if !ok {
 						continue
 					}
 

@@ -16,9 +16,7 @@ package install
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -107,23 +105,13 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return nil, err
 		}
 
-		configReader, err := puller.PullConfigLayer(ctx, ref)
+		artifactConfig, err := puller.PullConfigLayer(ctx, ref)
 		if err != nil {
-			return nil, err
-		}
-
-		configBytes, err := io.ReadAll(configReader)
-		if err != nil {
-			return nil, err
-		}
-
-		var artifactConfig oci.ArtifactConfig
-		if err = json.Unmarshal(configBytes, &artifactConfig); err != nil {
 			return nil, err
 		}
 
 		return &oci.RegistryResult{
-			Config: artifactConfig,
+			Config: *artifactConfig,
 		}, nil
 	})
 

@@ -152,7 +152,7 @@ func (a *ArtifactDependency) SetAlternative(name, version string) {
 // SetDependency stores an artifact dependency in the config.
 //
 // Return the insertion position.
-func (rc *ArtifactConfig) SetDependency(name, version string, alternatives []dependency) int {
+func (rc *ArtifactConfig) SetDependency(name, version string, alternatives []Dependency) int {
 	for i, d := range rc.Dependencies {
 		if d.Name == name {
 			rc.Dependencies[i].Version = version
