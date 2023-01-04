@@ -157,7 +157,7 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 }
 
 // PullConfigLayer fetches only the config layer from a given ref.
-func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (io.Reader, error) {
+func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client))
 	if err != nil {
 		return nil, err
@@ -172,10 +172,8 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (io.Reader, er
 	// Resolve to actual manifest if an index is found.
 	if desc.MediaType == v1.MediaTypeImageIndex {
 		var index v1.Index
-		_, indexReader, err := repo.FetchReference(ctx, ref)
-		if err != nil {
-			return nil, fmt.Errorf("unable to fetch index for ref %q", ref)
-		}
+		indexReader := manifestReader
+		defer indexReader.Close()
 
 		indexBytes, err := io.ReadAll(indexReader)
 		if err != nil {
@@ -228,5 +226,15 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (io.Reader, er
 		return nil, fmt.Errorf("unable to fetch descriptor with digest: %s", desc.Digest.String())
 	}
 
-	return rc, nil
+	configBytes, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+
+	var artifactConfig oci.ArtifactConfig
+	if err = json.Unmarshal(configBytes, &artifactConfig); err != nil {
+		return nil, err
+	}
+
+	return &artifactConfig, nil
 }
