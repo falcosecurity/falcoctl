@@ -25,7 +25,6 @@ import (
 
 	"github.com/opencontainers/image-spec/specs-go"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	logger "github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote"
@@ -251,7 +250,7 @@ func (p *Pusher) storeArtifactsIndex(ctx context.Context, fileStore *file.Store,
 	return p.toFileStore(ctx, fileStore, index.MediaType, ArtifactsIndexName, index)
 }
 
-func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaType, name string, data interface{}) (*v1.Descriptor, error) {
+func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaType, name string, data interface{}) (desc *v1.Descriptor, err error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal data of media type %q: %w", mediaType, err)
@@ -263,20 +262,22 @@ func (p *Pusher) toFileStore(ctx context.Context, fileStore *file.Store, mediaTy
 		return nil, err
 	}
 	defer func() {
-		if err := configFile.Close(); err != nil {
-			logger.Printf("Error closing file: %s\n", err)
+		if err != nil {
+			return
 		}
+		err = configFile.Close()
 	}()
 
 	if _, err := configFile.Write(dataBytes); err != nil {
 		return nil, fmt.Errorf("unable to write data of media type %q to temporary file %s: %w", mediaType, configFile.Name(), err)
 	}
 
-	desc, err := fileStore.Add(ctx, name, mediaType, filepath.Clean(configFile.Name()))
+	d, err := fileStore.Add(ctx, name, mediaType, filepath.Clean(configFile.Name()))
 	if err != nil {
 		return nil, fmt.Errorf("unable to store data of media type %q in the file store: %w", mediaType, err)
 	}
-	return &desc, nil
+	desc = &d
+	return
 }
 
 func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store,

@@ -27,8 +27,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	logger "github.com/sirupsen/logrus"
 )
 
 // DefaultRSABits is the default bit size to generate an RSA keypair
@@ -208,7 +206,6 @@ func (g *GRPCTLS) FlushToDisk(path string) error {
 
 	for _, name := range certsFilenames {
 		f := filepath.Join(path, name)
-		logger.Infof("Writing: %s", f)
 		if err := ioutil.WriteFile(f, g.certs[name].Bytes(), 0600); err != nil {
 			return fmt.Errorf(`unable to write "%s": %v`, name, err)
 		}
