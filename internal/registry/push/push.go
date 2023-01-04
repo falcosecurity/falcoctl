@@ -26,7 +26,8 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-var longPush = `Push Falco "rulefile" or "plugin" OCI artifacts to remote registry
+const (
+	longPush = `Push Falco "rulefile" or "plugin" OCI artifacts to remote registry
 
 Example - Push artifact "myplugin.tar.gz" of type "plugin" for the platform where falcoctl is running (default):
 	falcoctl registry push --type plugin localhost:5000/myplugin:latest myplugin.tar.gz
@@ -53,6 +54,7 @@ Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with multiple d
 		--depends-on myplugin:1.2.3 \
 		--depends-on otherplugin:3.2.1
 `
+)
 
 type pushOptions struct {
 	*options.CommonOptions
