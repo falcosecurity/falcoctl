@@ -25,7 +25,8 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-var longPull = `Pull Falco "rulefile" or "plugin" OCI artifacts from remote registry
+const (
+	longPull = `Pull Falco "rulefile" or "plugin" OCI artifacts from remote registry
 
 Example - Pull artifact "myplugin" of type "plugin" for the platform where falcoctl is running (default) in the current working directory (default):
 	falcoctl registry pull localhost:5000/myplugin:latest --type plugin
@@ -39,6 +40,7 @@ Example - Pull artifact "myplugin" of type "plugin" for platform "linux/aarch64"
 Example - Pull artifact "myrulesfile" of type "rulesfile":
 	falcoctl registry pull localhost:5000/myrulesfile:latest --type rulesfile
 `
+)
 
 type pullOptions struct {
 	*options.CommonOptions

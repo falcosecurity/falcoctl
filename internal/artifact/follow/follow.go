@@ -29,9 +29,10 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-const timeout = time.Second * 5
+const (
+	timeout = time.Second * 5
 
-var longFollow = `Follow a list of artifacts from remote registry. It periodically
+	longFollow = `Follow a list of artifacts from remote registry. It periodically
 checks if the artifacts changed and downloads the latest version based on the configured
 tags.
 
@@ -54,6 +55,7 @@ The command also supports the references for the artifacts composed by "registry
 Example - Install and follow "cloudtrail" plugins using the full artifact reference:
 	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/cloudtrail:0.6.0-rc1
 `
+)
 
 type artifactFollowOptions struct {
 	*options.CommonOptions
