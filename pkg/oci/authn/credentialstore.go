@@ -25,7 +25,6 @@ import (
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/docker/cli/cli/config/types"
-	logger "github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
@@ -66,9 +65,8 @@ func NewStore(configPaths ...string) (*Store, error) {
 }
 
 // loadConfigFile reads the credential-related configurationfrom the given path.
-func loadConfigFile(path string) (*configfile.ConfigFile, error) {
-	var cfg *configfile.ConfigFile
-	if _, err := os.Stat(path); err != nil {
+func loadConfigFile(path string) (cfg *configfile.ConfigFile, err error) {
+	if _, err = os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			cfg = configfile.New(path)
 		} else {
@@ -80,12 +78,13 @@ func loadConfigFile(path string) (*configfile.ConfigFile, error) {
 			return nil, err
 		}
 		defer func() {
-			if err := file.Close(); err != nil {
-				logger.Printf("Error closing file: %s\n", err)
+			if err != nil {
+				return
 			}
+			err = file.Close()
 		}()
 		cfg = configfile.New(path)
-		if err := cfg.LoadFromReader(file); err != nil {
+		if err = cfg.LoadFromReader(file); err != nil {
 			return nil, err
 		}
 	}
