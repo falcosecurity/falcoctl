@@ -54,11 +54,6 @@ func NameFromRef(ref string) (string, error) {
 		return "", fmt.Errorf(`cannot extract artifact name from reference: %q`, ref)
 	}
 
-	// Remember to append "-rules" if the ref contained "ruleset"
-	if strings.Contains(ref, "ruleset") {
-		parts[0] += "-rules"
-	}
-
 	return parts[0], nil
 }
 
