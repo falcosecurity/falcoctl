@@ -20,7 +20,6 @@ import (
 
 	"github.com/blang/semver"
 
-	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
@@ -35,8 +34,8 @@ var (
 type depInfo struct {
 	// ref is the remote reference to this artifact
 	ref string
-	// res contains the config layer for this artifact
-	res *oci.RegistryResult
+	// config contains the config layer for this artifact
+	config *oci.ArtifactConfig
 	// ver represents the semver version of this artifact
 	ver *semver.Version
 	// ok is used to mark this dependency as fully processed, with its own
@@ -55,41 +54,62 @@ func copyDepsMap(in depsMapType) (out depsMapType) {
 // ResolveDeps resolves dependencies to a list of references.
 func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []string, err error) {
 	depMap := make(depsMapType)
-	upsertMap := func(name string, ref string) error {
+	// configMap is used to avoid getting a remote config layer more than once
+	configMap := make(map[string]*oci.ArtifactConfig)
+
+	retrieveConfig := func(ref string) (*oci.ArtifactConfig, error) {
+		config, ok := configMap[ref]
+		if !ok {
+			res, err := resolver(ref)
+			if err != nil {
+				return nil, err
+			}
+
+			configMap[ref] = &res.Config
+			return &res.Config, nil
+		}
+
+		return config, nil
+	}
+
+	upsertMap := func(ref string) error {
 		// fetch artifact config layer metadata
-		res, err := resolver(ref)
+		config, err := retrieveConfig(ref)
 		if err != nil {
 			return err
-		} else if res.Config.Version == "" {
+		}
+
+		if config.Version == "" {
 			return fmt.Errorf("empty version for ref %q: config may be corrupted", ref)
 		}
 
-		ver, err := semver.Parse(res.Config.Version)
+		ver, err := semver.Parse(config.Version)
 		if err != nil {
-			return fmt.Errorf("unable to parse version %q for ref %q, %w", res.Config.Version, ref, err)
+			return fmt.Errorf("unable to parse version %q for ref %q, %w", config.Version, ref, err)
 		}
 
-		depMap[name] = &depInfo{
-			ref: ref,
-			res: res,
-			ver: &ver,
+		depMap[config.Name] = &depInfo{
+			ref:    ref,
+			config: config,
+			ver:    &ver,
 		}
 		return nil
 	}
 
 	// Prepare initial map from user inputs
 	for _, ref := range inRefs {
-		name, err := utils.NameFromRef(ref)
+		config, err := retrieveConfig(ref)
 		if err != nil {
 			return nil, err
 		}
+		name := config.Name
 
 		// todo: shall we shadow?
 		if info, ok := depMap[name]; ok {
 			return nil, fmt.Errorf(`cannot provide multiple references for %q: %q, %q`, name, info.ref, ref)
 		}
 
-		if err := upsertMap(name, ref); err != nil {
+		if err := upsertMap(ref); err != nil {
 			return nil, err
 		}
 	}
@@ -102,7 +122,7 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 			if info.ok {
 				continue
 			}
-			for _, required := range info.res.Config.Dependencies {
+			for _, required := range info.config.Dependencies {
 				// Does already exist in the map?
 				if existing, ok := depMap[required.Name]; ok {
 					requiredVer, err := semver.Parse(required.Version)
@@ -148,7 +168,7 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 					}
 
 					if alternativeVer.Compare(*existing.ver) > 0 {
-						if err := upsertMap(alternative.Name, alternative.Name+":"+alternativeVer.String()); err != nil {
+						if err := upsertMap(alternative.Name + ":" + alternativeVer.String()); err != nil {
 							return nil, err
 						}
 					}
@@ -160,7 +180,7 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 				}
 
 				// dep to be added or bumped
-				if err := upsertMap(required.Name, required.Name+":"+required.Version); err != nil {
+				if err := upsertMap(required.Name + ":" + required.Version); err != nil {
 					return nil, err
 				}
 				allOk = false
