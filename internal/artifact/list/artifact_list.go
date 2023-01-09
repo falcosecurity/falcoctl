@@ -44,6 +44,7 @@ func NewArtifactListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 		DisableFlagsInUseLine: true,
 		Short:                 "List all artifacts",
 		Long:                  "List all artifacts",
+		Aliases:               []string{"ls"},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunArtifactList(ctx, args))
 		},
