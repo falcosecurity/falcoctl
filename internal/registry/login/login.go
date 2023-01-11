@@ -31,6 +31,8 @@ import (
 type loginOptions struct {
 	*options.CommonOptions
 	hostname string
+	username string
+	password string
 }
 
 func (o *loginOptions) Validate(args []string) error {
@@ -62,6 +64,9 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 		},
 	}
 
+	cmd.Flags().StringVarP(&o.username, "user", "u", "", "username of the user to login with")
+	cmd.Flags().StringVarP(&o.password, "password", "p", "", "password or token required for authentication")
+
 	return cmd
 }
 
@@ -75,9 +80,18 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		reg = oci.DefaultRegistry
 	}
 
-	user, token, err := utils.GetCredentials(o.Printer)
-	if err != nil {
-		return err
+	var err error
+	var user, token string
+
+	// Login works if both -u and -p flags are used or none of them are used.
+	if o.username == "" && o.password == "" {
+		// In this case it just works interactively
+		user, token, err = utils.GetCredentials(o.Printer)
+		if err != nil {
+			return err
+		}
+	} else if o.username == "" || o.password == "" {
+		return fmt.Errorf("please use both --user and --password flags for the scriptable version of this command")
 	}
 
 	cred := &auth.Credential{
