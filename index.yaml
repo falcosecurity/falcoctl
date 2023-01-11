@@ -1,3 +1,17 @@
+- name: application-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/rules/application-rules
+  description: Application rules
+  home: https://github.com/falcosecurity/rules/blob/main/rules/application_rules.yaml
+  keywords:
+    - application-rules
+  license: apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/rules/blob/main/rules/application_rules.yaml
 - name: cloudtrail
   type: plugin
   registry: ghcr.io
@@ -59,6 +73,20 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/master/plugins/dummy_c
+- name: falco-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/rules/falco-rules
+  description: Falco rules that are loaded by default
+  home: https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml
+  keywords:
+    - falco-rules
+  license: apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml
 - name: github
   type: plugin
   registry: ghcr.io
