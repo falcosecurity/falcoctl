@@ -28,18 +28,11 @@ import (
 )
 
 // New instantiates the root command and initializes the tree of commands.
-func New(ctx context.Context) *cobra.Command {
-	opt := options.NewOptions()
-
+func New(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "falcoctl",
 		Short:             "The control tool for running Falco in Kubernetes",
 		DisableAutoGenTag: true,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// Initializing the options. Subcommands can overwrite configs for the options
-			// by calling the initialize function.
-			opt.Initialize()
-		},
 	}
 
 	// Global flags
@@ -66,7 +59,9 @@ func Execute() {
 		stop()
 	}()
 
+	opt := options.NewOptions()
+	cmd := New(ctx, opt)
 	// we do not log the error here since we expect that each subcommand
 	// handles the errors by itself.
-	output.ExitOnErr(New(ctx).Execute())
+	output.ExitOnErr(cmd.Execute())
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
@@ -55,6 +56,8 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 		Long:                  "Login to an OCI registry to push and pull Falco rules and plugins",
 		Args:                  cobra.MaximumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
+			opt.Initialize()
+			opt.Printer.CheckErr(config.Load(opt.ConfigFile))
 			o.Printer.CheckErr(o.Validate(args))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -85,6 +88,39 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		Password: token,
 	}
 
+	if err = DoLogin(ctx, reg, cred); err != nil {
+		return err
+	}
+
+	currentAuths, err := config.BasicAuths()
+	if err != nil {
+		return fmt.Errorf("unable to get basicAuths from viper: %w", err)
+	}
+
+	for _, a := range currentAuths {
+		if a.Registry == reg {
+			o.Printer.Verbosef("credentials for registry %q already exists in the config file %q", reg, config.ConfigPath)
+			return nil
+		}
+	}
+
+	currentAuths = append(currentAuths, config.BasicAuth{
+		Registry: reg,
+		User:     user,
+		Password: token,
+	})
+
+	if err := config.UpdateConfigFile(config.BasicAuthsKey, currentAuths, o.ConfigFile); err != nil {
+		return fmt.Errorf("unable to update basic auths credential list in the config file %q: %w", config.ConfigPath, err)
+	}
+	o.Printer.Verbosef("credentials added to config file %q", config.ConfigPath)
+
+	o.Printer.Success.Println("Login succeeded")
+	return nil
+}
+
+// DoLogin checks if passed credentials are correct and stores them.
+func DoLogin(ctx context.Context, reg string, cred *auth.Credential) error {
 	client := authn.NewClient(authn.WithCredentials(cred))
 	r, err := registry.NewRegistry(reg, registry.WithClient(client))
 	if err != nil {
@@ -92,16 +128,14 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 	}
 
 	if err := r.CheckConnection(ctx); err != nil {
-		o.Printer.Verbosef("%s", err.Error())
 		return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
 	}
 
 	// Store validated credentials
-	err = authn.Login(o.hostname, user, token)
+	err = authn.Login(reg, cred.Username, cred.Password)
 	if err != nil {
 		return err
 	}
 
-	o.Printer.Success.Println("Login succeeded")
 	return nil
 }

@@ -15,8 +15,11 @@
 package logout
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
@@ -50,6 +53,8 @@ func NewLogoutCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 		Long:                  "Logout from an OCI registry",
 		Args:                  cobra.MaximumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
+			opt.Initialize()
+			opt.Printer.CheckErr(config.Load(opt.ConfigFile))
 			o.Printer.CheckErr(o.Validate(args))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -64,6 +69,23 @@ func (o *logoutOptions) RunLogout(args []string) error {
 	err := authn.Logout(o.hostname)
 	if err != nil {
 		return err
+	}
+
+	currentAuths, err := config.BasicAuths()
+	if err != nil {
+		return fmt.Errorf("unable to get basicAuths from viper: %w", err)
+	}
+
+	for i, a := range currentAuths {
+		if a.Registry == o.hostname {
+			o.Printer.Verbosef("credentials for registry %q exists in the config file %q, removing", o.hostname, config.ConfigPath)
+			currentAuths = append(currentAuths[:i], currentAuths[i+1:]...)
+			break
+		}
+	}
+
+	if err := config.UpdateConfigFile(config.BasicAuthsKey, currentAuths, o.ConfigFile); err != nil {
+		return fmt.Errorf("unable to update basic auths credential list in the config file %q: %w", config.ConfigPath, err)
 	}
 
 	o.Printer.DefaultText.Println("Logout succeeded")
