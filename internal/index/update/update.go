@@ -78,7 +78,7 @@ func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) 
 
 	for _, name := range args {
 		nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
-		indexFile := filepath.Join(config.FalcoctlPath, nameYaml)
+		indexFile := filepath.Join(config.IndexesDir, nameYaml)
 
 		indexConfigEntry, err := o.indexConfig.Get(name)
 		if err != nil {

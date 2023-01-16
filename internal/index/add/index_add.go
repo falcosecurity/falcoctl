@@ -29,14 +29,23 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-type indexAddOptions struct {
+// IndexAddOptions contains the options for the index add command.
+type IndexAddOptions struct {
 	*options.CommonOptions
 }
 
-func (o *indexAddOptions) Validate(args []string) error {
+// Validate is used to make sure that required directories are existing in the filesystem.
+func (o *IndexAddOptions) Validate(args []string) error {
 	// TODO(loresuso): we should move this logic elsewhere
 	if _, err := os.Stat(config.FalcoctlPath); os.IsNotExist(err) {
 		err = os.Mkdir(config.FalcoctlPath, 0o700)
+		if err != nil {
+			return err
+		}
+	}
+
+	if _, err := os.Stat(config.IndexesDir); os.IsNotExist(err) {
+		err = os.Mkdir(config.IndexesDir, 0o700)
 		if err != nil {
 			return err
 		}
@@ -46,7 +55,7 @@ func (o *indexAddOptions) Validate(args []string) error {
 
 // NewIndexAddCmd returns the index add command.
 func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
-	o := indexAddOptions{
+	o := IndexAddOptions{
 		CommonOptions: opt,
 	}
 
@@ -67,12 +76,12 @@ func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Comm
 	return cmd
 }
 
-func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error {
+// RunIndexAdd implements the index add command.
+func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error {
 	name := args[0]
 	nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 	url := args[1]
-
-	indexFile := filepath.Join(config.FalcoctlPath, nameYaml)
+	indexFile := filepath.Join(config.IndexesDir, nameYaml)
 
 	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
@@ -108,6 +117,27 @@ func (o *indexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 
 	if err := indexConfig.Write(config.IndexesFile); err != nil {
 		return err
+	}
+
+	currentIndexes, err := config.Indexes()
+	if err != nil {
+		return fmt.Errorf("unable to get indexes from viper: %w", err)
+	}
+
+	for _, i := range currentIndexes {
+		if i.Name == name {
+			o.Printer.Verbosef("index with name %q already exists in the config file %q", name, config.ConfigPath)
+			return nil
+		}
+	}
+
+	currentIndexes = append(currentIndexes, config.Index{
+		Name: name,
+		URL:  url,
+	})
+
+	if err := config.UpdateConfigFile(config.IndexesKey, currentIndexes, o.ConfigFile); err != nil {
+		return fmt.Errorf("unable to update indexes list in the config file %q: %w", config.ConfigPath, err)
 	}
 
 	return nil
