@@ -106,7 +106,7 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	pusher, err := utils.PusherForRegistry(ctx, o.PlainHTTP, o.Oauth, registry, o.Printer)
+	pusher, err := utils.PusherForRegistry(ctx, o.PlainHTTP, registry, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the pusher for registry %s: %w", registry, err)
 	}

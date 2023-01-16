@@ -119,7 +119,7 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 
 // Descriptor retrieves the descriptor of an artifact from a remote repository.
 func (p *Puller) Descriptor(ctx context.Context, ref string) (*v1.Descriptor, error) {
-	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client))
+	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 
 // PullConfigLayer fetches only the config layer from a given ref.
 func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
-	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client))
+	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}

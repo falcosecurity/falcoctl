@@ -18,12 +18,10 @@ import "github.com/spf13/cobra"
 
 // RegistryOptions defines options that are common while interacting with a remote registry.
 type RegistryOptions struct {
-	Oauth     bool
 	PlainHTTP bool
 }
 
 // AddFlags registers the registry flags.
 func (r *RegistryOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&r.Oauth, "oauth", false, "allows interacting with remote registry via OAuth authentication")
 	cmd.Flags().BoolVar(&r.PlainHTTP, "plain-http", false, "allows interacting with remote registry via plain http requests")
 }
