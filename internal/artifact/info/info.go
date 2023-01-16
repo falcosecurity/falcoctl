@@ -64,7 +64,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		return err
 	}
 
-	mergedIndexes, err := utils.Indexes(indexConfig, config.FalcoctlPath)
+	mergedIndexes, err := utils.Indexes(indexConfig, config.IndexesDir)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			return err
 		}
 
-		client, err := utils.ClientForRegistry(ctx, reg, o.PlainHTTP, o.Oauth, o.Printer)
+		client, err := utils.ClientForRegistry(ctx, reg, o.PlainHTTP, o.Printer)
 		if err != nil {
 			return err
 		}

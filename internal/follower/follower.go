@@ -21,10 +21,16 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/blang/semver"
+	"oras.land/oras-go/v2/registry"
+
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
@@ -42,6 +48,7 @@ type Follower struct {
 	*ocipuller.Puller
 	*Config
 	*output.Printer
+	config.FalcoVersions
 }
 
 // Config configuration options for the Follower.
@@ -59,10 +66,13 @@ type Config struct {
 	ArtifactReference string
 	// PlainHTTP is set to true if all registry interaction must be in plain http.
 	PlainHTTP bool
-	// Oauth is set to true if the authentication must be through Oauth2.0 client credentials flow.
-	Oauth bool
 	// Verbose enables the verbose logs.
 	Verbose bool
+	// WorkingDir directory where to save temporary files.
+	WorkingDir string
+	// FalcoVersions is a struct containing all the required Falco versions that this follower
+	// has to take into account when installing artifacts.
+	FalcoVersions config.FalcoVersions
 }
 
 // New creates a Follower configured with the passed parameters and ready to be used.
@@ -73,12 +83,13 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 		return nil, fmt.Errorf("unable to extract registry from ref %q: %w", ref, err)
 	}
 
-	tag, err := utils.TagFromRef(ref)
+	parsedRef, err := registry.ParseReference(ref)
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract tag from ref %q: %w", ref, err)
 	}
+	tag := parsedRef.Reference
 
-	client, err := utils.ClientForRegistry(ctx, reg, config.PlainHTTP, config.Oauth, printer)
+	client, err := utils.ClientForRegistry(ctx, reg, config.PlainHTTP, printer)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +100,7 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 	}
 
 	// Create temp dir where to put pulled artifacts.
-	workingDir, err := os.MkdirTemp("", "falcoctl-")
+	workingDir, err := os.MkdirTemp(config.WorkingDir, "falcoctl-")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
@@ -97,12 +108,13 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 	customPrinter := printer.WithScope(ref)
 
 	return &Follower{
-		ref:        ref,
-		tag:        tag,
-		workingDir: workingDir,
-		Puller:     puller,
-		Config:     config,
-		Printer:    customPrinter,
+		ref:           ref,
+		tag:           tag,
+		workingDir:    workingDir,
+		Puller:        puller,
+		Config:        config,
+		Printer:       customPrinter,
+		FalcoVersions: config.FalcoVersions,
 	}, nil
 }
 
@@ -144,6 +156,19 @@ func (f *Follower) follow(ctx context.Context) {
 	}
 
 	f.Info.Printfln("found new version under tag %q", f.tag)
+
+	// Pull config layer to check falco versions
+	artifactConfig, err := f.PullConfigLayer(ctx, f.ref)
+	if err != nil {
+		f.Error.Printfln("unable to pull config layer for ref %q: %v", f.ref, err)
+		return
+	}
+
+	err = f.checkRequirements(artifactConfig)
+	if err != nil {
+		f.Error.Printfln("unmet requirements for ref %q: %v", f.ref, err)
+		return
+	}
 
 	f.Verbosef("pulling artifact from remote repository...")
 	// Pull the artifact from the repository.
@@ -243,6 +268,47 @@ func (f *Follower) destinationDir(res *oci.RegistryResult) string {
 		dir = f.RulefilesDir
 	}
 	return dir
+}
+
+func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
+	// Check if each requirement specified in a config layer meet the needs of the
+	// currently running Falco.
+
+	// Create a new map to hold both semver versions and int versions, just like Falco versions
+	requiredVersions := make(config.FalcoVersions)
+	for _, requirement := range artifactConfig.Requirements {
+		parsedReq, err := semver.Parse(requirement.Version)
+		if err != nil {
+			// try to convert to int
+			v, err := strconv.Atoi(requirement.Version)
+			if err != nil {
+				return fmt.Errorf("unexpected string found in config layer, should be either convertible to int or semver: %s", requirement.Version)
+			}
+			requiredVersions[requirement.Name] = v
+		} else {
+			requiredVersions[requirement.Name] = parsedReq
+		}
+	}
+
+	for k, requirement := range requiredVersions {
+		if reflect.TypeOf(requirement).Kind() == reflect.Int { // handle integers
+			falcoVer := f.FalcoVersions[k].(int)
+			if falcoVer < requirement.(int) {
+				return fmt.Errorf("incompatible versions, Falco: %d, Requirement: %s:%d", falcoVer, k, requirement.(int))
+			}
+		} else { // handle semver
+			falcoVer := f.FalcoVersions[k].(semver.Version)
+			reqVer := requirement.(semver.Version)
+			// Normal semver check
+			if falcoVer.Major != reqVer.Major {
+				return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoVer.String(), k, reqVer.String())
+			} else if falcoVer.Compare(reqVer) < 0 {
+				return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoVer.String(), k, reqVer.String())
+			}
+		}
+	}
+
+	return nil
 }
 
 func (f *Follower) cleanUp() {

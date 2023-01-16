@@ -80,7 +80,7 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 		return err
 	}
 
-	mergedIndexes, err := utils.Indexes(indexConfig, config.FalcoctlPath)
+	mergedIndexes, err := utils.Indexes(indexConfig, config.IndexesDir)
 	if err != nil {
 		return err
 	}

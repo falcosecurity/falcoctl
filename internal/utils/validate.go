@@ -34,16 +34,6 @@ func GetRegistryFromRef(ref string) (string, error) {
 	return ref[0:index], nil
 }
 
-// TagFromRef extracts the tag values from a ref string.
-func TagFromRef(ref string) (string, error) {
-	i := strings.Index(ref, ":")
-	if i <= 0 {
-		return "", fmt.Errorf("cannot extract tag name from ref %q", ref)
-	}
-
-	return ref[i+1:], nil
-}
-
 // NameFromRef extracts the name of the artifact from a ref string.
 func NameFromRef(ref string) (string, error) {
 	// todo: check and improve parsing logic

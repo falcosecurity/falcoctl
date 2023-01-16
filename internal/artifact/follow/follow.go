@@ -16,11 +16,18 @@ package follow
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"reflect"
 	"sync"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/follower"
@@ -62,7 +69,10 @@ type artifactFollowOptions struct {
 	*options.RegistryOptions
 	rulesfilesDir string
 	pluginsDir    string
+	workingDir    string
 	every         time.Duration
+	falcoVersions string
+	versions      config.FalcoVersions
 	closeChan     chan bool
 }
 
@@ -78,7 +88,37 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		Use:   "follow [ref1 [ref2 ...]] [flags]",
 		Short: "Install a list of artifacts and continuously checks if there are updates",
 		Long:  longFollow,
-		Args:  cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// Override "every" flag with viper config if not set by user.
+			f := cmd.Flags().Lookup("every")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag every"))
+			} else if !f.Changed && viper.IsSet(config.FollowerEveryKey) {
+				val := viper.Get(config.FollowerEveryKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"every\" flag: %w", err))
+				}
+			}
+
+			// Override "falco-versions" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("falco-versions")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag falco-versions"))
+			} else if !f.Changed && viper.IsSet(config.FollowerFalcoVersionsKey) {
+				val := viper.Get(config.FollowerFalcoVersionsKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"falco-versions\" flag: %w", err))
+				}
+			}
+
+			// Get Falco versions via HTTP endpoint
+			if err := o.retrieveFalcoVersions(ctx); err != nil {
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
+					"and correctly exposing the version endpoint: %w", err))
+			}
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunArtifactFollow(ctx, args))
 		},
@@ -92,19 +132,35 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		"Directory where to install rules")
 	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
 		"Directory where to install plugins")
-
+	cmd.Flags().StringVar(&o.workingDir, "working-dir", "", "Directory where to save temporary files")
+	cmd.Flags().StringVar(&o.falcoVersions, "falco-versions", "http://localhost:8765/versions",
+		"Where to retrieve versions, it can be either an URL or a path to a file")
 	return cmd
 }
 
 // RunArtifactFollow executes the business logic for the artifact follow command.
 func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []string) error {
+	// Retrieve configuration for follower
+	configuredFollower, err := config.Follower()
+	if err != nil {
+		o.Printer.CheckErr(fmt.Errorf("unable to retrieved the configured follower: %w", err))
+	}
+
+	// Set args as configured if no arg was passed
+	if len(args) == 0 {
+		if len(configuredFollower.Artifacts) == 0 {
+			return fmt.Errorf("no artifacts to follow, please configure artifacts or pass them as arguments to this command")
+		}
+		args = configuredFollower.Artifacts
+	}
+
 	o.Printer.Info.Printfln("Reading all configured index files from %q", config.IndexesFile)
 	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
 	}
 
-	mergedIndexes, err := utils.Indexes(indexConfig, config.FalcoctlPath)
+	mergedIndexes, err := utils.Indexes(indexConfig, config.IndexesDir)
 	if err != nil {
 		return err
 	}
@@ -119,7 +175,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 	// For each artifact create a follower.
 	var followers = make(map[string]*follower.Follower, 0)
 	for _, a := range args {
-		o.Printer.Info.Printfln("Creating follower for %q", a)
+		o.Printer.Info.Printfln("Creating follower for %q, check every %s", a, o.every.String())
 		ref, err := utils.ParseReference(mergedIndexes, a)
 		if err != nil {
 			return fmt.Errorf("unable to parse artifact reference for %q: %w", a, err)
@@ -132,9 +188,10 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			PluginsDir:        o.pluginsDir,
 			ArtifactReference: ref,
 			PlainHTTP:         o.PlainHTTP,
-			Oauth:             o.Oauth,
 			Verbose:           o.IsVerbose(),
 			CloseChan:         o.closeChan,
+			WorkingDir:        o.workingDir,
+			FalcoVersions:     o.versions,
 		}
 		fol, err := follower.New(ctx, ref, o.Printer, cfg)
 		if err != nil {
@@ -171,6 +228,52 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		o.Printer.DefaultText.Printfln("followers correctly stopped.")
 	case <-time.After(timeout):
 		o.Printer.DefaultText.Printfln("Timed out waiting for followers to exit")
+	}
+
+	return nil
+}
+
+func (o *artifactFollowOptions) retrieveFalcoVersions(ctx context.Context) error {
+	_, err := url.ParseRequestURI(o.falcoVersions)
+	if err != nil {
+		return fmt.Errorf("unable to parse URI: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", o.falcoVersions, http.NoBody)
+	if err != nil {
+		return fmt.Errorf("cannot fetch Falco version: %w", err)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to get versions from URL %q: %w", o.falcoVersions, err)
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("unable to read response body: %w", err)
+	}
+
+	err = json.Unmarshal(data, &o.versions)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling: %w", err)
+	}
+
+	for k, v := range o.versions {
+		switch reflect.TypeOf(v).Kind() {
+		case reflect.String:
+			// In this case, we treat the input as semver and we try to parse it
+			o.versions[k], err = semver.Parse(v.(string))
+			if err != nil {
+				return fmt.Errorf("unable to parse Falco version %q: %w", v, err)
+			}
+		case reflect.Float64:
+			o.versions[k] = int(v.(float64)) // convert to int
+		default:
+			return fmt.Errorf("got unexpected type while retrieving Falco versions: %s, %T", k, v)
+		}
 	}
 
 	return nil
