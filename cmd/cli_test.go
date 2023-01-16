@@ -25,6 +25,8 @@ import (
 
 	"github.com/acarl005/stripansi"
 	"gotest.tools/assert"
+
+	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type expect struct {
@@ -72,7 +74,7 @@ var tests = []testCase{
 
 func run(t *testing.T, test testCase) {
 	// Setup
-	c := New(context.Background())
+	c := New(context.Background(), &options.CommonOptions{})
 	o := bytes.NewBufferString("")
 	c.SetOut(o)
 	c.SetErr(o)
