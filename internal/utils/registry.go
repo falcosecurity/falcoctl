@@ -65,20 +65,27 @@ func ClientForRegistry(ctx context.Context, reg string, plainHTTP bool, printer 
 
 	printer.Verbosef("Retrieving credentials from local store")
 	cred, err = credentialStore.Credential(ctx, reg)
-	if err != nil || reflect.DeepEqual(cred, auth.EmptyCredential) {
-		// Try client credentials
-		regCreds, err := ReadClientCredentials()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving credentials for registry %s: %w", reg, err)
+	}
+
+	// Try client credentials
+	if reflect.DeepEqual(cred, auth.EmptyCredential) {
+		regCred, err := ClientCredentials(reg)
 		if err != nil {
-			return nil, fmt.Errorf("unable to retrieve credentials for registry %s: %w", reg, err)
+			return nil, fmt.Errorf("unexpected error while reading client credentials: %w", err)
 		}
 
-		regCred, ok := regCreds[reg]
-		if !ok {
-			return nil, fmt.Errorf("unable to retrieve credentials for registry %s: %w", reg, err)
+		if regCred != nil {
+			printer.Verbosef("proceeding with client credentials credentials for registry %q", reg)
+			oauth = true
+			conf = regCred
+		} else {
+			printer.Verbosef("proceeding with empty credentials for registry %q", reg)
 		}
 
-		conf = &regCred
-		oauth = true
+	} else {
+		printer.Verbosef("found basic credentials for registry %q", reg)
 	}
 
 	client := authn.NewClient(
