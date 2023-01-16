@@ -19,6 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/index/add"
 	"github.com/falcosecurity/falcoctl/internal/index/list"
 	"github.com/falcosecurity/falcoctl/internal/index/remove"
@@ -33,6 +34,10 @@ func NewIndexCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.C
 		DisableFlagsInUseLine: true,
 		Short:                 "Interact with index",
 		Long:                  "Interact with index",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			opt.Initialize()
+			opt.Printer.CheckErr(config.Load(opt.ConfigFile))
+		},
 	}
 
 	cmd.AddCommand(add.NewIndexAddCmd(ctx, opt))
