@@ -38,14 +38,14 @@ type IndexAddOptions struct {
 func (o *IndexAddOptions) Validate(args []string) error {
 	// TODO(loresuso): we should move this logic elsewhere
 	if _, err := os.Stat(config.FalcoctlPath); os.IsNotExist(err) {
-		err = os.Mkdir(config.FalcoctlPath, 0o700)
+		err = os.MkdirAll(config.FalcoctlPath, 0o700)
 		if err != nil {
 			return err
 		}
 	}
 
 	if _, err := os.Stat(config.IndexesDir); os.IsNotExist(err) {
-		err = os.Mkdir(config.IndexesDir, 0o700)
+		err = os.MkdirAll(config.IndexesDir, 0o700)
 		if err != nil {
 			return err
 		}
