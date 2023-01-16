@@ -91,7 +91,7 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		return err
 	}
 
-	puller, err := utils.PullerForRegistry(ctx, registry, o.PlainHTTP, o.Oauth, o.Printer)
+	puller, err := utils.PullerForRegistry(ctx, registry, o.PlainHTTP, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the puller for registry %s: %w", registry, err)
 	}
