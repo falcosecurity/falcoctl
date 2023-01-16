@@ -58,7 +58,7 @@ type RegistryClientCredentials map[string]clientcredentials.Config
 
 // WriteClientCredentials writes client credentials to config file.
 func WriteClientCredentials(registry string, cred *clientcredentials.Config) error {
-	creds, err := ReadClientCredentials()
+	creds, err := readClientCredentials()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
@@ -80,8 +80,8 @@ func WriteClientCredentials(registry string, cred *clientcredentials.Config) err
 	return nil
 }
 
-// ReadClientCredentials reads client credentials from config file.
-func ReadClientCredentials() (RegistryClientCredentials, error) {
+// readClientCredentials reads client credentials from config file.
+func readClientCredentials() (RegistryClientCredentials, error) {
 	data, err := os.ReadFile(config.ClientCredentialsFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read from %s: %w", config.ClientCredentialsFile, err)
@@ -94,4 +94,25 @@ func ReadClientCredentials() (RegistryClientCredentials, error) {
 	}
 
 	return creds, nil
+}
+
+// ClientCredentials retrieves the client credentials for a specific registry.
+func ClientCredentials(reg string) (*clientcredentials.Config, error) {
+	regCreds, err := readClientCredentials()
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		// Legit, will proceed with empty creds
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	regCred, ok := regCreds[reg]
+	if ok {
+		return &regCred, nil
+	}
+
+	// Legit, will proceed with empty creds
+	return nil, nil
 }
