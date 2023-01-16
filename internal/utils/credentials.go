@@ -17,6 +17,7 @@ package utils
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -50,11 +51,26 @@ func GetCredentials(p *output.Printer) (username, password string, err error) {
 	return strings.TrimSpace(username), strings.TrimSpace(password), nil
 }
 
+// RegistryClientCredentials is used to store registry:clientCrendetials key value.
+// This is done to be in accordance with the way Docker stores credentials, so that
+// users will be able to store only one credential per registry.
+type RegistryClientCredentials map[string]clientcredentials.Config
+
 // WriteClientCredentials writes client credentials to config file.
-func WriteClientCredentials(cred *clientcredentials.Config) error {
-	data, err := json.Marshal(cred)
+func WriteClientCredentials(registry string, cred *clientcredentials.Config) error {
+	creds, err := ReadClientCredentials()
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	if creds == nil {
+		creds = make(RegistryClientCredentials)
+	}
+	creds[registry] = *cred
+
+	data, err := json.Marshal(creds)
 	if err != nil {
-		return fmt.Errorf("unanle to marshal %+v", cred)
+		return fmt.Errorf("unable to marshal %+v", creds)
 	}
 
 	if err = os.WriteFile(config.ClientCredentialsFile, data, 0o600); err != nil {
@@ -65,17 +81,17 @@ func WriteClientCredentials(cred *clientcredentials.Config) error {
 }
 
 // ReadClientCredentials reads client credentials from config file.
-func ReadClientCredentials() (*clientcredentials.Config, error) {
+func ReadClientCredentials() (RegistryClientCredentials, error) {
 	data, err := os.ReadFile(config.ClientCredentialsFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read from %s: %w", config.ClientCredentialsFile, err)
 	}
 
-	var cred clientcredentials.Config
-	err = json.Unmarshal(data, &cred)
+	var creds RegistryClientCredentials
+	err = json.Unmarshal(data, &creds)
 	if err != nil {
 		return nil, fmt.Errorf("unable to unmarshal client credentials: %w", err)
 	}
 
-	return &cred, nil
+	return creds, nil
 }
