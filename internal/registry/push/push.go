@@ -82,6 +82,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		Args:                  cobra.MinimumNArgs(2),
 		SilenceErrors:         true,
 		PreRun: func(cmd *cobra.Command, args []string) {
+			o.Initialize()
 			o.Printer.CheckErr(o.validate())
 		},
 		Run: func(cmd *cobra.Command, args []string) {

@@ -68,6 +68,7 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		Long:                  longPull,
 		Args:                  cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
+			o.Initialize()
 			o.Printer.CheckErr(o.Validate())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
