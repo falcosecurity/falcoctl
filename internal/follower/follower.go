@@ -21,7 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"sync"
@@ -74,6 +74,10 @@ type Config struct {
 	// has to take into account when installing artifacts.
 	FalcoVersions config.FalcoVersions
 }
+
+var (
+	isInt = regexp.MustCompile(`^(0|([1-9]\d*))$`)
+)
 
 // New creates a Follower configured with the passed parameters and ready to be used.
 // It does not check the correctness of the parameters, make sure everything is initialized.
@@ -277,33 +281,45 @@ func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
 	// Create a new map to hold both semver versions and int versions, just like Falco versions
 	requiredVersions := make(config.FalcoVersions)
 	for _, requirement := range artifactConfig.Requirements {
-		parsedReq, err := semver.Parse(requirement.Version)
-		if err != nil {
-			// try to convert to int
-			v, err := strconv.Atoi(requirement.Version)
-			if err != nil {
-				return fmt.Errorf("unexpected string found in config layer, should be either convertible to int or semver: %s", requirement.Version)
-			}
-			requiredVersions[requirement.Name] = v
-		} else {
-			requiredVersions[requirement.Name] = parsedReq
-		}
+		requiredVersions[requirement.Name] = requirement.Version
 	}
 
 	for k, requirement := range requiredVersions {
-		if reflect.TypeOf(requirement).Kind() == reflect.Int { // handle integers
-			falcoVer := f.FalcoVersions[k].(int)
-			if falcoVer < requirement.(int) {
-				return fmt.Errorf("incompatible versions, Falco: %d, Requirement: %s:%d", falcoVer, k, requirement.(int))
+		falcoVer, ok := f.FalcoVersions[k]
+		if !ok {
+			return fmt.Errorf("unrecognized key %s: Falco does not satisfy this requirement", k)
+		}
+
+		if isInt.MatchString(requirement) { // handle integers
+			falcoVerInt, err := strconv.Atoi(falcoVer)
+			if err != nil {
+				return fmt.Errorf("expected integer for key %s: %w", k, err)
+			}
+
+			reqVerInt, err := strconv.Atoi(requirement)
+			if err != nil {
+				return fmt.Errorf("expected integer for key %s: %w", k, err)
+			}
+
+			if falcoVerInt < reqVerInt {
+				return fmt.Errorf("incompatible versions, Falco: %d, Requirement: %s:%d", falcoVerInt, k, reqVerInt)
 			}
 		} else { // handle semver
-			falcoVer := f.FalcoVersions[k].(semver.Version)
-			reqVer := requirement.(semver.Version)
+			falcoSemver, err := semver.Parse(falcoVer)
+			if err != nil {
+				return fmt.Errorf("expected semver for key %s: %w", k, err)
+			}
+
+			reqSemver, err := semver.Parse(requirement)
+			if err != nil {
+				return fmt.Errorf("expected semver for key %s: %w", k, err)
+			}
+
 			// Normal semver check
-			if falcoVer.Major != reqVer.Major {
-				return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoVer.String(), k, reqVer.String())
-			} else if falcoVer.Compare(reqVer) < 0 {
-				return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoVer.String(), k, reqVer.String())
+			if falcoSemver.Major != reqSemver.Major {
+				return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), k, reqSemver.String())
+			} else if falcoSemver.Compare(reqSemver) < 0 {
+				return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), k, reqSemver.String())
 			}
 		}
 	}
