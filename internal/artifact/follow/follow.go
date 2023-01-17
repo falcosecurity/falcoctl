@@ -21,11 +21,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"sync"
 	"time"
 
-	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -259,21 +257,6 @@ func (o *artifactFollowOptions) retrieveFalcoVersions(ctx context.Context) error
 	err = json.Unmarshal(data, &o.versions)
 	if err != nil {
 		return fmt.Errorf("error unmarshalling: %w", err)
-	}
-
-	for k, v := range o.versions {
-		switch reflect.TypeOf(v).Kind() {
-		case reflect.String:
-			// In this case, we treat the input as semver and we try to parse it
-			o.versions[k], err = semver.Parse(v.(string))
-			if err != nil {
-				return fmt.Errorf("unable to parse Falco version %q: %w", v, err)
-			}
-		case reflect.Float64:
-			o.versions[k] = int(v.(float64)) // convert to int
-		default:
-			return fmt.Errorf("got unexpected type while retrieving Falco versions: %s, %T", k, v)
-		}
 	}
 
 	return nil
