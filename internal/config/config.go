@@ -17,6 +17,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -149,6 +150,9 @@ func Load(path string) error {
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
 		// If the config is not found, we create the file with the
 		// already set up default values
+		if err = os.MkdirAll(filepath.Dir(absolutePath), 0o700); err != nil {
+			return fmt.Errorf("unable to create config directory: %w", err)
+		}
 		if err = viper.WriteConfigAs(path); err != nil {
 			return fmt.Errorf("unable to write config file: %w", err)
 		}
