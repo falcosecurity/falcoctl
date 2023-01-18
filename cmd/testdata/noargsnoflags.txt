@@ -1,4 +1,4 @@
-The control tool for running Falco in Kubernetes
+A CLI tool to interact with Falco and artifacts of its ecosystem
 
 Usage:
   falcoctl [command]
