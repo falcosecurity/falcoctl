@@ -111,6 +111,42 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				}
 			}
 
+			// Override "rulesfiles-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("rulesfiles-dir")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag rulesfiles-dir"))
+			} else if !f.Changed && viper.IsSet(config.FollowerRulesfilesDirKey) {
+				val := viper.Get(config.FollowerRulesfilesDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
+				}
+			}
+
+			// Override "plugins-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("plugins-dir")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag plugins-dir"))
+			} else if !f.Changed && viper.IsSet(config.FollowerPluginsDirKey) {
+				val := viper.Get(config.FollowerPluginsDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
+				}
+			}
+
+			// Override "working-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("working-dir")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag working-dir"))
+			} else if !f.Changed && viper.IsSet(config.FollowerWorkingDirKey) {
+				val := viper.Get(config.FollowerWorkingDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"working-dir\" flag: %w", err))
+				}
+			}
+
 			// Get Falco versions via HTTP endpoint
 			if err := o.retrieveFalcoVersions(ctx); err != nil {
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
