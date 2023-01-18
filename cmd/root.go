@@ -31,7 +31,7 @@ import (
 func New(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "falcoctl",
-		Short:             "The control tool for running Falco in Kubernetes",
+		Short:             "A CLI tool to interact with Falco and artifacts of its ecosystem",
 		DisableAutoGenTag: true,
 	}
 
