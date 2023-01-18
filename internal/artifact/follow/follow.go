@@ -32,6 +32,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -60,6 +61,8 @@ The command also supports the references for the artifacts composed by "registry
 Example - Install and follow "cloudtrail" plugins using the full artifact reference:
 	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/cloudtrail:0.6.0-rc1
 `
+
+	maxRetry = 5
 )
 
 type artifactFollowOptions struct {
@@ -71,6 +74,7 @@ type artifactFollowOptions struct {
 	every         time.Duration
 	falcoVersions string
 	versions      config.FalcoVersions
+	timeout       time.Duration
 	closeChan     chan bool
 }
 
@@ -169,6 +173,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 	cmd.Flags().StringVar(&o.workingDir, "working-dir", "", "Directory where to save temporary files")
 	cmd.Flags().StringVar(&o.falcoVersions, "falco-versions", "http://localhost:8765/versions",
 		"Where to retrieve versions, it can be either an URL or a path to a file")
+	cmd.Flags().DurationVar(&o.timeout, "timeout", defaultBackoffConfig.MaxDelay,
+		"Timeout for initial connection to the Falco versions endpoint")
 	return cmd
 }
 
@@ -278,7 +284,16 @@ func (o *artifactFollowOptions) retrieveFalcoVersions(ctx context.Context) error
 		return fmt.Errorf("cannot fetch Falco version: %w", err)
 	}
 
-	client := &http.Client{}
+	backoffConfig := defaultBackoffConfig
+	backoffConfig.MaxDelay = o.timeout
+
+	client := &http.Client{
+		Transport: &backoffTransport{
+			Base:    http.DefaultTransport,
+			Printer: o.Printer,
+			Config:  backoffConfig,
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("unable to get versions from URL %q: %w", o.falcoVersions, err)
@@ -296,4 +311,84 @@ func (o *artifactFollowOptions) retrieveFalcoVersions(ctx context.Context) error
 	}
 
 	return nil
+}
+
+// Config defines the configuration options for backoff.
+type backoffConfig struct {
+	// BaseDelay is the amount of time to backoff after the first failure.
+	BaseDelay time.Duration
+	// Multiplier is the factor with which to multiply backoffs after a
+	// failed retry. Should ideally be greater than 1.
+	Multiplier float64
+	// Jitter is the factor with which backoffs are randomized.
+	// todo: not yet implemented
+	// Jitter float64
+	// MaxDelay is the upper bound of backoff delay.
+	MaxDelay time.Duration
+}
+
+var defaultBackoffConfig = backoffConfig{
+	BaseDelay:  1.0 * time.Second,
+	Multiplier: 1.6,
+	// Jitter:     0.2, todo: not yet implemented
+	MaxDelay: 120 * time.Second,
+}
+
+type backoffTransport struct {
+	Base      http.RoundTripper
+	Printer   *output.Printer
+	Config    backoffConfig
+	attempts  int
+	startTime time.Time
+}
+
+func (bt *backoffTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	var err error
+	var resp *http.Response
+
+	bt.startTime = time.Now()
+	bt.attempts = 0
+
+	bt.Printer.Verbosef("Retrieving versions from Falco (timeout %s) ...", bt.Config.MaxDelay)
+
+	for time.Now().Sub(bt.startTime) <= bt.Config.MaxDelay {
+		resp, err = bt.Base.RoundTrip(req)
+		if err != nil {
+			sleep := bt.Config.backoff(int(bt.attempts))
+			bt.Printer.Verbosef("error: %s. Trying again in %s", err.Error(), sleep.String())
+			time.Sleep(sleep)
+		} else {
+			bt.Printer.Verbosef("Successfully retrieved versions from Falco ...")
+			return resp, err
+		}
+
+		bt.attempts++
+	}
+
+	return resp, fmt.Errorf("timeout occurred while retrieving versions from Falco")
+}
+
+// Backoff returns the amount of time to wait before the next retry given the
+// number of retries.
+func (bc backoffConfig) backoff(retries int) time.Duration {
+	if retries == 0 {
+		return bc.BaseDelay
+	}
+	backoff, max := float64(bc.BaseDelay), float64(bc.MaxDelay)
+	for backoff < max && retries > 0 {
+		backoff *= bc.Multiplier
+		retries--
+	}
+	if backoff > max {
+		backoff = max
+	}
+	// Randomize backoff delays so that if a cluster of requests start at
+	// the same time, they won't operate in lockstep.
+	// todo: implement jitter
+	// backoff *= 1 + bc.Jitter*(math.Float64()*2-1)
+	if backoff < 0 {
+		return 0
+	}
+
+	return time.Duration(backoff)
 }
