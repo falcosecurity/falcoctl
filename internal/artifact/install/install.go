@@ -22,6 +22,7 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -49,6 +50,31 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		DisableFlagsInUseLine: true,
 		Short:                 "Install a list of artifacts",
 		Long:                  "Install a list of artifacts",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// Override "rulesfiles-dir" flag with viper config if not set by user.
+			f := cmd.Flags().Lookup("rulesfiles-dir")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag rulesfiles-dir"))
+			} else if !f.Changed && viper.IsSet(config.InstallerRulesfilesDirKey) {
+				val := viper.Get(config.InstallerRulesfilesDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
+				}
+			}
+
+			// Override "plugins-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("plugins-dir")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag plugins-dir"))
+			} else if !f.Changed && viper.IsSet(config.InstallerPluginsDirKey) {
+				val := viper.Get(config.InstallerPluginsDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
+				}
+			}
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunArtifactInstall(ctx, args))
 		},
