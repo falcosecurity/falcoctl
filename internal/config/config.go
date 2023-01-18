@@ -72,8 +72,18 @@ const (
 	FollowerArtifactsKey = "follower.artifacts"
 	// FollowerFalcoVersionsKey is the Viper key for follower "falcoVersions" configuration.
 	FollowerFalcoVersionsKey = "follower.falcoversions"
+	// FollowerRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
+	FollowerRulesfilesDirKey = "follower.rulesfilesdir"
+	// FollowerPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
+	FollowerPluginsDirKey = "follower.pluginsdir"
+	// FollowerWorkingDirKey is the Viper key for follower "pluginsDir" configuration.
+	FollowerWorkingDirKey = "follower.workingdir"
 	// InstallerArtifactsKey is the Viper key for installer "artifacts" configuration.
 	InstallerArtifactsKey = "installer.artifacts"
+	// InstallerRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
+	InstallerRulesfilesDirKey = "installer.rulesfilesdir"
+	// InstallerPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
+	InstallerPluginsDirKey = "installer.pluginsdir"
 )
 
 // Index represents a configured index.
@@ -102,11 +112,16 @@ type Follow struct {
 	Every         time.Duration `mapstructure:"every"`
 	Artifacts     []string      `mapstructure:"artifacts"`
 	FalcoVersions string        `mapstructure:"falcoVersions"`
+	RulesfilesDir string        `mapstructure:"rulesFilesDir"`
+	PluginsDir    string        `mapstructure:"pluginsDir"`
+	WorkingDir    string        `mapstructure:"pluginsDir"`
 }
 
 // Install represents the installer configuration.
 type Install struct {
-	Artifacts []string `mapstructure:"artifacts"`
+	Artifacts     []string `mapstructure:"artifacts"`
+	RulesfilesDir string   `mapstructure:"rulesFilesDir"`
+	PluginsDir    string   `mapstructure:"pluginsDir"`
 }
 
 func init() {
@@ -338,6 +353,9 @@ func Follower() (Follow, error) {
 		Every:         viper.GetDuration(FollowerEveryKey),
 		Artifacts:     artifacts,
 		FalcoVersions: viper.GetString(FollowerFalcoVersionsKey),
+		RulesfilesDir: viper.GetString(FollowerRulesfilesDirKey),
+		PluginsDir:    viper.GetString(FollowerPluginsDirKey),
+		WorkingDir:    viper.GetString(FollowerWorkingDirKey),
 	}, nil
 }
 
@@ -351,7 +369,9 @@ func Installer() (Install, error) {
 	}
 
 	return Install{
-		Artifacts: artifacts,
+		Artifacts:     artifacts,
+		RulesfilesDir: viper.GetString(InstallerRulesfilesDirKey),
+		PluginsDir:    viper.GetString(InstallerPluginsDirKey),
 	}, nil
 }
 
