@@ -200,7 +200,7 @@ func (f *Follower) follow(ctx context.Context) {
 
 		if !exists {
 			f.Verbosef("file %q does not exist in %q, moving it", baseName, dstDir)
-			if err = os.Rename(path, dstPath); err != nil {
+			if err = utils.Move(path, dstPath); err != nil {
 				f.Error.Printfln("an error occurred while moving file %q to %q: %v", baseName, dstDir, err)
 				return
 			}
@@ -218,7 +218,7 @@ func (f *Follower) follow(ctx context.Context) {
 
 		if !equal {
 			f.Verbosef("overwriting file %q with file %q", dstPath, path)
-			if err = os.Rename(path, dstPath); err != nil {
+			if err = utils.Move(path, dstPath); err != nil {
 				f.Error.Printfln("an error occurred while overwriting file %q: %v", dstPath, err)
 				return
 			}
