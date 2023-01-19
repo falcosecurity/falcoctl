@@ -110,7 +110,7 @@ func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
 		Password: token,
 	})
 
-	if err := config.UpdateConfigFile(config.BasicAuthsKey, currentAuths, o.ConfigFile); err != nil {
+	if err := config.UpdateConfigFile(config.RegistryAuthBasicKey, currentAuths, o.ConfigFile); err != nil {
 		return fmt.Errorf("unable to update basic auths credential list in the config file %q: %w", config.ConfigPath, err)
 	}
 	o.Printer.Verbosef("credentials added to config file %q", config.ConfigPath)

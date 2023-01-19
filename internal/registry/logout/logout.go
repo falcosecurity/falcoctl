@@ -84,7 +84,7 @@ func (o *logoutOptions) RunLogout(args []string) error {
 		}
 	}
 
-	if err := config.UpdateConfigFile(config.BasicAuthsKey, currentAuths, o.ConfigFile); err != nil {
+	if err := config.UpdateConfigFile(config.RegistryAuthBasicKey, currentAuths, o.ConfigFile); err != nil {
 		return fmt.Errorf("unable to update basic auths credential list in the config file %q: %w", config.ConfigPath, err)
 	}
 

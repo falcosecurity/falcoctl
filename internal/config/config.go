@@ -60,10 +60,10 @@ const (
 
 	// Viper configuration keys.
 
-	// OauthAuthsKey is the Viper key for OAuth authentication configuration.
-	OauthAuthsKey = "oauthauths"
-	// BasicAuthsKey is the Viper key for basic authentication configuration.
-	BasicAuthsKey = "basicauths"
+	// RegistryAuthOauthKey is the Viper key for OAuth authentication configuration.
+	RegistryAuthOauthKey = "registry.auth.oauth"
+	// RegistryAuthBasicKey is the Viper key for basic authentication configuration.
+	RegistryAuthBasicKey = "registry.auth.basic"
 	// IndexesKey is the Viper key for indexes configuration.
 	IndexesKey = "indexes"
 	// ArtifactFollowEveryKey is the Viper key for follower "every" configuration.
@@ -245,7 +245,7 @@ func indexListHookFunc() mapstructure.DecodeHookFuncType {
 func BasicAuths() ([]BasicAuth, error) {
 	var auths []BasicAuth
 
-	if err := viper.UnmarshalKey(BasicAuthsKey, &auths, viper.DecodeHook(basicAuthListHookFunc())); err != nil {
+	if err := viper.UnmarshalKey(RegistryAuthBasicKey, &auths, viper.DecodeHook(basicAuthListHookFunc())); err != nil {
 		return nil, fmt.Errorf("unable to get basicAuths: %w", err)
 	}
 
@@ -295,7 +295,7 @@ func basicAuthListHookFunc() mapstructure.DecodeHookFuncType {
 func OauthAuths() ([]OauthAuth, error) {
 	var auths []OauthAuth
 
-	if err := viper.UnmarshalKey(OauthAuthsKey, &auths, viper.DecodeHook(oathAuthListHookFunc())); err != nil {
+	if err := viper.UnmarshalKey(RegistryAuthOauthKey, &auths, viper.DecodeHook(oathAuthListHookFunc())); err != nil {
 		return nil, fmt.Errorf("unable to get oauthAuths: %w", err)
 	}
 
