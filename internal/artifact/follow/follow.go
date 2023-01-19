@@ -61,8 +61,6 @@ The command also supports the references for the artifacts composed by "registry
 Example - Install and follow "cloudtrail" plugins using the full artifact reference:
 	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/cloudtrail:0.6.0-rc1
 `
-
-	maxRetry = 5
 )
 
 type artifactFollowOptions struct {
@@ -315,10 +313,16 @@ func (bt *backoffTransport) RoundTrip(req *http.Request) (*http.Response, error)
 
 	bt.Printer.Verbosef("Retrieving versions from Falco (timeout %s) ...", bt.Config.MaxDelay)
 
-	for time.Now().Sub(bt.startTime) <= bt.Config.MaxDelay {
+	for {
 		resp, err = bt.Base.RoundTrip(req)
 		if err != nil {
-			sleep := bt.Config.backoff(int(bt.attempts))
+			sleep := bt.Config.backoff(bt.attempts)
+
+			wakeTime := time.Now().Add(sleep)
+			if wakeTime.Sub(bt.startTime) > bt.Config.MaxDelay {
+				return resp, fmt.Errorf("timeout occurred while retrieving versions from Falco")
+			}
+
 			bt.Printer.Verbosef("error: %s. Trying again in %s", err.Error(), sleep.String())
 			time.Sleep(sleep)
 		} else {
@@ -328,8 +332,6 @@ func (bt *backoffTransport) RoundTrip(req *http.Request) (*http.Response, error)
 
 		bt.attempts++
 	}
-
-	return resp, fmt.Errorf("timeout occurred while retrieving versions from Falco")
 }
 
 // Backoff returns the amount of time to wait before the next retry given the
