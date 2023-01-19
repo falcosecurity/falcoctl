@@ -56,8 +56,8 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag rulesfiles-dir"))
-			} else if !f.Changed && viper.IsSet(config.InstallerRulesfilesDirKey) {
-				val := viper.Get(config.InstallerRulesfilesDirKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactInstallRulesfilesDirKey) {
+				val := viper.Get(config.ArtifactInstallRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
 				}
@@ -68,8 +68,8 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag plugins-dir"))
-			} else if !f.Changed && viper.IsSet(config.InstallerPluginsDirKey) {
-				val := viper.Get(config.InstallerPluginsDirKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactInstallPluginsDirKey) {
+				val := viper.Get(config.ArtifactInstallPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
 				}
