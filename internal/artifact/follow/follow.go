@@ -94,8 +94,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag every"))
-			} else if !f.Changed && viper.IsSet(config.FollowerEveryKey) {
-				val := viper.Get(config.FollowerEveryKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowEveryKey) {
+				val := viper.Get(config.ArtifactFollowEveryKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"every\" flag: %w", err))
 				}
@@ -106,8 +106,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag falco-versions"))
-			} else if !f.Changed && viper.IsSet(config.FollowerFalcoVersionsKey) {
-				val := viper.Get(config.FollowerFalcoVersionsKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowFalcoVersionsKey) {
+				val := viper.Get(config.ArtifactFollowFalcoVersionsKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"falco-versions\" flag: %w", err))
 				}
@@ -118,8 +118,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag rulesfiles-dir"))
-			} else if !f.Changed && viper.IsSet(config.FollowerRulesfilesDirKey) {
-				val := viper.Get(config.FollowerRulesfilesDirKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowRulesfilesDirKey) {
+				val := viper.Get(config.ArtifactFollowRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
 				}
@@ -130,8 +130,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag plugins-dir"))
-			} else if !f.Changed && viper.IsSet(config.FollowerPluginsDirKey) {
-				val := viper.Get(config.FollowerPluginsDirKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowPluginsDirKey) {
+				val := viper.Get(config.ArtifactFollowPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
 				}
@@ -142,8 +142,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag working-dir"))
-			} else if !f.Changed && viper.IsSet(config.FollowerWorkingDirKey) {
-				val := viper.Get(config.FollowerWorkingDirKey)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowWorkingDirKey) {
+				val := viper.Get(config.ArtifactFollowWorkingDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"working-dir\" flag: %w", err))
 				}

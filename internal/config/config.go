@@ -66,24 +66,24 @@ const (
 	BasicAuthsKey = "basicauths"
 	// IndexesKey is the Viper key for indexes configuration.
 	IndexesKey = "indexes"
-	// FollowerEveryKey is the Viper key for follower "every" configuration.
-	FollowerEveryKey = "follower.every"
-	// FollowerArtifactsKey is the Viper key for follower "artifacts" configuration.
-	FollowerArtifactsKey = "follower.artifacts"
-	// FollowerFalcoVersionsKey is the Viper key for follower "falcoVersions" configuration.
-	FollowerFalcoVersionsKey = "follower.falcoversions"
-	// FollowerRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
-	FollowerRulesfilesDirKey = "follower.rulesfilesdir"
-	// FollowerPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
-	FollowerPluginsDirKey = "follower.pluginsdir"
-	// FollowerWorkingDirKey is the Viper key for follower "pluginsDir" configuration.
-	FollowerWorkingDirKey = "follower.workingdir"
-	// InstallerArtifactsKey is the Viper key for installer "artifacts" configuration.
-	InstallerArtifactsKey = "installer.artifacts"
-	// InstallerRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
-	InstallerRulesfilesDirKey = "installer.rulesfilesdir"
-	// InstallerPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
-	InstallerPluginsDirKey = "installer.pluginsdir"
+	// ArtifactFollowEveryKey is the Viper key for follower "every" configuration.
+	ArtifactFollowEveryKey = "artifact.follow.every"
+	// ArtifactFollowRefsKey is the Viper key for follower "artifacts" configuration.
+	ArtifactFollowRefsKey = "artifact.follow.refs"
+	// ArtifactFollowFalcoVersionsKey is the Viper key for follower "falcoVersions" configuration.
+	ArtifactFollowFalcoVersionsKey = "artifact.follow.falcoversions"
+	// ArtifactFollowRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
+	ArtifactFollowRulesfilesDirKey = "artifact.follow.rulesfilesdir"
+	// ArtifactFollowPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
+	ArtifactFollowPluginsDirKey = "artifact.follow.pluginsdir"
+	// ArtifactFollowWorkingDirKey is the Viper key for follower "pluginsDir" configuration.
+	ArtifactFollowWorkingDirKey = "artifact.follow.workingdir"
+	// ArtifactInstallArtifactsKey is the Viper key for installer "artifacts" configuration.
+	ArtifactInstallArtifactsKey = "artifact.install.refs"
+	// ArtifactInstallRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
+	ArtifactInstallRulesfilesDirKey = "artifact.install.rulesfilesdir"
+	// ArtifactInstallPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
+	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
 )
 
 // Index represents a configured index.
@@ -159,9 +159,9 @@ func Load(path string) error {
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
 
 	// Set default follower options
-	viper.SetDefault(FollowerEveryKey, DefaultFollower.Every)
-	viper.SetDefault(FollowerArtifactsKey, DefaultFollower.Artifacts)
-	viper.SetDefault(FollowerFalcoVersionsKey, DefaultFollower.FalcoVersions)
+	viper.SetDefault(ArtifactFollowEveryKey, DefaultFollower.Every)
+	viper.SetDefault(ArtifactFollowRefsKey, DefaultFollower.Artifacts)
+	viper.SetDefault(ArtifactFollowFalcoVersionsKey, DefaultFollower.FalcoVersions)
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
@@ -346,18 +346,18 @@ func oathAuthListHookFunc() mapstructure.DecodeHookFuncType {
 func Follower() (Follow, error) {
 	// with Follow we can just use nested keys.
 	// env variables can just make use of ";" to separat
-	artifacts := viper.GetStringSlice(FollowerArtifactsKey)
+	artifacts := viper.GetStringSlice(ArtifactFollowRefsKey)
 	if len(artifacts) == 1 { // in this case it might come from the env
 		artifacts = strings.Split(artifacts[0], ";")
 	}
 
 	return Follow{
-		Every:         viper.GetDuration(FollowerEveryKey),
+		Every:         viper.GetDuration(ArtifactFollowEveryKey),
 		Artifacts:     artifacts,
-		FalcoVersions: viper.GetString(FollowerFalcoVersionsKey),
-		RulesfilesDir: viper.GetString(FollowerRulesfilesDirKey),
-		PluginsDir:    viper.GetString(FollowerPluginsDirKey),
-		WorkingDir:    viper.GetString(FollowerWorkingDirKey),
+		FalcoVersions: viper.GetString(ArtifactFollowFalcoVersionsKey),
+		RulesfilesDir: viper.GetString(ArtifactFollowRulesfilesDirKey),
+		PluginsDir:    viper.GetString(ArtifactFollowPluginsDirKey),
+		WorkingDir:    viper.GetString(ArtifactFollowWorkingDirKey),
 	}, nil
 }
 
@@ -365,15 +365,15 @@ func Follower() (Follow, error) {
 func Installer() (Install, error) {
 	// with Install we can just use nested keys.
 	// env variables can just make use of ";" to separat
-	artifacts := viper.GetStringSlice(InstallerArtifactsKey)
+	artifacts := viper.GetStringSlice(ArtifactInstallArtifactsKey)
 	if len(artifacts) == 1 { // in this case it might come from the env
 		artifacts = strings.Split(artifacts[0], ";")
 	}
 
 	return Install{
 		Artifacts:     artifacts,
-		RulesfilesDir: viper.GetString(InstallerRulesfilesDirKey),
-		PluginsDir:    viper.GetString(InstallerPluginsDirKey),
+		RulesfilesDir: viper.GetString(ArtifactInstallRulesfilesDirKey),
+		PluginsDir:    viper.GetString(ArtifactInstallPluginsDirKey),
 	}, nil
 }
 
