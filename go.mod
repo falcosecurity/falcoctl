@@ -13,6 +13,7 @@ require (
 	github.com/onsi/gomega v1.20.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
 	github.com/pterm/pterm v0.12.45
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
