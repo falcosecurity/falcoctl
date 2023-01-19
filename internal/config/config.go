@@ -164,7 +164,7 @@ func Load(path string) error {
 	viper.SetDefault(FollowerFalcoVersionsKey, DefaultFollower.FalcoVersions)
 
 	err = viper.ReadInConfig()
-	if errors.As(err, &viper.ConfigFileNotFoundError{}) {
+	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
 		// If the config is not found, we create the file with the
 		// already set up default values
 		if err = os.MkdirAll(filepath.Dir(absolutePath), 0o700); err != nil {
