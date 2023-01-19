@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -70,6 +71,7 @@ type artifactFollowOptions struct {
 	pluginsDir    string
 	tmpDir        string
 	every         time.Duration
+	cron          string
 	falcoVersions string
 	versions      config.FalcoVersions
 	timeout       time.Duration
@@ -98,6 +100,18 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				val := viper.Get(config.ArtifactFollowEveryKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"every\" flag: %w", err))
+				}
+			}
+
+			// Override "cron" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("cron")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag cron"))
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowCronKey) {
+				val := viper.Get(config.ArtifactFollowCronKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"cron\" flag: %w", err))
 				}
 			}
 
@@ -149,6 +163,10 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				}
 			}
 
+			if o.every != 0 && o.cron != "" {
+				o.Printer.CheckErr(fmt.Errorf("can't set both \"cron\" and \"every\" flags"))
+			}
+
 			// Get Falco versions via HTTP endpoint
 			if err := o.retrieveFalcoVersions(ctx); err != nil {
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
@@ -162,7 +180,9 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 
 	o.RegistryOptions.AddFlags(cmd)
 	cmd.Flags().DurationVarP(&o.every, "every", "e", config.FollowResync, "Time interval how often it checks for a new version of the "+
-		"artifact")
+		"artifact. Cannot be used together with 'cron' option.")
+	cmd.Flags().StringVar(&o.cron, "cron", "", "Cron-like string to specify interval how often it checks for a new version of the artifact."+
+		" Cannot be used together with 'every' option.")
 	// TODO (alacuku): move it in a dedicate data structure since they are in common with artifactInstall command.
 	cmd.Flags().StringVarP(&o.rulesfilesDir, "rulesfiles-dir", "", config.RulesfilesDir,
 		"Directory where to install rules")
@@ -207,13 +227,27 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		o.Printer.Warning.Println("No configured index. Consider to configure one using the 'index add' command.")
 	}
 
+	var sched cron.Schedule
+	if o.cron != "" {
+		sched, err = cron.ParseStandard(o.cron)
+		if err != nil {
+			return fmt.Errorf("unable to parse cron '%s': %w", o.cron, err)
+		}
+	} else {
+		sched = scheduledDuration{o.every}
+	}
+
 	var wg sync.WaitGroup
 	// Disable styling
 	o.Printer.DisableStylingf()
 	// For each artifact create a follower.
 	var followers = make(map[string]*follower.Follower, 0)
 	for _, a := range args {
-		o.Printer.Info.Printfln("Creating follower for %q, check every %s", a, o.every.String())
+		if o.cron != "" {
+			o.Printer.Info.Printfln("Creating follower for %q, with check using cron %s", a, o.cron)
+		} else {
+			o.Printer.Info.Printfln("Creating follower for %q, with check every %s", a, o.every.String())
+		}
 		ref, err := utils.ParseReference(mergedIndexes, a)
 		if err != nil {
 			return fmt.Errorf("unable to parse artifact reference for %q: %w", a, err)
@@ -221,7 +255,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 
 		cfg := &follower.Config{
 			WaitGroup:         &wg,
-			Resync:            o.every,
+			Resync:            sched,
 			RulefilesDir:      o.rulesfilesDir,
 			PluginsDir:        o.pluginsDir,
 			ArtifactReference: ref,
@@ -393,4 +427,12 @@ func (bc backoffConfig) backoff(retries int) time.Duration {
 	}
 
 	return time.Duration(backoff)
+}
+
+type scheduledDuration struct {
+	time.Duration
+}
+
+func (sd scheduledDuration) Next(tm time.Time) time.Time {
+	return tm.Add(sd.Duration)
 }

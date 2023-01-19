@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/blang/semver"
+	"github.com/robfig/cron/v3"
 	"oras.land/oras-go/v2/registry"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
@@ -57,7 +58,7 @@ type Config struct {
 	// CloseChan used to close the follower.
 	CloseChan <-chan bool
 	// Resync time after which periodically it checks for new a new version.
-	Resync time.Duration
+	Resync cron.Schedule
 	// RulesfileDir directory where the rulesfile are stored.
 	RulefilesDir string
 	// PluginsDir directory where the plugins are stored.
@@ -128,6 +129,8 @@ func (f *Follower) Follow(ctx context.Context) {
 	f.follow(ctx)
 
 	for {
+		now := time.Now()
+		next := f.Resync.Next(now)
 		select {
 		case <-f.CloseChan:
 			f.cleanUp()
@@ -135,7 +138,7 @@ func (f *Follower) Follow(ctx context.Context) {
 			// Notify that the follower is done.
 			f.WaitGroup.Done()
 			return
-		case <-time.After(f.Resync):
+		case <-time.After(next.Sub(now)):
 			// Start following the artifact.
 			f.follow(ctx)
 		}
@@ -212,7 +215,7 @@ func (f *Follower) follow(ctx context.Context) {
 		// Check if the files are equal.
 		equal, err := equal([]string{path, dstPath})
 		if err != nil {
-			f.Error.Printfln("an error occurred while comaparing files %q and %q: %v", path, dstPath, err)
+			f.Error.Printfln("an error occurred while comparing files %q and %q: %v", path, dstPath, err)
 			return
 		}
 
