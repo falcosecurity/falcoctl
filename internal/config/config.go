@@ -49,7 +49,7 @@ const (
 	// EnvPrefix is the prefix for all the environment variables.
 	EnvPrefix = "FALCOCTL"
 	// ConfigPath is the path to the default config.
-	ConfigPath = "/etc/falcoctl/config.yaml"
+	ConfigPath = "/etc/falcoctl/falcoctl.yaml"
 	// PluginsDir default path where plugins are installed.
 	PluginsDir = "/usr/share/falco/plugins"
 	// RulesfilesDir default path where rulesfiles are installed.
