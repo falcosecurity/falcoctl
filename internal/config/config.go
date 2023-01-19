@@ -143,15 +143,17 @@ func init() {
 
 // Load is used to load the config file.
 func Load(path string) error {
-	viper.SetConfigName("config")
+	// we keep these for consistency, but not actually used
+	// since we explicitly set the filepath later
+	viper.SetConfigName("falcoctl")
+	viper.SetConfigType("yaml")
 
 	absolutePath, err := filepath.Abs(path)
 	if err != nil {
 		return err
 	}
 
-	viper.AddConfigPath(filepath.Dir(absolutePath))
-	viper.SetConfigType("yaml")
+	viper.SetConfigFile(absolutePath)
 
 	// Set default index
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
