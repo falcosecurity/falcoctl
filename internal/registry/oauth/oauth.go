@@ -121,7 +121,7 @@ func (o *RegistryOauthOptions) RunOauth(ctx context.Context, args []string) erro
 		TokenURL:     o.Conf.TokenURL,
 	})
 
-	if err := config.UpdateConfigFile(config.OauthAuthsKey, currentAuths, o.ConfigFile); err != nil {
+	if err := config.UpdateConfigFile(config.RegistryAuthOauthKey, currentAuths, o.ConfigFile); err != nil {
 		return fmt.Errorf("unable to update oauth auths credential list in the config file %q: %w", config.ConfigPath, err)
 	}
 	o.Printer.Verbosef("credentials added to config file %q", config.ConfigPath)
