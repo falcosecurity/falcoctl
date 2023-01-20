@@ -22,6 +22,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/artifact"
+	"github.com/falcosecurity/falcoctl/internal/index"
+	"github.com/falcosecurity/falcoctl/internal/registry"
+	"github.com/falcosecurity/falcoctl/internal/tls"
 	"github.com/falcosecurity/falcoctl/internal/version"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -39,11 +43,11 @@ func New(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	opt.AddFlags(rootCmd.PersistentFlags())
 
 	// Commands
-	rootCmd.AddCommand(NewTLSCmd())
+	rootCmd.AddCommand(tls.NewTLSCmd())
 	rootCmd.AddCommand(version.NewVersionCmd(opt))
-	rootCmd.AddCommand(NewRegistryCmd(ctx, opt))
-	rootCmd.AddCommand(NewIndexCmd(ctx, opt))
-	rootCmd.AddCommand(NewArtifactCmd(ctx, opt))
+	rootCmd.AddCommand(registry.NewRegistryCmd(ctx, opt))
+	rootCmd.AddCommand(index.NewIndexCmd(ctx, opt))
+	rootCmd.AddCommand(artifact.NewArtifactCmd(ctx, opt))
 
 	return rootCmd
 }

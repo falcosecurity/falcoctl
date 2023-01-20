@@ -19,7 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/registry/auth/login"
+	"github.com/falcosecurity/falcoctl/internal/registry/auth/basic"
 	"github.com/falcosecurity/falcoctl/internal/registry/auth/oauth"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -33,7 +33,7 @@ func NewAuthCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Co
 		Long:                  "Handle authentication towards OCI registries",
 	}
 
-	cmd.AddCommand(login.NewLoginCmd(ctx, opt))
+	cmd.AddCommand(basic.NewLoginCmd(ctx, opt))
 	cmd.AddCommand(oauth.NewOauthCmd(ctx, opt))
 
 	return cmd
