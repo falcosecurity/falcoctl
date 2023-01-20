@@ -28,8 +28,8 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/artifact/search"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/index/add"
-	"github.com/falcosecurity/falcoctl/internal/registry/login"
-	"github.com/falcosecurity/falcoctl/internal/registry/oauth"
+	"github.com/falcosecurity/falcoctl/internal/registry/auth/login"
+	"github.com/falcosecurity/falcoctl/internal/registry/auth/oauth"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
