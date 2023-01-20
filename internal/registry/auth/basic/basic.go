@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package login
+package basic
 
 import (
 	"context"
@@ -43,14 +43,14 @@ func (o *loginOptions) Validate(args []string) error {
 	return nil
 }
 
-// NewLoginCmd returns the login command.
+// NewLoginCmd returns the basic command.
 func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := loginOptions{
 		CommonOptions: opt,
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "login hostname",
+		Use:                   "basic hostname",
 		DisableFlagsInUseLine: true,
 		Short:                 "Login to an OCI registry",
 		Long:                  "Login to an OCI registry to push and pull Falco rules and plugins",
@@ -61,15 +61,15 @@ func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 			o.Printer.CheckErr(o.Validate(args))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunLogin(ctx, args))
+			o.Printer.CheckErr(o.RunBasic(ctx, args))
 		},
 	}
 
 	return cmd
 }
 
-// RunLogin executes the business logic for the login command.
-func (o *loginOptions) RunLogin(ctx context.Context, args []string) error {
+// RunBasic executes the business logic for the basic command.
+func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	var reg string
 
 	if n := len(args); n == 1 {

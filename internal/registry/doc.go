@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package auth defines the logic to authenticate against an OCI registry.
-package auth
+// Package registry implements the registry commands.
+package registry

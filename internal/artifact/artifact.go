@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package artifact
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/artifact/search"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/index/add"
-	"github.com/falcosecurity/falcoctl/internal/registry/auth/login"
+	"github.com/falcosecurity/falcoctl/internal/registry/auth/basic"
 	"github.com/falcosecurity/falcoctl/internal/registry/auth/oauth"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -65,7 +65,7 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 					Password: basicAuth.Password,
 				}
 
-				opt.Printer.CheckErr(login.DoLogin(ctx, basicAuth.Registry, cred))
+				opt.Printer.CheckErr(basic.DoLogin(ctx, basicAuth.Registry, cred))
 			}
 
 			oauthAuths, err := config.OauthAuths()

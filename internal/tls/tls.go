@@ -1,4 +1,4 @@
-// Copyright 2023 The Falco Authors
+// Copyright 2022 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package auth defines the logic to authenticate against an OCI registry.
-package auth
+package tls
+
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/falcosecurity/falcoctl/internal/tls/install"
+)
+
+// NewTLSCmd return the tls command.
+func NewTLSCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                   "tls",
+		TraverseChildren:      true,
+		DisableFlagsInUseLine: true,
+		Short:                 "Generate and install TLS material for Falco",
+		Long:                  `Generate and install TLS material for Falco`,
+	}
+
+	cmd.AddCommand(install.NewTLSInstallCmd())
+
+	return cmd
+}
