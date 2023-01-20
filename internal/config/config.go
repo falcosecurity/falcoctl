@@ -379,11 +379,11 @@ func Installer() (Install, error) {
 
 // UpdateConfigFile is used to update a section of the config file.
 // We create a brand new viper instance for doing it so that we are sure that modifications
-// are scoped to the passed key with no side effects (e.g user forgot to unser one env variable for
+// are scoped to the passed key with no side effects (e.g user forgot to unset one env variable for
 // another config setting, avoid to mistakenly update it).
 func UpdateConfigFile(key string, value interface{}, path string) error {
 	v := viper.New()
-	v.SetConfigName("config")
+	v.SetConfigName("falcoctl")
 
 	absolutePath, err := filepath.Abs(path)
 	if err != nil {
