@@ -20,7 +20,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/registry/login"
-	"github.com/falcosecurity/falcoctl/internal/registry/logout"
 	"github.com/falcosecurity/falcoctl/internal/registry/oauth"
 	"github.com/falcosecurity/falcoctl/internal/registry/pull"
 	"github.com/falcosecurity/falcoctl/internal/registry/push"
@@ -37,7 +36,6 @@ func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 	}
 
 	cmd.AddCommand(login.NewLoginCmd(ctx, opt))
-	cmd.AddCommand(logout.NewLogoutCmd(opt))
 	cmd.AddCommand(push.NewPushCmd(ctx, opt))
 	cmd.AddCommand(pull.NewPullCmd(ctx, opt))
 	cmd.AddCommand(oauth.NewOauthCmd(ctx, opt))
