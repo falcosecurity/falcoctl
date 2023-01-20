@@ -76,8 +76,8 @@ const (
 	ArtifactFollowRulesfilesDirKey = "artifact.follow.rulesfilesdir"
 	// ArtifactFollowPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowPluginsDirKey = "artifact.follow.pluginsdir"
-	// ArtifactFollowWorkingDirKey is the Viper key for follower "pluginsDir" configuration.
-	ArtifactFollowWorkingDirKey = "artifact.follow.workingdir"
+	// ArtifactFollowTmpDirKey is the Viper key for follower "pluginsDir" configuration.
+	ArtifactFollowTmpDirKey = "artifact.follow.tmpdir"
 	// ArtifactInstallArtifactsKey is the Viper key for installer "artifacts" configuration.
 	ArtifactInstallArtifactsKey = "artifact.install.refs"
 	// ArtifactInstallRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
@@ -114,7 +114,7 @@ type Follow struct {
 	FalcoVersions string        `mapstructure:"falcoVersions"`
 	RulesfilesDir string        `mapstructure:"rulesFilesDir"`
 	PluginsDir    string        `mapstructure:"pluginsDir"`
-	WorkingDir    string        `mapstructure:"pluginsDir"`
+	TmpDir        string        `mapstructure:"pluginsDir"`
 }
 
 // Install represents the installer configuration.
@@ -357,7 +357,7 @@ func Follower() (Follow, error) {
 		FalcoVersions: viper.GetString(ArtifactFollowFalcoVersionsKey),
 		RulesfilesDir: viper.GetString(ArtifactFollowRulesfilesDirKey),
 		PluginsDir:    viper.GetString(ArtifactFollowPluginsDirKey),
-		WorkingDir:    viper.GetString(ArtifactFollowWorkingDirKey),
+		TmpDir:        viper.GetString(ArtifactFollowTmpDirKey),
 	}, nil
 }
 

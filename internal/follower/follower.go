@@ -43,7 +43,7 @@ import (
 type Follower struct {
 	ref           string
 	tag           string
-	workingDir    string
+	tmpDir        string
 	currentDigest string
 	*ocipuller.Puller
 	*Config
@@ -68,8 +68,8 @@ type Config struct {
 	PlainHTTP bool
 	// Verbose enables the verbose logs.
 	Verbose bool
-	// WorkingDir directory where to save temporary files.
-	WorkingDir string
+	// TmpDir directory where to save temporary files.
+	TmpDir string
 	// FalcoVersions is a struct containing all the required Falco versions that this follower
 	// has to take into account when installing artifacts.
 	FalcoVersions config.FalcoVersions
@@ -104,7 +104,7 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 	}
 
 	// Create temp dir where to put pulled artifacts.
-	workingDir, err := os.MkdirTemp(config.WorkingDir, "falcoctl-")
+	tmpDir, err := os.MkdirTemp(config.TmpDir, "falcoctl-")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
@@ -114,7 +114,7 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 	return &Follower{
 		ref:           ref,
 		tag:           tag,
-		workingDir:    workingDir,
+		tmpDir:        tmpDir,
 		Puller:        puller,
 		Config:        config,
 		Printer:       customPrinter,
@@ -234,13 +234,13 @@ func (f *Follower) follow(ctx context.Context) {
 func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.RegistryResult, err error) {
 	// Pull the artifact from the repository.
 	f.Verbosef("pulling artifact %q", f.ref)
-	res, err = f.Pull(ctx, f.ref, f.workingDir, runtime.GOOS, runtime.GOARCH)
+	res, err = f.Pull(ctx, f.ref, f.tmpDir, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to pull artifact %q: %w", f.ref, err)
 	}
 
 	f.Verbosef("extracting artifact")
-	res.Filename = filepath.Join(f.workingDir, res.Filename)
+	res.Filename = filepath.Join(f.tmpDir, res.Filename)
 
 	file, err := os.Open(res.Filename)
 	if err != nil {
@@ -248,9 +248,9 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	}
 
 	// Extract artifact and move it to its destination directory
-	filePaths, err = utils.ExtractTarGz(file, f.workingDir)
+	filePaths, err = utils.ExtractTarGz(file, f.tmpDir)
 	if err != nil {
-		return filePaths, res, fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.workingDir, err)
+		return filePaths, res, fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.tmpDir, err)
 	}
 
 	f.Verbosef("cleaning up leftovers files")
@@ -328,8 +328,8 @@ func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
 }
 
 func (f *Follower) cleanUp() {
-	if err := os.RemoveAll(f.workingDir); err != nil {
-		f.DefaultText.Printfln("an error occurred while removing working directory %q:%w", f.workingDir, err)
+	if err := os.RemoveAll(f.tmpDir); err != nil {
+		f.DefaultText.Printfln("an error occurred while removing working directory %q:%v", f.tmpDir, err)
 	}
 }
 
