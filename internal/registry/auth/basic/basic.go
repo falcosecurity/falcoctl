@@ -43,17 +43,17 @@ func (o *loginOptions) Validate(args []string) error {
 	return nil
 }
 
-// NewLoginCmd returns the basic command.
-func NewLoginCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+// NewBasicCmd returns the basic command.
+func NewBasicCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := loginOptions{
 		CommonOptions: opt,
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "basic hostname",
+		Use:                   "basic [hostname]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Login to an OCI registry",
-		Long:                  "Login to an OCI registry to push and pull Falco rules and plugins",
+		Long:                  "Login to an OCI registry to push and pull artifacts",
 		Args:                  cobra.MaximumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			opt.Initialize()

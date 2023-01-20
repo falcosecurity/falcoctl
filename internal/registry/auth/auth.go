@@ -33,7 +33,7 @@ func NewAuthCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Co
 		Long:                  "Handle authentication towards OCI registries",
 	}
 
-	cmd.AddCommand(basic.NewLoginCmd(ctx, opt))
+	cmd.AddCommand(basic.NewBasicCmd(ctx, opt))
 	cmd.AddCommand(oauth.NewOauthCmd(ctx, opt))
 
 	return cmd
