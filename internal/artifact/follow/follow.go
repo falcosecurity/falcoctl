@@ -68,7 +68,7 @@ type artifactFollowOptions struct {
 	*options.RegistryOptions
 	rulesfilesDir string
 	pluginsDir    string
-	workingDir    string
+	tmpDir        string
 	every         time.Duration
 	falcoVersions string
 	versions      config.FalcoVersions
@@ -137,15 +137,15 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				}
 			}
 
-			// Override "working-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("working-dir")
+			// Override "tmp-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("tmp-dir")
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag working-dir"))
-			} else if !f.Changed && viper.IsSet(config.ArtifactFollowWorkingDirKey) {
-				val := viper.Get(config.ArtifactFollowWorkingDirKey)
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag tmp-dir"))
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowTmpDirKey) {
+				val := viper.Get(config.ArtifactFollowTmpDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"working-dir\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"tmp-dir\" flag: %w", err))
 				}
 			}
 
@@ -168,7 +168,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		"Directory where to install rules")
 	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
 		"Directory where to install plugins")
-	cmd.Flags().StringVar(&o.workingDir, "working-dir", "", "Directory where to save temporary files")
+	cmd.Flags().StringVar(&o.tmpDir, "tmp-dir", "", "Directory where to save temporary files")
 	cmd.Flags().StringVar(&o.falcoVersions, "falco-versions", "http://localhost:8765/versions",
 		"Where to retrieve versions, it can be either an URL or a path to a file")
 	cmd.Flags().DurationVar(&o.timeout, "timeout", defaultBackoffConfig.MaxDelay,
@@ -228,7 +228,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			PlainHTTP:         o.PlainHTTP,
 			Verbose:           o.IsVerbose(),
 			CloseChan:         o.closeChan,
-			WorkingDir:        o.workingDir,
+			TmpDir:            o.tmpDir,
 			FalcoVersions:     o.versions,
 		}
 		fol, err := follower.New(ctx, ref, o.Printer, cfg)
