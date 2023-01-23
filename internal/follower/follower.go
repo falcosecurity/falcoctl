@@ -213,20 +213,21 @@ func (f *Follower) follow(ctx context.Context) {
 		}
 		f.Verbosef("file %q already exists in %q, checking if it is equal to the existing one", baseName, dstDir)
 		// Check if the files are equal.
-		equal, err := equal([]string{path, dstPath})
+		eq, err := equal([]string{path, dstPath})
 		if err != nil {
 			f.Error.Printfln("an error occurred while comparing files %q and %q: %v", path, dstPath, err)
 			return
 		}
 
-		if !equal {
+		if !eq {
 			f.Verbosef("overwriting file %q with file %q", dstPath, path)
 			if err = utils.Move(path, dstPath); err != nil {
 				f.Error.Printfln("an error occurred while overwriting file %q: %v", dstPath, err)
 				return
 			}
+		} else {
+			f.Verbosef("the two file are equal, nothing to be done")
 		}
-		f.Verbosef("the two file are equal, nothing to be done")
 	}
 
 	f.Info.Printfln("artifact with tag %q correctly installed", f.tag)
