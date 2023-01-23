@@ -51,7 +51,10 @@ func NewPuller(client remote.Client, plainHTTP bool, tracker output.Tracker) *Pu
 // Pull an artifact from a remote registry.
 // Ref format follows: REGISTRY/REPO[:TAG|@DIGEST]. Ex. localhost:5000/hello:latest.
 func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.RegistryResult, error) {
-	fileStore := file.New(destDir)
+	fileStore, err := file.New(destDir)
+	if err != nil {
+		return nil, err
+	}
 
 	repo, err := repository.NewRepository(ref,
 		repository.WithClient(p.Client),
