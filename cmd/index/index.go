@@ -19,11 +19,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/cmd/index/add"
+	"github.com/falcosecurity/falcoctl/cmd/index/list"
+	"github.com/falcosecurity/falcoctl/cmd/index/remove"
+	"github.com/falcosecurity/falcoctl/cmd/index/update"
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/index/add"
-	"github.com/falcosecurity/falcoctl/internal/index/list"
-	"github.com/falcosecurity/falcoctl/internal/index/remove"
-	"github.com/falcosecurity/falcoctl/internal/index/update"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 

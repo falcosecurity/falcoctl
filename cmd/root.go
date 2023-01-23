@@ -22,11 +22,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/artifact"
-	"github.com/falcosecurity/falcoctl/internal/index"
-	"github.com/falcosecurity/falcoctl/internal/registry"
-	"github.com/falcosecurity/falcoctl/internal/tls"
-	"github.com/falcosecurity/falcoctl/internal/version"
+	"github.com/falcosecurity/falcoctl/cmd/artifact"
+	"github.com/falcosecurity/falcoctl/cmd/index"
+	"github.com/falcosecurity/falcoctl/cmd/registry"
+	"github.com/falcosecurity/falcoctl/cmd/tls"
+	"github.com/falcosecurity/falcoctl/cmd/version"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )

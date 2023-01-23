@@ -21,15 +21,15 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
-	"github.com/falcosecurity/falcoctl/internal/artifact/follow"
-	"github.com/falcosecurity/falcoctl/internal/artifact/info"
-	"github.com/falcosecurity/falcoctl/internal/artifact/install"
-	"github.com/falcosecurity/falcoctl/internal/artifact/list"
-	"github.com/falcosecurity/falcoctl/internal/artifact/search"
+	"github.com/falcosecurity/falcoctl/cmd/artifact/follow"
+	"github.com/falcosecurity/falcoctl/cmd/artifact/info"
+	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
+	"github.com/falcosecurity/falcoctl/cmd/artifact/list"
+	"github.com/falcosecurity/falcoctl/cmd/artifact/search"
+	"github.com/falcosecurity/falcoctl/cmd/index/add"
+	"github.com/falcosecurity/falcoctl/cmd/registry/auth/basic"
+	"github.com/falcosecurity/falcoctl/cmd/registry/auth/oauth"
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/index/add"
-	"github.com/falcosecurity/falcoctl/internal/registry/auth/basic"
-	"github.com/falcosecurity/falcoctl/internal/registry/auth/oauth"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
