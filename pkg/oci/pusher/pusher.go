@@ -129,7 +129,9 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	manifestDescs := make([]*v1.Descriptor, len(o.Filepaths))
 	var fileStore *file.Store
 	for i, artifactPath := range o.Filepaths {
-		fileStore = file.New(p.workingDir)
+		if fileStore, err = file.New(p.workingDir); err != nil {
+			return nil, err
+		}
 
 		platform := ""
 		if len(o.Platforms) > i {
@@ -167,7 +169,9 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	} else {
 		// Here we are in the case when we are dealing with a plugin.
 		// Assuming this filestore to be memory only (size of the index should be less than 4MiB)
-		fileStore = file.New("")
+		if fileStore, err = file.New(""); err != nil {
+			return nil, err
+		}
 		if rootDesc, err = p.storeArtifactsIndex(ctx, fileStore, manifestDescs, o.AnnotationSource); err != nil {
 			return nil, err
 		}
@@ -188,7 +192,7 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	if len(tags) > 0 {
 		tagNOptions := oras.DefaultTagNOptions
 		tagNOptions.Concurrency = 1
-		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, tagNOptions); err != nil {
+		if _, err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, tagNOptions); err != nil {
 			return nil, err
 		}
 	}
@@ -292,15 +296,20 @@ func (p *Pusher) packManifest(ctx context.Context, fileStore *file.Store,
 	// Now we can create manifest, using the Config descriptor and principal Layer descriptor.
 	// In case annotation source is passed, we put it in the ManifestAnnotations.
 	var packOptions oras.PackOptions
+
+	// Currently, Manifests are not pushed as OCI Artifact Manifest.
+	// Always pushed as OCI Image Manifest.
+	packImageManifest := true
+
 	if annotationSource != "" {
 		annotations := make(map[string]string)
 		annotations[v1.AnnotationSource] = annotationSource
-		packOptions = oras.PackOptions{ConfigDescriptor: configDesc, ManifestAnnotations: annotations}
+		packOptions = oras.PackOptions{ConfigDescriptor: configDesc, ManifestAnnotations: annotations, PackImageManifest: packImageManifest}
 	} else {
-		packOptions = oras.PackOptions{ConfigDescriptor: configDesc}
+		packOptions = oras.PackOptions{ConfigDescriptor: configDesc, PackImageManifest: packImageManifest}
 	}
 
-	desc, err := oras.Pack(ctx, fileStore, []v1.Descriptor{*dataDesc}, packOptions)
+	desc, err := oras.Pack(ctx, fileStore, "", []v1.Descriptor{*dataDesc}, packOptions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate manifest for config layer %s and data layer %s: %w", configDesc.MediaType, dataDesc.MediaType, err)
 	}
