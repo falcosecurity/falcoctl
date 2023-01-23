@@ -1,4 +1,4 @@
-// Copyright 2023 The Falco Authors
+// Copyright 2022 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package registry
 
 import (
 	"context"
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/registry/auth/basic"
-	"github.com/falcosecurity/falcoctl/internal/registry/auth/oauth"
+	"github.com/falcosecurity/falcoctl/cmd/registry/auth"
+	"github.com/falcosecurity/falcoctl/cmd/registry/pull"
+	"github.com/falcosecurity/falcoctl/cmd/registry/push"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
-// NewAuthCmd returns the registry command.
-func NewAuthCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
+// NewRegistryCmd returns the registry command.
+func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                   "auth",
+		Use:                   "registry",
 		DisableFlagsInUseLine: true,
-		Short:                 "Handle authentication towards OCI registries",
-		Long:                  "Handle authentication towards OCI registries",
+		Short:                 "Interact with OCI registries",
+		Long:                  "Interact with OCI registries",
 	}
 
-	cmd.AddCommand(basic.NewBasicCmd(ctx, opt))
-	cmd.AddCommand(oauth.NewOauthCmd(ctx, opt))
+	cmd.AddCommand(auth.NewAuthCmd(ctx, opt))
+	cmd.AddCommand(push.NewPushCmd(ctx, opt))
+	cmd.AddCommand(pull.NewPullCmd(ctx, opt))
 
 	return cmd
 }

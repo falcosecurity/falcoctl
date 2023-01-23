@@ -17,7 +17,7 @@ package tls
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/tls/install"
+	"github.com/falcosecurity/falcoctl/cmd/tls/install"
 )
 
 // NewTLSCmd return the tls command.
