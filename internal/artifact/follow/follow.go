@@ -311,7 +311,7 @@ func (o *artifactFollowOptions) retrieveFalcoVersions(ctx context.Context) error
 		return fmt.Errorf("unable to parse URI: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", o.falcoVersions, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, o.falcoVersions, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("cannot fetch Falco version: %w", err)
 	}
@@ -386,6 +386,9 @@ func (bt *backoffTransport) RoundTrip(req *http.Request) (*http.Response, error)
 	for {
 		resp, err = bt.Base.RoundTrip(req)
 		if err != nil {
+			if req.Context().Err() != nil {
+				return nil, req.Context().Err()
+			}
 			sleep := bt.Config.backoff(bt.attempts)
 
 			wakeTime := time.Now().Add(sleep)
