@@ -282,48 +282,42 @@ func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
 	// Check if each requirement specified in a config layer meet the needs of the
 	// currently running Falco.
 
-	// Create a new map to hold both semver versions and int versions, just like Falco versions
-	requiredVersions := make(config.FalcoVersions)
 	for _, requirement := range artifactConfig.Requirements {
-		requiredVersions[requirement.Name] = requirement.Version
-	}
-
-	for k, requirement := range requiredVersions {
-		falcoVer, ok := f.FalcoVersions[k]
+		reqName := requirement.Name
+		falcoVer, ok := f.FalcoVersions[requirement.Name]
 		if !ok {
-			return fmt.Errorf("unrecognized key %s: Falco does not satisfy this requirement", k)
+			return fmt.Errorf("unrecognized key %s: Falco does not satisfy this requirement", reqName)
 		}
-
-		if isInt.MatchString(requirement) { // handle integers
+		if isInt.MatchString(requirement.Version) { // handle integers
 			falcoVerInt, err := strconv.Atoi(falcoVer)
 			if err != nil {
-				return fmt.Errorf("expected integer for key %s: %w", k, err)
+				return fmt.Errorf("expected integer for key %s: %w", reqName, err)
 			}
 
-			reqVerInt, err := strconv.Atoi(requirement)
+			reqVerInt, err := strconv.Atoi(requirement.Version)
 			if err != nil {
-				return fmt.Errorf("expected integer for key %s: %w", k, err)
+				return fmt.Errorf("expected integer for key %s: %w", reqName, err)
 			}
 
 			if falcoVerInt < reqVerInt {
-				return fmt.Errorf("incompatible versions, Falco: %d, Requirement: %s:%d", falcoVerInt, k, reqVerInt)
+				return fmt.Errorf("incompatible versions, Falco: %d, Requirement: %s:%d", falcoVerInt, reqName, reqVerInt)
 			}
 		} else { // handle semver
 			falcoSemver, err := semver.Parse(falcoVer)
 			if err != nil {
-				return fmt.Errorf("expected semver for key %s: %w", k, err)
+				return fmt.Errorf("expected semver for key %s: %w", reqName, err)
 			}
 
-			reqSemver, err := semver.Parse(requirement)
+			reqSemver, err := semver.Parse(requirement.Version)
 			if err != nil {
-				return fmt.Errorf("expected semver for key %s: %w", k, err)
+				return fmt.Errorf("expected semver for key %s: %w", reqName, err)
 			}
 
 			// Normal semver check
 			if falcoSemver.Major != reqSemver.Major {
-				return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), k, reqSemver.String())
+				return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), reqName, reqSemver.String())
 			} else if falcoSemver.Compare(reqSemver) < 0 {
-				return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), k, reqSemver.String())
+				return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), reqName, reqSemver.String())
 			}
 		}
 	}

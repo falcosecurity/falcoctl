@@ -84,6 +84,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		CommonOptions:   opt,
 		RegistryOptions: &options.RegistryOptions{},
 		closeChan:       make(chan bool),
+		versions:        config.FalcoVersions{},
 	}
 
 	cmd := &cobra.Command{
@@ -337,9 +338,18 @@ func (o *artifactFollowOptions) retrieveFalcoVersions(ctx context.Context) error
 		return fmt.Errorf("unable to read response body: %w", err)
 	}
 
-	err = json.Unmarshal(data, &o.versions)
+	var dataUnmarshalled map[string]interface{}
+
+	err = json.Unmarshal(data, &dataUnmarshalled)
 	if err != nil {
 		return fmt.Errorf("error unmarshalling: %w", err)
+	}
+
+	for key, value := range dataUnmarshalled {
+		// todo(alacuku): how to handle types other than strings? Silently ignoring for now...
+		if strValue, ok := value.(string); ok {
+			o.versions[key] = strValue
+		}
 	}
 
 	return nil
