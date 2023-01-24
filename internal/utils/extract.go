@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // ExtractTarGz extracts a *.tar.gz compressed archive and moves its content to destDir.
@@ -51,6 +52,10 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
 		case tar.TypeDir:
 			return nil, fmt.Errorf("unexepected dir inside the archive, expected to find only files without any tree structure")
 		case tar.TypeReg:
+			if strings.Contains(header.Name, "..") {
+				return nil, fmt.Errorf("not allowed relative path in tar archive")
+			}
+
 			f := filepath.Join(destDir, filepath.Clean(header.Name))
 			outFile, err := os.Create(filepath.Clean(f))
 			if err != nil {
