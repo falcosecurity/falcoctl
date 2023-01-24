@@ -17,6 +17,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -64,6 +65,7 @@ func Execute() {
 	}()
 
 	opt := options.NewOptions()
+	opt.Initialize(options.WithWriter(os.Stdout))
 	cmd := New(ctx, opt)
 	// we do not log the error here since we expect that each subcommand
 	// handles the errors by itself.
