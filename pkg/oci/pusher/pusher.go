@@ -98,9 +98,15 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, err
 	}
 
+	tags := o.Tags
+
 	// Using ":latest" by default if no tag was provided.
 	if repo.Reference.Reference == "" {
-		repo.Reference.Reference = oci.DefaultTag
+		if len(tags) > 0 {
+			repo.Reference.Reference, tags = tags[0], tags[1:]
+		} else {
+			repo.Reference.Reference = oci.DefaultTag
+		}
 	}
 
 	// Set remoteTarget and its tracker.
@@ -178,7 +184,7 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, err
 	}
 
-	if len(o.Tags) > 0 {
+	if len(tags) > 0 {
 		tagNOptions := oras.DefaultTagNOptions
 		tagNOptions.Concurrency = 1
 		if err = oras.TagN(ctx, remoteTarget, repo.Reference.Reference, o.Tags, tagNOptions); err != nil {
