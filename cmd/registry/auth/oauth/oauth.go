@@ -53,7 +53,7 @@ func NewOauthCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "oauth",
+		Use:                   "oauth [HOSTNAME]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Retrieve access and refresh tokens for OAuth2.0 client credentials flow authentication",
 		Long:                  longOauth,
