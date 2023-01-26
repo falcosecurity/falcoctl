@@ -1,10 +1,17 @@
 name: docker-image
 
 on:
-  push:
-    branches: [main]
   workflow_call:
-
+    inputs:
+      release:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+      build_date:
+        required: true
+        type: string
 jobs:
   docker-image:
     runs-on: ubuntu-22.04
@@ -47,3 +54,7 @@ jobs:
           push: true
           tags: ${{ steps.meta_falcoctl.outputs.tags }}
           file: ./build/Dockerfile
+          build-args: |
+            RELEASE=${{ inputs.release }}
+            COMMIT=${{ inputs.commit }}
+            BUILD_DATE=${{ inputs.build_date }}
