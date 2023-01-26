@@ -91,12 +91,12 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 
 // RunArtifactInstall executes the business logic for the artifact install command.
 func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []string) error {
-	if len(args) == 0 {
-		configuredInstaller, err := config.Installer()
-		if err != nil {
-			o.Printer.CheckErr(fmt.Errorf("unable to retrieved the configured installer: %w", err))
-		}
+	configuredInstaller, err := config.Installer()
+	if err != nil {
+		o.Printer.CheckErr(fmt.Errorf("unable to retrieved the configured installer: %w", err))
+	}
 
+	if len(args) == 0 {
 		// Set args as configured if no arg was passed
 		if len(configuredInstaller.Artifacts) == 0 {
 			return fmt.Errorf("no artifacts to install, please configure artifacts or pass them as arguments to this command")
