@@ -12,7 +12,7 @@ DOCKER ?= docker
 # version settings
 RELEASE?=$(shell git rev-parse HEAD)
 COMMIT?=$(shell git rev-parse HEAD)
-BUILD_DATE?=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
+BUILD_DATE?=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 PROJECT?=github.com/falcosecurity/falcoctl
 
 # todo(leogr): re-enable race when CLI tests can run with race enabled
