@@ -13,28 +13,20 @@ This is a Go project that has a lot of potential in the Falco ecosystem, but nee
 
 If you would like to get involved with contributing to this specific project, please check out [the Falco community](https://github.com/falcosecurity/community) to get involved.
 
-## ⚠️ Current status
-
-👷‍♀️ **Under active development** 👷‍♂️
-
-So `falcoctl` was born out of a need to encapsulate common logic for the project.
-Right now there are a lot of scripts, in many languages, and even container images that perform ad-hoc tasks.
-We hope to make `falcoctl` the source of truth for these tasks or chores and give operators a first class experience.
-
-Recently, we started an effort to revamp this project and make it a first-class citizen in the Falco ecosystem. As the first step, we are currently working on implementing a [proposal](proposals/20220916-rules-and-plugin-distribution.md) to allow our users to consume and install distributed plugins and rules files easily.
-
 ## Installation
 ### Install falcoctl manually
 You can download and install *falcoctl* manually following the appropriate instructions based on your operating system architecture.
 #### Linux
 ##### AMD64
 ```bash
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v0.2.0-rc1/falcoctl_0.2.0-rc1_linux_amd64.tar.gz" | tar -xz
+LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
+curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_amd64.tar.gz" | tar -xz
 sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
 ```
 ##### ARM64
 ```bash
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v0.2.0-rc1/falcoctl_0.2.0-rc1_linux_arm64.tar.gz" | tar -xz
+LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
+curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_arm64.tar.gz" | tar -xz
 sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
 ```
 > NOTE: Make sure */usr/local/bin* is in your PATH environment variable.
@@ -42,13 +34,15 @@ sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
 #### MacOS
 ##### Intel
 ```bash
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v0.2.0-rc1/falcoctl_0.2.0-rc1_darwin_amd64.tar.gz" | tar -xz
+LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
+curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_darwin_amd64.tar.gz" | tar -xz
 chmod +x falcoctl
 sudo mv falcoctl /usr/local/bin/falcoctl
 ```
 ##### Apple Silicon
 ```bash
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v0.2.0-rc1/falcoctl_0.2.0-rc1_darwin_arm64.tar.gz" | tar -xz
+LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
+curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_darwin_arm64.tar.gz" | tar -xz
 chmod +x falcoctl
 sudo mv falcoctl /usr/local/bin/falcoctl
 ```
@@ -215,8 +209,8 @@ The above commands help us to find all the necessary info for a given **artifact
  ```
  By default, if we give the name of an **artifact** it will search for the **artifact** in the configured `index` files and downlaod the `latest` version. The commands accepts also the OCI **reference** of an **artifact**. In this case, it will ignore the local `index` files.
  The command has two flags:
- * *--plugins-dir*: directory where to install plugins. Defaults to `/usr/share/falco/plugins`;
- * *--rulesfiles-dir*: directory where to install rules. Defaults to `/etc/falco`.
+ * `--plugins-dir`: directory where to install plugins. Defaults to `/usr/share/falco/plugins`;
+ * `--rulesfiles-dir`: directory where to install rules. Defaults to `/etc/falco`.
 
  > If the repositories of the **artifacts** your are trying to install are not public then you need to authenticate to the remote registry.
 
@@ -224,25 +218,28 @@ The above commands help us to find all the necessary info for a given **artifact
 
  The `registry` commands interact with OCI registries allowing the user to authenticate, pull and push artifacts. We have tested the *falcoctl* tool with the **ghcr.io** registry, but it should work with all the registries that support the OCI artifacts.
 
-#### Falcoctl registry login
-The `registry login` authenticates a user to a given OCI registry. Run the command in advance for any private registries.
+### Falcoctl registry auth
+The `registry auth` command authenticates a user to a given OCI registry.
 
-#### Falcoctl registry logout
-The `registry logout` removes the stored credentials by the `registry login` command.
+#### Falcoctl registry auth basic
+The `registry auth basic` command authenticates a user to a given OCI registry using HTTP Basic Authentication. Run the command in advance for any private registries.
 
-#### Falcoctl registry push
+#### Falcoctl registry auth oauth
+The `registry auth oauth` command retrieves access and refresh tokens for OAuth2.0 client credentials flow authentication. Run the command in advance for any private registries.
+
+### Falcoctl registry push
 It pushes local files and references the artifact uniquely. The following command shows how to push a local file to a remote registry:
 ```bash
 falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
 ```
 The type denotes the **artifact** type in this case *plugins*. The `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0` is the unique reference that points to the **artifact**.
 Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulesfile**. Based on **artifact type** the commands accepts different flags:
-* *--annotation-source*: set annotation source for the artifact;
-* *--depends-on*: set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
-* *--tag*: additional artifact tag. Can be repeated multiple time 
-* *--type*: type of artifact to be pushed. Allowed values: "rulesfile", "plugin"
+* `--annotation-source`: set annotation source for the artifact;
+* `--depends-on`: set an artifact dependency (can be specified multiple times). Example: `--depends-on my-plugin:1.2.3`
+* `--tag`: additional artifact tag. Can be repeated multiple time 
+* `--type`: type of artifact to be pushed. Allowed values: `rulesfile`, `plugin`
 
-#### Falcoctl registry pull
+### Falcoctl registry pull
 Pulling **artifacts** involves specifying the reference. The type of **artifact** is not required since the tool will implicitly extract it from the OCI **artifact**:
 ```
 falcoctl registry pull ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0                                        
