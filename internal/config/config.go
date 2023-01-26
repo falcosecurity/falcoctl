@@ -368,9 +368,7 @@ func Installer() (Install, error) {
 	// with Install we can just use nested keys.
 	// env variables can just make use of ";" to separat
 	artifacts := viper.GetStringSlice(ArtifactInstallArtifactsKey)
-	if len(artifacts) == 0 {
-		return Install{}, fmt.Errorf("cannot find any artifact to install")
-	} else if len(artifacts) == 1 { // in this case it might come from the env
+	if len(artifacts) == 1 { // in this case it might come from the env
 		artifacts = strings.Split(artifacts[0], ";")
 	}
 

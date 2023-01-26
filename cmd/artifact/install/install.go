@@ -97,6 +97,10 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			o.Printer.CheckErr(fmt.Errorf("unable to retrieved the configured installer: %w", err))
 		}
 
+		// Set args as configured if no arg was passed
+		if len(configuredInstaller.Artifacts) == 0 {
+			return fmt.Errorf("no artifacts to install, please configure artifacts or pass them as arguments to this command")
+		}
 		args = configuredInstaller.Artifacts
 	}
 
