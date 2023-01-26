@@ -18,9 +18,9 @@ builds:
       goarch: 386
 
     ldflags: |
-      -X github.com/falcosecurity/falcoctl/pkg/version.buildDate={{ .Date }}
-      -X github.com/falcosecurity/falcoctl/pkg/version.gitCommit={{ .Commit }}
-      -X github.com/falcosecurity/falcoctl/pkg/version.semVersion={{ if .IsSnapshot }}{{ .Commit }}{{ else }}{{ .Version }}{{ end }}
+      -X github.com/falcosecurity/falcoctl/cmd/version.buildDate={{ .Date }}
+      -X github.com/falcosecurity/falcoctl/cmd/version.gitCommit={{ .Commit }}
+      -X github.com/falcosecurity/falcoctl/cmd/version.semVersion={{ if .IsSnapshot }}{{ .Commit }}{{ else }}{{ .Version }}{{ end }}
       -s
       -w
     main: .

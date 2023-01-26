@@ -10,8 +10,8 @@ GO ?= go
 DOCKER ?= docker
 
 # version settings
-RELEASE?=$(shell git rev-parse --short HEAD)
-COMMIT?=$(shell git rev-parse --short HEAD)
+RELEASE?=$(shell git rev-parse HEAD)
+COMMIT?=$(shell git rev-parse HEAD)
 BUILD_DATE?=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 PROJECT?=github.com/falcosecurity/falcoctl
 
@@ -21,9 +21,9 @@ TEST_FLAGS ?= -v -cover# -race
 .PHONY: falcoctl
 falcoctl:
 	$(GO) build -ldflags \
-    "-X ${PROJECT}/pkg/version.semVersion=${RELEASE} \
-    -X ${PROJECT}/pkg/version.gitCommit=${COMMIT} \
-    -X ${PROJECT}/pkg/version.buildDate=${BUILD_DATE}" \
+    "-X '${PROJECT}/cmd/version.semVersion=${RELEASE}' \
+    -X '${PROJECT}/cmd/version.gitCommit=${COMMIT}' \
+    -X '${PROJECT}/cmd/version.buildDate=${BUILD_DATE}'" \
     -o falcoctl .
 
 .PHONY: test
@@ -71,4 +71,4 @@ lint: golangci-lint
 	$(GOLANGCILINT) run --new-from-rev main
 
 docker:
-	$(DOCKER) build -f ./build/Dockerfile .
+	$(DOCKER) build -f ./build/Dockerfile . --build-arg RELEASE=${RELEASE} --build-arg COMMIT=${COMMIT} --build-arg BUILD_DATE=${BUILD_DATE}
