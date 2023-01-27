@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	longPull = `Pull Falco "rulefile" or "plugin" OCI artifacts from remote registry.
+	longPull = `Pull Falco "rulesfile" or "plugin" OCI artifacts from remote registry.
 
 Artifact references are passed as arguments. 
 
