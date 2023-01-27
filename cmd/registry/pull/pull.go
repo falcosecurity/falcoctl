@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,16 @@ import (
 )
 
 const (
-	longPull = `Pull Falco "rulefile" or "plugin" OCI artifacts from remote registry
+	longPull = `Pull Falco "rulefile" or "plugin" OCI artifacts from remote registry.
+
+Artifact references are passed as arguments. 
+
+A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
+optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).
+
+When providing just the name of the artifact, the command will search for the artifacts in 
+the configured index files, and if found, it will use the registry and repository specified 
+in the indexes.
 
 Example - Pull artifact "myplugin" of type "plugin" for the platform where falcoctl is running (default) in the current working directory (default):
 	falcoctl registry pull localhost:5000/myplugin:latest --type plugin
