@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,28 +39,27 @@ import (
 const (
 	timeout = time.Second * 5
 
-	longFollow = `Follow a list of artifacts from remote registry. It periodically
-checks if the artifacts changed and downloads the latest version based on the configured
-tags.
+	longFollow = `This command allows you to keep up-to-date one or more given artifacts.
+It checks for updates on a periodic basis and then downloads and installs the latest version, 
+as specified by the passed tags. 
 
-Artifacts are passed as arguments. By just providing the name of the artifact the
-command will search for the artifact in the configured index files (see index command).
-If found it will use the 'registry' and 'repository' as specifiend in the index file.
+Artifact references are passed as arguments. 
 
-Example - Install and follow "cloudtrail" plugin using the "latest" (default) tag using the info found in the index file:
-	falcoctl artifact follow cloudtrail
+A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
+optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).
 
-Example - Install and follow "cloudtrail:0.6.0" plugin using the "0.6.0" tag. Here we explicitly set the tag:
-	falcoctl artifact follow cloudtrail:0.6.0
+When providing just the name of the artifact, the command will search for the artifacts in 
+the configured index files, and if found, it will use the registry and repository specified 
+in the indexes.
 
-Example - Install and follow "cloudtrail" plugin and "cloutrail-rules" using the "latest" (default) tag:
-	falcoctl artifact follow cloudtrail cloudtrail-rules
+Example - Install and follow "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
+	falcoctl artifact follow k8saudit-rules
 
+Example - Install and follow all updates from "k8saudit-rules" 0.5.x release series:
+	falcoctl artifact follow k8saudit-rules:0.5
 
-The command also supports the references for the artifacts composed by "registry" + "repository" + "tag":
-
-Example - Install and follow "cloudtrail" plugins using the full artifact reference:
-	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/cloudtrail:0.6.0-rc1
+Example - Install and follow "cloudtrail" plugins using a fully qualified reference:
+	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/k8saudit:latest
 `
 )
 
