@@ -256,7 +256,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		cfg := &follower.Config{
 			WaitGroup:         &wg,
 			Resync:            sched,
-			RulefilesDir:      o.rulesfilesDir,
+			RulesfilesDir:     o.rulesfilesDir,
 			PluginsDir:        o.pluginsDir,
 			ArtifactReference: ref,
 			PlainHTTP:         o.PlainHTTP,

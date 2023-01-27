@@ -236,7 +236,7 @@ It pushes local files and references the artifact uniquely. The following comman
 falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
 ```
 The type denotes the **artifact** type in this case *plugins*. The `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0` is the unique reference that points to the **artifact**.
-Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulefiles**. Based on **artifact type** the commands accepts different flags:
+Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulesfile**. Based on **artifact type** the commands accepts different flags:
 * *--annotation-source*: set annotation source for the artifact;
 * *--depends-on*: set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
 * *--tag*: additional artifact tag. Can be repeated multiple time 

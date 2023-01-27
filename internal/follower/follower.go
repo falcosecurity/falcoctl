@@ -60,7 +60,7 @@ type Config struct {
 	// Resync time after which periodically it checks for new a new version.
 	Resync cron.Schedule
 	// RulesfileDir directory where the rulesfile are stored.
-	RulefilesDir string
+	RulesfilesDir string
 	// PluginsDir directory where the plugins are stored.
 	PluginsDir string
 	// ArtifactReference reference to the artifact in a remote repository.
@@ -273,7 +273,7 @@ func (f *Follower) destinationDir(res *oci.RegistryResult) string {
 	case oci.Plugin:
 		dir = f.PluginsDir
 	case oci.Rulesfile:
-		dir = f.RulefilesDir
+		dir = f.RulesfilesDir
 	}
 	return dir
 }
