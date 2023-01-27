@@ -1,4 +1,4 @@
-A CLI tool to interact with Falco and artifacts of its ecosystem
+The official CLI tool for working with Falco and its ecosystem components
 
 Usage:
   falcoctl [command]
