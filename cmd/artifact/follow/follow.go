@@ -43,7 +43,20 @@ const (
 It checks for updates on a periodic basis and then downloads and installs the latest version, 
 as specified by the passed tags. 
 
-Artifact references are passed as arguments. 
+Artifact references and flags are passed as arguments through:
+- command line options
+- environment variables
+- configuration file
+The arguments passed through these different modalities are prioritized in the following order:
+command line options, environment variables, and finally the configuration file. This means that
+if an argument is passed through multiple modalities, the value set in the command line options
+will take precedence over the value set in environment variables, which will in turn take precedence
+over the value set in the configuration file.
+Please note that when passing multiple artifact references via an environment variable, they must be
+separated by a semicolon ';' and the environment variable used for references is called
+FALCOCT_ARTIFACT_FOLLOW_REFS. Other arguments, if passed through environment variables, should start
+with "FALCOCTL_" and be followed by the hierarchical keys used in the configuration file separated by
+an underscore "_".
 
 A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
 optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).

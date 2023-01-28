@@ -31,6 +31,41 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
+const (
+	longInstall = `This command allows you to install one or more given artifacts.
+
+Artifact references and flags are passed as arguments through:
+- command line options
+- environment variables
+- configuration file
+The arguments passed through these different modalities are prioritized in the following order:
+command line options, environment variables, and finally the configuration file. This means that
+if an argument is passed through multiple modalities, the value set in the command line options
+will take precedence over the value set in environment variables, which will in turn take precedence
+over the value set in the configuration file.
+Please note that when passing multiple artifact references via an environment variable, they must be
+separated by a semicolon ';'. Other arguments, if passed through environment variables, should start
+with "FALCOCTL_" and be followed by the hierarchical keys used in the configuration file separated by
+an underscore "_".
+
+A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
+optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).
+
+When providing just the name of the artifact, the command will search for the artifacts in 
+the configured index files, and if found, it will use the registry and repository specified 
+in the indexes.
+
+Example - Install "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
+	falcoctl artifact follow k8saudit-rules
+
+Example - Install all updates from "k8saudit-rules" 0.5.x release series:
+	falcoctl artifact follow k8saudit-rules:0.5
+
+Example - Install "cloudtrail" plugins using a fully qualified reference:
+	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/k8saudit:latest
+`
+)
+
 type artifactInstallOptions struct {
 	*options.CommonOptions
 	*options.RegistryOptions
@@ -49,7 +84,7 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		Use:                   "install [ref1 [ref2 ...]] [flags]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Install a list of artifacts",
-		Long:                  "Install a list of artifacts",
+		Long:                  longInstall,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
 			f := cmd.Flags().Lookup("rulesfiles-dir")
