@@ -41,8 +41,6 @@ var (
 	ClientCredentialsFile string
 	// DefaultIndex is the default index for the falcosecurity organization.
 	DefaultIndex Index
-	// DefaultFollower represents the default following options.
-	DefaultFollower Follow
 )
 
 const (
@@ -136,11 +134,6 @@ func init() {
 		Name: "falcosecurity",
 		URL:  "https://falcosecurity.github.io/falcoctl/index.yaml",
 	}
-	DefaultFollower = Follow{
-		Every:         time.Hour * 24,
-		Artifacts:     []string{"falco-rules:1", "application-rules:1"},
-		FalcoVersions: "http://localhost:8765/versions",
-	}
 }
 
 // Load is used to load the config file.
@@ -159,11 +152,6 @@ func Load(path string) error {
 
 	// Set default index
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
-
-	// Set default follower options
-	viper.SetDefault(ArtifactFollowEveryKey, DefaultFollower.Every)
-	viper.SetDefault(ArtifactFollowRefsKey, DefaultFollower.Artifacts)
-	viper.SetDefault(ArtifactFollowFalcoVersionsKey, DefaultFollower.FalcoVersions)
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
