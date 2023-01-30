@@ -66,12 +66,12 @@ This tutorial aims at presenting how to install a Falco artifact. The next few s
 
 First thing, we need to add a new `index` to *falcoctl*:
 ```bash
-falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+$ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
 ```
 We just downloaded the metadata of the **artifacts** hosted and distributed by the **falcosecurity** organization and made them available to the *falcoctl* tool.
 Now let's check that the `index` file is in place by running:
 ```
-falcoctl index list
+$ falcoctl index list
 ```
 We should get an output similar to this one:
 ```
@@ -80,14 +80,14 @@ falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2022-10-
 ```
 Now let's search all the artifacts related to *cloudtrail*:
 ```
-❯ falcoctl artifact search cloudtrail
+$ falcoctl artifact search cloudtrail
 INDEX           ARTIFACT                TYPE            REGISTRY        REPOSITORY                              
 falcosecurity   cloudtrail              plugin          ghcr.io         falcosecurity/plugins/plugin/cloudtrail 
 falcosecurity   cloudtrail-rules        rulesfile       ghcr.io         falcosecurity/plugins/ruleset/cloudtrail
 ```
 Lets install the *cloudtrail plugin*:
 ```
-❯ falcoctl artifact install cloudtrail --plugins-dir=./
+$ falcoctl artifact install cloudtrail --plugins-dir=./
  INFO  Reading all configured index files from "/home/aldo/.config/falcoctl/indexes.yaml"
  INFO  Preparing to pull "ghcr.io/falcosecurity/plugins/plugin/cloudtrail:latest"
  INFO  Remote registry "ghcr.io" implements docker registry API V2
@@ -98,7 +98,7 @@ Lets install the *cloudtrail plugin*:
 ```
 Install the *cloudtrail-rules* rulesfile:
 ```
-❯ ./falcoctl artifact install cloudtrail-rules --rulesfiles-dir=./
+$ ./falcoctl artifact install cloudtrail-rules --rulesfiles-dir=./
  INFO  Reading all configured index files from "/home/aldo/.config/falcoctl/indexes.yaml"
  INFO  Preparing to pull "ghcr.io/falcosecurity/plugins/ruleset/cloudtrail:latest"
  INFO  Remote registry "ghcr.io" implements docker registry API V2
@@ -109,6 +109,30 @@ Install the *cloudtrail-rules* rulesfile:
 ```
 
 We should have now two new files in the current directory: `aws_cloudtrail_rules.yaml` and `libcloudtrail.so`.
+
+# Falcoctl Configuration File
+
+The `falco configuration file` is a yaml file that contains some metadata about the `falcoctl` behaviour.
+It contains the list of the indexes where the artifacts are listed, how often and which artifacts needed to be updated periodically.
+The default configuration is stored in `/etc/falcoctl/falcoctl.yaml`.
+This is an example of a falcoctl configuration file:
+
+``` yaml
+artifact:
+  follow:
+    every: 6h0m0s
+    falcoVersions: http://localhost:8765/versions
+    refs:
+    - falco-rules:0
+    - my-rules:1
+indexes:
+- name: falcosecurity
+  url: https://falcosecurity.github.io/falcoctl/index.yaml
+- name: my-index
+  url: https://example.com/falcoctl/index.yaml
+```
+
+
 # Falcoctl Commands
 
 ## Falcoctl index
@@ -154,24 +178,24 @@ This is an example of an index file:
 New indexes are configured to be used by the *falcoctl* tool by adding them through the `index add` command. The current implementation requires a valid HTTP URL from where to download the `index` file. There are no limits to the number of indexes that can be added to the *falcoctl* tool. When adding a new index the tool adds a new entry in a file called **indexes.yaml** and downloads the *index* file in `~/.config/falcoctl`. The same folder is used to store the **indexes.yaml** file, too.
 The following command adds a new index named *falcosecurity*:
 ```bash
-falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+$ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
 ```
 #### falcoctl index list
 Using the `index list` command you can check the configured `indexes` in your local system:
 ```bash
-❯ falcoctl index list
+$ falcoctl index list
 NAME            URL                                                     ADDED                   UPDATED            
-falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2022-10-25 15:01:25     2022-10-25 15:01:25
+$ falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2022-10-25 15:01:25     2022-10-25 15:01:25
 ```
 #### falcoctl index update
 The `index update` allows to update a previously configured `index` file by syncing the local one with the remote one:
 ```bash
-falcoctl index update falcosecurity
+$ falcoctl index update falcosecurity
 ```
 #### falcoctl index remove
 When we want to remove an `index` file that we configured previously, the `index remove` command is the one we need:
 ```bash
-falcoctl index remove falcosecurity
+$ falcoctl index remove falcosecurity
 ```
 The above command will remove the **falcosecurity** index from the local system.
 
@@ -180,7 +204,7 @@ The *falcoctl* tool provides different commands to interact with Falco **artifac
 #### Falcoctl artifact search
 The `artifact search` command allows to search for **artifacts** provided by the `index` files configured in *falcoctl*. The command supports searches by name or by keywords and displays all the **artifacts** that match the search. Assuming that we have already configured the `index` provided by the `falcosecurity` organization, the following command shows all the **artifacts** that work with **Kubernetes**:
 ```bash
-❯ falcoctl artifact search kubernetes
+$ falcoctl artifact search kubernetes
 INDEX           ARTIFACT        TYPE            REGISTRY        REPOSITORY                            
 falcosecurity   k8saudit        plugin          ghcr.io         falcosecurity/plugins/plugin/k8saudit 
 falcosecurity   k8saudit-rules  rulesfile       ghcr.io         falcosecurity/plugins/ruleset/k8saudit
@@ -189,7 +213,7 @@ falcosecurity   k8saudit-rules  rulesfile       ghcr.io         falcosecurity/pl
 #### Falcoctl artifact info
 As per the name, `artifact info` prints some info for a given **artifact**:
 ```bash
-❯ falcoctl artifact info k8saudit
+$ falcoctl artifact info k8saudit
 REF                                             TAGS                                          
 ghcr.io/falcosecurity/plugins/plugin/k8saudit   0.1.0 0.2.0 0.2.1 0.3.0 0.4.0-rc1 0.4.0 latest
 ```
@@ -198,7 +222,7 @@ It shows the OCI **reference** and **tags** for the **artifact** of interest. Th
 #### Falcoctl artifact install
 The above commands help us to find all the necessary info for a given **artifact**. The `artifact install` command installs an **artifact**. It pulls the **artifact** from remote repository, and saves it in a given directory. The following command installs the *k8saudit* plugin in the default path:
 ```bash
-❯ falcoctl artifact install k8saudit
+$ falcoctl artifact install k8saudit
  INFO  Reading all configured index files from "/home/aldo/.config/falcoctl/indexes.yaml"
  INFO  Preparing to pull "ghcr.io/falcosecurity/plugins/plugin/k8saudit:latest"
  INFO  Remote registry "ghcr.io" implements docker registry API V2                                                                                                                                              
@@ -206,8 +230,9 @@ The above commands help us to find all the necessary info for a given **artifact
  INFO  Pulling ded0b5419f40: ############################################# 100% 
  INFO  Pulling 107d1230f3f0: ############################################# 100% 
  INFO  Artifact successfully installed in "/usr/share/falco/plugins"
- ```
- By default, if we give the name of an **artifact** it will search for the **artifact** in the configured `index` files and downlaod the `latest` version. The commands accepts also the OCI **reference** of an **artifact**. In this case, it will ignore the local `index` files.
+```
+
+By default, if we give the name of an **artifact** it will search for the **artifact** in the configured `index` files and downlaod the `latest` version. The commands accepts also the OCI **reference** of an **artifact**. In this case, it will ignore the local `index` files.
  The command has two flags:
  * `--plugins-dir`: directory where to install plugins. Defaults to `/usr/share/falco/plugins`;
  * `--rulesfiles-dir`: directory where to install rules. Defaults to `/etc/falco`.
@@ -230,7 +255,7 @@ The `registry auth oauth` command retrieves access and refresh tokens for OAuth2
 ### Falcoctl registry push
 It pushes local files and references the artifact uniquely. The following command shows how to push a local file to a remote registry:
 ```bash
-falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
+$ falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
 ```
 The type denotes the **artifact** type in this case *plugins*. The `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0` is the unique reference that points to the **artifact**.
 Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulesfile**. Based on **artifact type** the commands accepts different flags:
@@ -242,5 +267,42 @@ Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rul
 ### Falcoctl registry pull
 Pulling **artifacts** involves specifying the reference. The type of **artifact** is not required since the tool will implicitly extract it from the OCI **artifact**:
 ```
-falcoctl registry pull ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0                                        
+$ falcoctl registry pull ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0
 ```
+
+# Falcoctl Environment Variables
+
+The arguments of `falcoctl` can passed as arguments through:
+ - command line options
+ - environment variables
+ - configuration file
+
+The `falcoctl` arguments can be passed through these different modalities are prioritized in the following order: command line options, environment variables, and finally the configuration file. This means that if an argument is passed through multiple modalities, the value set in the command line options will take precedence over the value set in environment variables, which will in turn take precedence over the value set in the configuration file.
+
+This is the list of the environment variable that `falcoctl` will use:
+
+| Name | Content |
+| ------ | ---------- |
+| `FALCOCTL_REGISTRY_AUTH_BASIC` | `registry,username,password;registry1,username1,password1` |
+| `FALCOCTL_REGISTRY_AUTH_OAUTH` | `registry,client-id,client-secret,token-url;registry1` |
+| `FALCOCTL_INDEXES` | `index-name,https://falcosecurity.github.io/falcoctl/index.yaml` |
+| `FALCOCTL_ARTIFACT_FOLLOW_EVERY` | `6h0m0s` |
+| `FALCOCTL_ARTIFACT_FOLLOW_CRON` | `cron-formatted-string` |
+| `FALCOCTL_ARTIFACT_FOLLOW_REFS` | `ref1;ref2` |
+| `FALCOCTL_ARTIFACT_FOLLOW_FALCOVERSIONS` | `falco-version-url` |
+| `FALCOCTL_ARTIFACT_FOLLOW_RULESFILEDIR` | `rules-directory-path` |
+| `FALCOCTL_ARTIFACT_FOLLOW_PLUGINSDIR` | `plugins-directory-path` |
+| `FALCOCTL_ARTIFACT_FOLLOW_TMPDIR` | `tmp-directory-path` |
+| `FALCOCTL_ARTIFACT_INSTALL_REFS` | `ref1;ref2` |
+| `FALCOCTL_ARTIFACT_INSTALL_RULESFILEDIR` | `rules-directory-path` |
+| `FALCOCTL_ARTIFACT_INSTALL_PLUGINSDIR` | `plugins-directory-path` |
+
+Please note that when passing multiple arguments via an environment variable, they must be separated by a semicolon. Moreover, multiple fields of the same argument must be separated by a comma.
+
+Here is an example of `falcoctl` usage with environment variables:
+
+```bash
+$ export FALCOCTL_REGISTRY_AUTH_BASIC="localhost:6000;000000;999999;http://localhost:9096/token"
+$ falcoctl registry oauth 
+```
+
