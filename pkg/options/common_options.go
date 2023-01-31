@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -41,6 +42,8 @@ type CommonOptions struct {
 	// Config file. It must not be possible to be reinitialized by subcommands,
 	// using the Initialize function. It will be attached as global flags.
 	ConfigFile string
+	// IndexCache caches the entries for the configured indexes.
+	IndexCache *cache.Cache
 }
 
 // NewOptions returns a new CommonOptions struct.
@@ -62,6 +65,13 @@ func WithPrinterScope(scope string) Configs {
 func WithWriter(writer io.Writer) Configs {
 	return func(options *CommonOptions) {
 		options.writer = writer
+	}
+}
+
+// WithIndexCache sets the index cache.
+func WithIndexCache(c *cache.Cache) Configs {
+	return func(options *CommonOptions) {
+		options.IndexCache = c
 	}
 }
 

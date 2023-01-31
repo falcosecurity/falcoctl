@@ -26,10 +26,10 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/list"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/search"
-	"github.com/falcosecurity/falcoctl/cmd/index/add"
 	"github.com/falcosecurity/falcoctl/cmd/registry/auth/basic"
 	"github.com/falcosecurity/falcoctl/cmd/registry/auth/oauth"
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -49,13 +49,9 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 			indexes, err := config.Indexes()
 			opt.Printer.CheckErr(err)
 
-			for _, ind := range indexes {
-				indexMgr := add.IndexAddOptions{
-					CommonOptions: opt,
-				}
-				opt.Printer.CheckErr(indexMgr.Validate([]string{ind.Name, ind.URL}))
-				opt.Printer.CheckErr(indexMgr.RunIndexAdd(ctx, []string{ind.Name, ind.URL}))
-			}
+			// Create the index cache.
+			indexCache, err := cache.NewFromConfig(ctx, config.IndexesFile, config.IndexesDir, indexes)
+			opt.Printer.CheckErr(err)
 
 			basicAuths, err := config.BasicAuths()
 			opt.Printer.CheckErr(err)
@@ -81,6 +77,8 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 				}
 				opt.Printer.CheckErr(oauthMgr.RunOauth(ctx, []string{auth.Registry}))
 			}
+
+			opt.Initialize(commonoptions.WithIndexCache(indexCache))
 		},
 	}
 

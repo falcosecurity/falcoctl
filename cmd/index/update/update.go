@@ -17,14 +17,12 @@ package update
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/consts"
 	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -43,7 +41,7 @@ func (o *indexUpdateOptions) Validate(args []string) error {
 
 	for _, name := range args {
 		if e := o.indexConfig.Get(name); e == nil {
-			return fmt.Errorf("cannot update %s: %w. Check that each passed index is cached in the system", name, err)
+			return fmt.Errorf("index named %q not found in indexes file %q", name, config.IndexesFile)
 		}
 	}
 
@@ -74,32 +72,19 @@ func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 }
 
 func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) error {
-	ts := time.Now().Format(consts.TimeFormat)
-
-	for _, name := range args {
-		nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
-		indexFile := filepath.Join(config.IndexesDir, nameYaml)
-
-		indexConfigEntry := o.indexConfig.Get(name)
-		if indexConfigEntry == nil {
-			return fmt.Errorf("cannot update index %s: not found", name)
-		}
-
-		remoteIndex, err := index.Fetch(ctx, indexConfigEntry.URL, name)
-		if err != nil {
-			return err
-		}
-
-		err = remoteIndex.Write(indexFile)
-		if err != nil {
-			return err
-		}
-
-		indexConfigEntry.UpdatedTimestamp = ts
+	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
+	if err != nil {
+		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
-	if err := o.indexConfig.Write(config.IndexesFile); err != nil {
-		return err
+	for _, arg := range args {
+		if err := indexCache.Update(ctx, arg); err != nil {
+			return fmt.Errorf("an error occurred while updating index %q: %w", arg, err)
+		}
+	}
+
+	if _, err = indexCache.Write(); err != nil {
+		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
 
 	return nil

@@ -261,7 +261,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		} else {
 			o.Printer.Info.Printfln("Creating follower for %q, with check every %s", a, o.every.String())
 		}
-		ref, err := utils.ParseReference(mergedIndexes, a)
+		ref, err := o.IndexCache.ResolveReference(a)
 		if err != nil {
 			return fmt.Errorf("unable to parse artifact reference for %q: %w", a, err)
 		}

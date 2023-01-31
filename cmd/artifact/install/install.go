@@ -164,7 +164,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 	// Specify how to pull config layer for each artifact requested by user.
 	resolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-		ref, err := utils.ParseReference(mergedIndexes, ref)
+		ref, err := o.IndexCache.ResolveReference(ref)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +191,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 	// Compute input to install dependencies
 	for i, arg := range args {
-		args[i], err = utils.ParseReference(mergedIndexes, arg)
+		args[i], err = o.IndexCache.ResolveReference(arg)
 		if err != nil {
 			return err
 		}
@@ -208,7 +208,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 	// Install artifacts
 	for _, ref := range resolvedDepsRefs {
-		ref, err = utils.ParseReference(mergedIndexes, ref)
+		ref, err = o.IndexCache.ResolveReference(ref)
 		if err != nil {
 			return err
 		}

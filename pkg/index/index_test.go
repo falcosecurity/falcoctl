@@ -250,6 +250,13 @@ func TestConfig(t *testing.T) {
 		t.Error(err)
 	}
 
+	c.Remove("test")
+	for _, item := range c.Configs {
+		if item.Name == "test" {
+			t.Error(fmt.Errorf("entry \"test\" should have been removed"))
+		}
+	}
+
 	c.Add(ConfigEntry{
 		Name: "test",
 		URL:  "https://test.com/index.yaml",
@@ -260,8 +267,4 @@ func TestConfig(t *testing.T) {
 		t.Error(fmt.Errorf("entry \"test\" not found"))
 	}
 
-	err = c.Remove("test")
-	if err != nil {
-		t.Error(err)
-	}
 }

@@ -18,14 +18,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/consts"
-	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -78,67 +75,26 @@ func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Comm
 
 // RunIndexAdd implements the index add command.
 func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error {
+	var err error
+
 	name := args[0]
-	nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 	url := args[1]
-	indexFile := filepath.Join(config.IndexesDir, nameYaml)
 
-	indexConfig, err := index.NewConfig(config.IndexesFile)
+	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
-	if e := indexConfig.Get(name); e != nil {
-		o.Printer.Warning.Printf("%s already exists with the same configuration, skipping\n", name)
-		return nil
+	if err = indexCache.Add(ctx, name, url); err != nil {
+		return fmt.Errorf("unable to add index: %w", err)
 	}
 
-	remoteIndex, err := index.Fetch(ctx, url, name)
-	if err != nil {
-		return err
+	if _, err = indexCache.Write(); err != nil {
+		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
 
-	// Save the new index.
-	err = remoteIndex.Write(indexFile)
-	if err != nil {
-		return err
-	}
-
-	// Keep track of the newly created index file in indexes.yaml.
-	ts := time.Now().Format(consts.TimeFormat)
-	entry := index.ConfigEntry{
-		Name:             name,
-		AddedTimestamp:   ts,
-		UpdatedTimestamp: ts,
-		URL:              url,
-	}
-
-	indexConfig.Add(entry)
-
-	if err := indexConfig.Write(config.IndexesFile); err != nil {
-		return err
-	}
-
-	currentIndexes, err := config.Indexes()
-	if err != nil {
-		return fmt.Errorf("unable to get indexes from viper: %w", err)
-	}
-
-	for _, i := range currentIndexes {
-		if i.Name == name {
-			o.Printer.Verbosef("index with name %q already exists in the config file %q", name, config.ConfigPath)
-			return nil
-		}
-	}
-
-	currentIndexes = append(currentIndexes, config.Index{
+	return config.AddIndexes([]config.Index{{
 		Name: name,
 		URL:  url,
-	})
-
-	if err := config.UpdateConfigFile(config.IndexesKey, currentIndexes, o.ConfigFile); err != nil {
-		return fmt.Errorf("unable to update indexes list in the config file %q: %w", config.ConfigPath, err)
-	}
-
-	return nil
+	}}, o.ConfigFile)
 }

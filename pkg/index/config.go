@@ -15,7 +15,6 @@
 package index
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -66,16 +65,25 @@ func (c *Config) Add(entry ConfigEntry) {
 	c.Configs = append(c.Configs, entry)
 }
 
+// Upsert replaces the entry if already exists otherwise just appends it.
+func (c *Config) Upsert(entry ConfigEntry) {
+	for i, e := range c.Configs {
+		if entry.Name == e.Name {
+			c.Configs[i] = entry
+			return
+		}
+	}
+	c.Add(entry)
+}
+
 // Remove removes a config by name from an Config.
-func (c *Config) Remove(name string) error {
+func (c *Config) Remove(name string) {
 	for k, conf := range c.Configs {
 		if conf.Name == name {
 			c.Configs = append(c.Configs[:k], c.Configs[k+1:]...)
-			return nil
+			break
 		}
 	}
-
-	return fmt.Errorf("cannot remove index %s: not found", name)
 }
 
 // Get returns a pointer to an entry in a Config.
