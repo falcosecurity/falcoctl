@@ -256,6 +256,27 @@ By default, if we give the name of an **artifact** it will search for the **arti
 
  > If the repositories of the **artifacts** your are trying to install are not public then you need to authenticate to the remote registry.
 
+#### Falcoctl artifact follow
+The above commands allow us to keep up-to-date one or more given **artifacts**. The `artifact follow` command checks for updates on a periodic basis and then downloads and installs the latest version, as specified by the passed tags. 
+It pulls the **artifact** from remote repository, and saves it in a given directory. The following command installs the *github-rules* rulesfile in the default path:
+```bash
+ $ falcoctl artifact follow github-rules
+ WARN  falcosecurity already exists with the same configuration, skipping
+ INFO  Reading all configured index files from "/root/.config/falcoctl/indexes.yaml"
+INFO: Creating follower for "github-rules", with check every 6h0m0s
+ INFO  Starting follower for "ghcr.io/falcosecurity/plugins/ruleset/github:latest"
+ INFO   (ghcr.io/falcosecurity/plugins/ruleset/github:latest) found new version under tag "latest"
+ INFO   (ghcr.io/falcosecurity/plugins/ruleset/github:latest) artifact with tag "latest" correctly installed
+
+```
+
+By default, if we give the name of an **artifact** it will search for the **artifact** in the configured `index` files and downlaod the `latest` version. The commands accepts also the OCI **reference** of an **artifact**. In this case, it will ignore the local `index` files.
+ The command can specify the directory where to install the *rulesfile* artifacts through the `--rulesfiles-dir` flag (defaults to `/etc/falco`).
+
+ > If the repositories of the **artifacts** your are trying to install are not public then you need to authenticate to the remote registry.
+ 
+ > Please note that only **rulesfile** artifact can be followed.
+
  ## Falcoctl registry
 
  The `registry` commands interact with OCI registries allowing the user to authenticate, pull and push artifacts. We have tested the *falcoctl* tool with the **ghcr.io** registry, but it should work with all the registries that support the OCI artifacts.
