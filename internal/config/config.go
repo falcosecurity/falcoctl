@@ -187,7 +187,7 @@ func Indexes() ([]Index, error) {
 	var indexes []Index
 
 	if err := viper.UnmarshalKey(IndexesKey, &indexes, viper.DecodeHook(indexListHookFunc())); err != nil {
-		return nil, fmt.Errorf("unable to get indexes: %w", err)
+		return nil, fmt.Errorf("unable to get indexes from configuration: %w", err)
 	}
 
 	return indexes, nil
@@ -403,3 +403,56 @@ func UpdateConfigFile(key string, value interface{}, path string) error {
 // that we have fields like engine_version that are only numbers, we shoud be
 // as muche generic as possible.
 type FalcoVersions map[string]string
+
+// AddIndexes appends the provided indexes to a configuration file if not present.
+func AddIndexes(indexes []Index, configFile string) error {
+	var currIndexes []Index
+	var err error
+
+	// Retrieve the current indexes from configuration.
+	if currIndexes, err = Indexes(); err != nil {
+		return err
+	}
+	for i, idx := range indexes {
+		if _, ok := findIndexInSlice(currIndexes, &indexes[i]); !ok {
+			currIndexes = append(currIndexes, idx)
+		}
+	}
+
+	if err := UpdateConfigFile(IndexesKey, currIndexes, configFile); err != nil {
+		return fmt.Errorf("unable to update indexes list in the config file %q: %w", configFile, err)
+	}
+
+	return nil
+}
+
+// RemoveIndexes removes the index entries from a configuration file if any is found.
+func RemoveIndexes(names []string, configFile string) error {
+	var currIndexes []Index
+	var err error
+
+	// Retrieve the current indexes from configuration.
+	if currIndexes, err = Indexes(); err != nil {
+		return err
+	}
+	for _, name := range names {
+		if i, ok := findIndexInSlice(currIndexes, &Index{Name: name}); ok {
+			currIndexes = append(currIndexes[:i], currIndexes[i+1:]...)
+		}
+	}
+
+	if err := UpdateConfigFile(IndexesKey, currIndexes, configFile); err != nil {
+		return fmt.Errorf("unable to update indexes list in the config file %q: %w", configFile, err)
+	}
+
+	return nil
+}
+
+func findIndexInSlice(slice []Index, val *Index) (int, bool) {
+	for i, item := range slice {
+		if item.Name == val.Name {
+			return i, true
+		}
+	}
+	return -1, false
+}
