@@ -373,15 +373,17 @@ func Installer() (Install, error) {
 // another config setting, avoid to mistakenly update it).
 func UpdateConfigFile(key string, value interface{}, path string) error {
 	v := viper.New()
+	// we keep these for consistency, but not actually used
+	// since we explicitly set the filepath later
 	v.SetConfigName("falcoctl")
+	v.SetConfigType("yaml")
 
 	absolutePath, err := filepath.Abs(path)
 	if err != nil {
 		return err
 	}
 
-	v.AddConfigPath(filepath.Dir(absolutePath))
-	v.SetConfigType("yaml")
+	v.SetConfigFile(absolutePath)
 
 	if err := v.ReadInConfig(); err != nil {
 		return fmt.Errorf("config: error reading config file: %w", err)
