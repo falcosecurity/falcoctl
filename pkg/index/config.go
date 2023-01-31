@@ -15,8 +15,11 @@
 package index
 
 import (
+<<<<<<< HEAD
 	"errors"
 	"io/fs"
+=======
+>>>>>>> new(index-caching): add in-memory cache mechanism for index files
 	"os"
 	"path/filepath"
 
