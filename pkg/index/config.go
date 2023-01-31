@@ -79,14 +79,14 @@ func (c *Config) Remove(name string) error {
 }
 
 // Get returns a pointer to an entry in a Config.
-func (c *Config) Get(name string) (*ConfigEntry, error) {
+func (c *Config) Get(name string) *ConfigEntry {
 	for k, conf := range c.Configs {
 		if conf.Name == name {
-			return &c.Configs[k], nil
+			return &c.Configs[k]
 		}
 	}
 
-	return nil, fmt.Errorf("not found")
+	return nil
 }
 
 // Write writes an Config to disk.
