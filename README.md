@@ -125,11 +125,28 @@ artifact:
     refs:
     - falco-rules:0
     - my-rules:1
+  install:
+    refs:
+      - cloudtrail-rules:latest
+      - cloudtrail:latest
+    rulesfilesdir: /tmp/rules
+    pluginsdir: /tmp/plugins
 indexes:
 - name: falcosecurity
   url: https://falcosecurity.github.io/falcoctl/index.yaml
 - name: my-index
   url: https://example.com/falcoctl/index.yaml
+registry:
+  auth:
+    basic:
+    - password: password
+      registry: myregistry.example.com:5000
+      user: user
+    oauth:
+    - registry: myregistry.example.com:5001
+      clientsecret: "999999"
+      clientid: "000000"
+      tokenurl: http://myregistry.example.com:9096/token
 ```
 
 
@@ -302,7 +319,7 @@ Please note that when passing multiple arguments via an environment variable, th
 Here is an example of `falcoctl` usage with environment variables:
 
 ```bash
-$ export FALCOCTL_REGISTRY_AUTH_BASIC="localhost:6000;000000;999999;http://localhost:9096/token"
+$ export FALCOCTL_REGISTRY_AUTH_OAUTH="localhost:6000,000000,999999,http://localhost:9096/token"
 $ falcoctl registry oauth 
 ```
 
