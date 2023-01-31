@@ -255,9 +255,9 @@ func TestConfig(t *testing.T) {
 		URL:  "https://test.com/index.yaml",
 	})
 
-	_, err = c.Get("test")
-	if err != nil {
-		t.Error(err)
+	entry := c.Get("test")
+	if entry == nil {
+		t.Error(fmt.Errorf("entry \"test\" not found"))
 	}
 
 	err = c.Remove("test")

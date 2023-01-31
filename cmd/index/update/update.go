@@ -42,7 +42,7 @@ func (o *indexUpdateOptions) Validate(args []string) error {
 	}
 
 	for _, name := range args {
-		if _, err := o.indexConfig.Get(name); err != nil {
+		if e := o.indexConfig.Get(name); e == nil {
 			return fmt.Errorf("cannot update %s: %w. Check that each passed index is cached in the system", name, err)
 		}
 	}
@@ -80,8 +80,8 @@ func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) 
 		nameYaml := fmt.Sprintf("%s%s", name, ".yaml")
 		indexFile := filepath.Join(config.IndexesDir, nameYaml)
 
-		indexConfigEntry, err := o.indexConfig.Get(name)
-		if err != nil {
+		indexConfigEntry := o.indexConfig.Get(name)
+		if indexConfigEntry == nil {
 			return fmt.Errorf("cannot update index %s: not found", name)
 		}
 

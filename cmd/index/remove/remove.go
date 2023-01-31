@@ -41,7 +41,7 @@ func (o *indexRemoveOptions) Validate(args []string) error {
 	}
 
 	for _, name := range args {
-		if _, err := o.indexConfig.Get(name); err != nil {
+		if e := o.indexConfig.Get(name); e == nil {
 			return fmt.Errorf("cannot remove %s: %w. Check that each passed index is cached in the system", name, err)
 		}
 	}

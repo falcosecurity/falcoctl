@@ -88,7 +88,7 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 		return err
 	}
 
-	if _, err := indexConfig.Get(name); err == nil {
+	if e := indexConfig.Get(name); e != nil {
 		o.Printer.Warning.Printf("%s already exists with the same configuration, skipping\n", name)
 		return nil
 	}
