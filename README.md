@@ -332,7 +332,7 @@ This is the list of the environment variable that `falcoctl` will use:
 | `FALCOCTL_ARTIFACT_FOLLOW_PLUGINSDIR` | `plugins-directory-path` |
 | `FALCOCTL_ARTIFACT_FOLLOW_TMPDIR` | `tmp-directory-path` |
 | `FALCOCTL_ARTIFACT_INSTALL_REFS` | `ref1;ref2` |
-| `FALCOCTL_ARTIFACT_INSTALL_RULESFILEDIR` | `rules-directory-path` |
+| `FALCOCTL_ARTIFACT_INSTALL_RULESFILESDIR` | `rules-directory-path` |
 | `FALCOCTL_ARTIFACT_INSTALL_PLUGINSDIR` | `plugins-directory-path` |
 
 Please note that when passing multiple arguments via an environment variable, they must be separated by a semicolon. Moreover, multiple fields of the same argument must be separated by a comma.
