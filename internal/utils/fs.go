@@ -15,6 +15,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,6 +35,33 @@ func Move(oldPath, newPath string) error {
 		if err != nil {
 			return fmt.Errorf("unable to write to file %s: %w", newPath, err)
 		}
+	}
+
+	return nil
+}
+
+// ExistsAndIsWritable checks if the directory specified by the path exists and is writable.
+func ExistsAndIsWritable(path string) error {
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%s doesn't exists", path)
+	} else if err != nil {
+		return err
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("%s is not a directory", path)
+	}
+
+	if f, err := os.Create(filepath.Join(filepath.Clean(path), "._check_writable")); err == nil {
+		if err := f.Close(); err != nil {
+			return err
+		}
+		if err := os.Remove(f.Name()); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("%s is not writable", path)
 	}
 
 	return nil

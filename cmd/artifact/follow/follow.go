@@ -151,6 +151,10 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
 				}
 			}
+			// Check if directory exists and is writable
+			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
+				o.Printer.CheckErr(fmt.Errorf("rulesfiles-dir: %w", err))
+			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup("plugins-dir")
@@ -162,6 +166,10 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
 				}
+			}
+			// Check if directory exists and is writable
+			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
+				o.Printer.CheckErr(fmt.Errorf("plugins-dir: %w", err))
 			}
 
 			// Override "tmp-dir" flag with viper config if not set by user.

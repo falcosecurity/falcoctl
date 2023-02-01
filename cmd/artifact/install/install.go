@@ -97,6 +97,10 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
 				}
 			}
+			// Check if directory exists and is writable
+			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
+				o.Printer.CheckErr(fmt.Errorf("rulesfiles-dir: %w", err))
+			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup("plugins-dir")
@@ -108,6 +112,10 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
 				}
+			}
+			// Check if directory exists and is writable
+			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
+				o.Printer.CheckErr(fmt.Errorf("plugins-dir: %w", err))
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -237,13 +245,6 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			destDir = o.pluginsDir
 		case oci.Rulesfile:
 			destDir = o.rulesfilesDir
-		}
-
-		if _, err = os.Stat(destDir); os.IsNotExist(err) {
-			err = os.MkdirAll(destDir, 0o700)
-			if err != nil {
-				return err
-			}
 		}
 
 		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("INFO: Extracting and installing %q %q", result.Type, result.Filename))
