@@ -239,6 +239,13 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			destDir = o.rulesfilesDir
 		}
 
+		if _, err = os.Stat(destDir); os.IsNotExist(err) {
+			err = os.MkdirAll(destDir, 0o700)
+			if err != nil {
+				return err
+			}
+		}
+
 		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("INFO: Extracting and installing %q %q", result.Type, result.Filename))
 		result.Filename = filepath.Join(tmpDir, result.Filename)
 
