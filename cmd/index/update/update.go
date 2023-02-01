@@ -31,26 +31,6 @@ type indexUpdateOptions struct {
 	indexConfig *index.Config
 }
 
-<<<<<<< HEAD
-=======
-func (o *indexUpdateOptions) Validate(args []string) error {
-	// Check that all the index names are actually stored in the system.
-	var err error
-	o.indexConfig, err = index.NewConfig(config.IndexesFile)
-	if err != nil {
-		return err
-	}
-
-	for _, name := range args {
-		if e := o.indexConfig.Get(name); e == nil {
-			return fmt.Errorf("index named %q not found in indexes file %q", name, config.IndexesFile)
-		}
-	}
-
-	return nil
-}
-
->>>>>>> new(index-caching): add in-memory cache mechanism for index files
 // NewIndexUpdateCmd returns the index update command.
 func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := indexUpdateOptions{

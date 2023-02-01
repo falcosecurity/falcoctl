@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
@@ -41,6 +42,13 @@ var (
 	ClientCredentialsFile string
 	// DefaultIndex is the default index for the falcosecurity organization.
 	DefaultIndex Index
+
+	// Useful regexps for parsing.
+
+	// SemicolonSeparatedRegexp is a regexp matching semi-colon separated values, without trailing separator.
+	SemicolonSeparatedRegexp = regexp.MustCompile(`^([^;]+)(;[^;]+)*$`)
+	// CommaSeparatedRegexp is a regexp matching comma separated values, without trailing separator.
+	CommaSeparatedRegexp = regexp.MustCompile(`^([^,]+)(,[^,]+)*$`)
 )
 
 const (
@@ -209,10 +217,21 @@ func indexListHookFunc() mapstructure.DecodeHookFuncType {
 
 		switch f.Kind() {
 		case reflect.String:
+			if !SemicolonSeparatedRegexp.MatchString(data.(string)) {
+				return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), data.(string))
+			}
 			tokens := strings.Split(data.(string), ";")
 			indexes := make([]Index, len(tokens))
 			for i, token := range tokens {
+				if !CommaSeparatedRegexp.MatchString(token) {
+					return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", CommaSeparatedRegexp.String(), token)
+				}
+
 				values := strings.Split(token, ",")
+				if len(values) != 2 {
+					return data, fmt.Errorf("not valid token %q", token)
+				}
+
 				indexes[i] = Index{
 					Name: values[0],
 					URL:  values[1],
@@ -258,10 +277,21 @@ func basicAuthListHookFunc() mapstructure.DecodeHookFuncType {
 
 		switch f.Kind() {
 		case reflect.String:
+			if !SemicolonSeparatedRegexp.MatchString(data.(string)) {
+				return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), data.(string))
+			}
 			tokens := strings.Split(data.(string), ";")
 			auths := make([]BasicAuth, len(tokens))
 			for i, token := range tokens {
+				if !CommaSeparatedRegexp.MatchString(token) {
+					return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", CommaSeparatedRegexp.String(), token)
+				}
+
 				values := strings.Split(token, ",")
+				if len(values) != 3 {
+					return data, fmt.Errorf("not valid token %q", token)
+				}
+
 				auths[i] = BasicAuth{
 					Registry: values[0],
 					User:     values[1],
@@ -308,10 +338,21 @@ func oathAuthListHookFunc() mapstructure.DecodeHookFuncType {
 
 		switch f.Kind() {
 		case reflect.String:
+			if !SemicolonSeparatedRegexp.MatchString(data.(string)) {
+				return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), data.(string))
+			}
 			tokens := strings.Split(data.(string), ";")
 			auths := make([]OauthAuth, len(tokens))
 			for i, token := range tokens {
+				if !CommaSeparatedRegexp.MatchString(token) {
+					return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", CommaSeparatedRegexp.String(), token)
+				}
 				values := strings.Split(token, ",")
+
+				if len(values) != 4 {
+					return data, fmt.Errorf("not valid token %q", token)
+				}
+
 				auths[i] = OauthAuth{
 					Registry:     values[0],
 					ClientID:     values[1],
@@ -338,6 +379,9 @@ func Follower() (Follow, error) {
 	// env variables can just make use of ";" to separat
 	artifacts := viper.GetStringSlice(ArtifactFollowRefsKey)
 	if len(artifacts) == 1 { // in this case it might come from the env
+		if !SemicolonSeparatedRegexp.MatchString(artifacts[0]) {
+			return Follow{}, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), artifacts[0])
+		}
 		artifacts = strings.Split(artifacts[0], ";")
 	}
 
@@ -357,6 +401,9 @@ func Installer() (Install, error) {
 	// env variables can just make use of ";" to separat
 	artifacts := viper.GetStringSlice(ArtifactInstallArtifactsKey)
 	if len(artifacts) == 1 { // in this case it might come from the env
+		if !SemicolonSeparatedRegexp.MatchString(artifacts[0]) {
+			return Install{}, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), artifacts[0])
+		}
 		artifacts = strings.Split(artifacts[0], ";")
 	}
 
