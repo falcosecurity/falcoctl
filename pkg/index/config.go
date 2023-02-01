@@ -15,6 +15,8 @@
 package index
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -97,14 +99,24 @@ func (c *Config) Get(name string) *ConfigEntry {
 	return nil
 }
 
-// Write writes an Config to disk.
+// Write writes a Config to disk.
 func (c *Config) Write(path string) error {
+	// Get dir path.
+	dir, _ := filepath.Split(path)
+	// Create directory if it does not exist.
+	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+		err = os.MkdirAll(dir, defaultDirPermissions) // #nosec G301 //we want 755 permissions
+		if err != nil {
+			return err
+		}
+	}
+
 	data, err := yaml.Marshal(c)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(path, data, writePermissions)
+	err = os.WriteFile(path, data, defaultFilePermissions)
 	if err != nil {
 		return err
 	}

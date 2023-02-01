@@ -17,7 +17,6 @@ package add
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -29,25 +28,6 @@ import (
 // IndexAddOptions contains the options for the index add command.
 type IndexAddOptions struct {
 	*options.CommonOptions
-}
-
-// Validate is used to make sure that required directories are existing in the filesystem.
-func (o *IndexAddOptions) Validate(args []string) error {
-	// TODO(loresuso): we should move this logic elsewhere
-	if _, err := os.Stat(config.FalcoctlPath); os.IsNotExist(err) {
-		err = os.MkdirAll(config.FalcoctlPath, 0o700)
-		if err != nil {
-			return err
-		}
-	}
-
-	if _, err := os.Stat(config.IndexesDir); os.IsNotExist(err) {
-		err = os.MkdirAll(config.IndexesDir, 0o700)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // NewIndexAddCmd returns the index add command.
@@ -62,9 +42,6 @@ func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Comm
 		Short:                 "Add an index to the local falcoctl configuration",
 		Long:                  "Add an index to the local falcoctl configuration. Indexes are used to perform search operations for artifacts",
 		Args:                  cobra.ExactArgs(2),
-		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.Validate(args))
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunIndexAdd(ctx, args))
 		},

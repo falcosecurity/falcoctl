@@ -15,5 +15,6 @@
 package index
 
 const (
-	writePermissions = 0o600
+	defaultFilePermissions = 0o644
+	defaultDirPermissions  = 0o755
 )
