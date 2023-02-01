@@ -15,7 +15,9 @@
 package index
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
@@ -134,6 +136,16 @@ func (i *Index) Normalize() error {
 
 // Write writes entries to a file.
 func (i *Index) Write(path string) error {
+	// Get dir path.
+	dir, _ := filepath.Split(path)
+	// Create directory if it does not exist.
+	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+		err = os.MkdirAll(dir, defaultDirPermissions) // #nosec G301 //we want 755 permissions
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := i.Normalize(); err != nil {
 		return err
 	}
@@ -142,7 +154,7 @@ func (i *Index) Write(path string) error {
 		return fmt.Errorf("cannot marshal index: %w", err)
 	}
 
-	if err = os.WriteFile(path, indexBytes, writePermissions); err != nil {
+	if err = os.WriteFile(path, indexBytes, defaultFilePermissions); err != nil {
 		return fmt.Errorf("cannot write index to file: %w", err)
 	}
 
