@@ -188,6 +188,14 @@ func (f *Follower) follow(ctx context.Context) {
 
 	dstDir := f.destinationDir(res)
 
+	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
+		err = os.MkdirAll(dstDir, 0o700)
+		if err != nil {
+			f.Error.Printfln("cannot create destination directory for the artifact: %v", err)
+			return
+		}
+	}
+
 	// Install the artifacts if necessary.
 	for _, path := range filePaths {
 		baseName := filepath.Base(path)
@@ -275,6 +283,7 @@ func (f *Follower) destinationDir(res *oci.RegistryResult) string {
 	case oci.Rulesfile:
 		dir = f.RulesfilesDir
 	}
+
 	return dir
 }
 
