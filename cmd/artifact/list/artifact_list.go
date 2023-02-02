@@ -19,9 +19,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/utils"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -57,23 +54,13 @@ func NewArtifactListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 }
 
 func (o *artifactListOptions) RunArtifactList(ctx context.Context, args []string) error {
-	indexConfig, err := index.NewConfig(config.IndexesFile)
-	if err != nil {
-		return err
-	}
-
-	mergedIndexes, err := utils.Indexes(indexConfig, config.IndexesDir)
-	if err != nil {
-		return err
-	}
-
 	var data [][]string
-	for _, entry := range mergedIndexes.Entries {
+	for _, entry := range o.IndexCache.MergedIndexes.Entries {
 		if o.artifactType != "" && o.artifactType != oci.ArtifactType(entry.Type) {
 			continue
 		}
 
-		indexName := mergedIndexes.IndexByEntry(entry).Name
+		indexName := o.IndexCache.MergedIndexes.IndexByEntry(entry).Name
 		if o.index != "" && o.index != indexName {
 			continue
 		}
@@ -82,7 +69,7 @@ func (o *artifactListOptions) RunArtifactList(ctx context.Context, args []string
 		data = append(data, row)
 	}
 
-	if err = o.Printer.PrintTable(output.ArtifactSearch, data); err != nil {
+	if err := o.Printer.PrintTable(output.ArtifactSearch, data); err != nil {
 		return err
 	}
 
