@@ -32,11 +32,25 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
+const (
+	longRootCmd = `
+     __       _                _   _ 
+    / _| __ _| | ___ ___   ___| |_| |
+   | |_ / _  | |/ __/ _ \ / __| __| |
+   |  _| (_| | | (_| (_) | (__| |_| |
+   |_|  \__,_|_|\___\___/ \___|\__|_|
+									 
+	
+The official CLI tool for working with Falco and its ecosystem components
+`
+)
+
 // New instantiates the root command and initializes the tree of commands.
 func New(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "falcoctl",
 		Short:             "The official CLI tool for working with Falco and its ecosystem components",
+		Long:              longRootCmd,
 		DisableAutoGenTag: true,
 	}
 
