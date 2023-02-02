@@ -110,7 +110,9 @@ $ ./falcoctl artifact install cloudtrail-rules --rulesfiles-dir=./
 
 We should have now two new files in the current directory: `aws_cloudtrail_rules.yaml` and `libcloudtrail.so`.
 
-# Falcoctl Configuration File
+# Falcoctl Configuration Files
+
+## `/etc/falcoctl/falcoctl.yaml`
 
 The `falco configuration file` is a yaml file that contains some metadata about the `falcoctl` behaviour.
 It contains the list of the indexes where the artifacts are listed, how often and which artifacts needed to be updated periodically.
@@ -149,6 +151,19 @@ registry:
       tokenurl: http://myregistry.example.com:9096/token
 ```
 
+## `~/.config/falcoctl/`
+
+The `~/.config/falcoctl/` directory contains:
+- *cache objects*
+- *OAuth2 client credentials*
+
+### `~/.config/falcoctl/indexes.yaml`
+
+This file is used for cache purposes and contains the *index refs* added by the command `falcoctl index add [name] [ref]`. The *index ref* is enriched with two timestamps to track when it was added and the last time is was updated. Once the *index ref* is added, `falcoctl` will download the real index in the `~/.config/falcoctl/indexes/` directory. Moreover, every time the index is fetched, the `updated_timestamp` is updated.
+
+### `~/.config/falcoctl/clientcredentials.json`
+
+The command `falcoctl registry auth oauth` will add the `clientcredentials.json` file to the `~/.config/falcoctl/` directory. That file will contain all the needed information for the OAuth2 authetication.
 
 # Falcoctl Commands
 
