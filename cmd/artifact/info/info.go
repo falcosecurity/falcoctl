@@ -22,9 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -59,22 +57,12 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 }
 
 func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string) error {
-	indexConfig, err := index.NewConfig(config.IndexesFile)
-	if err != nil {
-		return err
-	}
-
-	mergedIndexes, err := utils.Indexes(indexConfig, config.IndexesDir)
-	if err != nil {
-		return err
-	}
-
 	var data [][]string
 	for _, name := range args {
 		var ref string
 		parsedRef, err := registry.ParseReference(name)
 		if err != nil {
-			entry, ok := mergedIndexes.EntryByName(name)
+			entry, ok := o.IndexCache.MergedIndexes.EntryByName(name)
 			if !ok {
 				o.Printer.Warning.Printfln("cannot find %q, skipping", name)
 				continue
@@ -112,7 +100,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		data = append(data, []string{ref, joinedTags})
 	}
 
-	if err = o.Printer.PrintTable(output.ArtifactInfo, data); err != nil {
+	if err := o.Printer.PrintTable(output.ArtifactInfo, data); err != nil {
 		return err
 	}
 
