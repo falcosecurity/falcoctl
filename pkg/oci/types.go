@@ -17,6 +17,7 @@ package oci
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -36,8 +37,8 @@ const (
 // The following functions are necessary to use ArtifactType with Cobra.
 
 // String returns a string representation of ArtifactType.
-func (e *ArtifactType) String() string {
-	return string(*e)
+func (e ArtifactType) String() string {
+	return string(e)
 }
 
 // Set an ArtifactType.
@@ -54,6 +55,57 @@ func (e *ArtifactType) Set(v string) error {
 // Type returns a string representing this type.
 func (e *ArtifactType) Type() string {
 	return "ArtifactType"
+}
+
+// ToMediaType converts type to its corresponding media type.
+// Ensure this is called after a Set().
+func (e *ArtifactType) ToMediaType() string {
+	switch *e {
+	case Rulesfile:
+		return FalcoRulesfileLayerMediaType
+	case Plugin:
+		return FalcoPluginLayerMediaType
+	}
+
+	// should never happen
+	return ""
+}
+
+// ArtifactTypeSlice is a slice of ArtifactType, can be passed as comma separated values.
+type ArtifactTypeSlice struct {
+	Types                []ArtifactType
+	CommaSeparatedString string
+}
+
+// String returns a string representation of ArtifactTypeSlice.
+func (e ArtifactTypeSlice) String() string {
+	return e.CommaSeparatedString
+}
+
+// Set an ArtifactType.
+func (e *ArtifactTypeSlice) Set(v string) error {
+	commaSeparatedRegexp := regexp.MustCompile(`^([^,]+)(,[^,]+)*$`)
+	if !commaSeparatedRegexp.MatchString(v) {
+		return fmt.Errorf("%q is not a valid comma separated string", v)
+	}
+
+	e.CommaSeparatedString = v
+
+	tokens := strings.Split(v, ",")
+	for _, token := range tokens {
+		var at ArtifactType
+		if err := at.Set(token); err != nil {
+			return fmt.Errorf("not valid token %q: %w", token, err)
+		}
+		e.Types = append(e.Types, at)
+	}
+
+	return nil
+}
+
+// Type returns a string representing this type.
+func (e *ArtifactTypeSlice) Type() string {
+	return "ArtifactTypeSlice"
 }
 
 // RegistryResult represents a generic result that is generated when

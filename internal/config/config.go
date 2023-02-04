@@ -27,6 +27,8 @@ import (
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
 var (
@@ -92,6 +94,8 @@ const (
 	ArtifactInstallRulesfilesDirKey = "artifact.install.rulesfilesdir"
 	// ArtifactInstallPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
+	// ArtifactAllowedTypesKey is the Viper key for the whitelist of artifacts to be installed in the system.
+	ArtifactAllowedTypesKey = "artifact.allowedTypes"
 )
 
 // Index represents a configured index.
@@ -160,6 +164,9 @@ func Load(path string) error {
 
 	// Set default index
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
+
+	// Set default artifact types
+	viper.SetDefault(ArtifactAllowedTypesKey, []string{oci.Rulesfile.String()})
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
@@ -411,6 +418,32 @@ func Installer() (Install, error) {
 		Artifacts:     artifacts,
 		RulesfilesDir: viper.GetString(ArtifactInstallRulesfilesDirKey),
 		PluginsDir:    viper.GetString(ArtifactInstallPluginsDirKey),
+	}, nil
+}
+
+// ArtifactAllowedTypes retrieves the allowed types section of the config file.
+func ArtifactAllowedTypes() (*oci.ArtifactTypeSlice, error) {
+	allowedTypes := viper.GetStringSlice(ArtifactAllowedTypesKey)
+	if len(allowedTypes) == 1 { // in this case it might come from the env
+		if !CommaSeparatedRegexp.MatchString(allowedTypes[0]) {
+			return nil, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), allowedTypes[0])
+		}
+		allowedTypes = strings.Split(allowedTypes[0], ",")
+	}
+
+	var allowedArtifactTypes []oci.ArtifactType
+	for _, t := range allowedTypes {
+		var at oci.ArtifactType
+		if err := at.Set(t); err != nil {
+			return nil, fmt.Errorf("unrecognized artifact type in config: %q", t)
+		}
+
+		allowedArtifactTypes = append(allowedArtifactTypes, at)
+	}
+
+	return &oci.ArtifactTypeSlice{
+		Types:                allowedArtifactTypes,
+		CommaSeparatedString: strings.Join(allowedTypes, ","),
 	}, nil
 }
 
