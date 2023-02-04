@@ -74,6 +74,8 @@ type Config struct {
 	// FalcoVersions is a struct containing all the required Falco versions that this follower
 	// has to take into account when installing artifacts.
 	FalcoVersions config.FalcoVersions
+	// AllowedTypes specify a list of artifacts that we are allowed to download.
+	AllowedTypes oci.ArtifactTypeSlice
 }
 
 var (
@@ -236,6 +238,11 @@ func (f *Follower) follow(ctx context.Context) {
 
 // pull downloads, extracts, and installs the artifact.
 func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.RegistryResult, err error) {
+	f.Verbosef("check if pulling an allowed type of artifact")
+	if err := f.Puller.CheckAllowedType(ctx, f.ref, f.Config.AllowedTypes.Types); err != nil {
+		return nil, nil, err
+	}
+
 	// Pull the artifact from the repository.
 	f.Verbosef("pulling artifact %q", f.ref)
 	res, err = f.Pull(ctx, f.ref, f.tmpDir, runtime.GOOS, runtime.GOARCH)

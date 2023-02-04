@@ -32,6 +32,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/follower"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -88,6 +89,7 @@ type artifactFollowOptions struct {
 	versions      config.FalcoVersions
 	timeout       time.Duration
 	closeChan     chan bool
+	allowedTypes  oci.ArtifactTypeSlice
 }
 
 // NewArtifactFollowCmd returns the artifact follow command.
@@ -184,6 +186,21 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				}
 			}
 
+			// Override "allowed-types" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("allowed-types")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag allowed-types"))
+			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
+				val, err := config.ArtifactAllowedTypes()
+				if err != nil {
+					o.Printer.CheckErr(err)
+				}
+				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"allowed-types\" flag: %w", err))
+				}
+			}
+
 			if o.every != 0 && o.cron != "" {
 				o.Printer.CheckErr(fmt.Errorf("can't set both \"cron\" and \"every\" flags"))
 			}
@@ -214,6 +231,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		"Where to retrieve versions, it can be either an URL or a path to a file")
 	cmd.Flags().DurationVar(&o.timeout, "timeout", defaultBackoffConfig.MaxDelay,
 		"Timeout for initial connection to the Falco versions endpoint")
+	cmd.Flags().Var(&o.allowedTypes, "allowed-types", "whitelist of artifacts type that can be followed")
 	return cmd
 }
 
@@ -285,6 +303,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			CloseChan:         o.closeChan,
 			TmpDir:            o.tmpDir,
 			FalcoVersions:     o.versions,
+			AllowedTypes:      o.allowedTypes,
 		}
 		fol, err := follower.New(ctx, ref, o.Printer, cfg)
 		if err != nil {
