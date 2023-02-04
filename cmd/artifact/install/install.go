@@ -71,6 +71,7 @@ type artifactInstallOptions struct {
 	*options.RegistryOptions
 	rulesfilesDir string
 	pluginsDir    string
+	allowedTypes  oci.ArtifactTypeSlice
 }
 
 // NewArtifactInstallCmd returns the artifact install command.
@@ -117,6 +118,21 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
 				o.Printer.CheckErr(fmt.Errorf("plugins-dir: %w", err))
 			}
+
+			// Override "allowed-types" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("allowed-types")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag allowed-types"))
+			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
+				val, err := config.ArtifactAllowedTypes()
+				if err != nil {
+					o.Printer.CheckErr(err)
+				}
+				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"allowed-types\" flag: %w", err))
+				}
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunArtifactInstall(ctx, args))
@@ -128,6 +144,7 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		"directory where to install rules. Defaults to /etc/falco")
 	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
 		"directory where to install plugins. Defaults to /usr/share/falco/plugins")
+	cmd.Flags().Var(&o.allowedTypes, "allowed-types", "whitelist of artifacts type that can be installed")
 
 	return cmd
 }
@@ -137,7 +154,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	// Retrieve configuration for installer
 	configuredInstaller, err := config.Installer()
 	if err != nil {
-		o.Printer.CheckErr(fmt.Errorf("unable to retrieved the configured installer: %w", err))
+		o.Printer.CheckErr(fmt.Errorf("unable to retrieve the configured installer: %w", err))
 	}
 
 	// Set args as configured if no arg was passed
@@ -230,6 +247,10 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 		puller, err := utils.PullerForRegistry(ctx, reg, o.PlainHTTP, o.Printer)
 		if err != nil {
+			return err
+		}
+
+		if err := puller.CheckAllowedType(ctx, ref, o.allowedTypes.Types); err != nil {
 			return err
 		}
 

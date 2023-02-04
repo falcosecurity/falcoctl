@@ -435,7 +435,7 @@ func ArtifactAllowedTypes() (*oci.ArtifactTypeSlice, error) {
 	for _, t := range allowedTypes {
 		var at oci.ArtifactType
 		if err := at.Set(t); err != nil {
-			return nil, fmt.Errorf("unrecognized artifact type in config: %q", t)
+			return nil, fmt.Errorf("unrecognized artifact type in config: %q, %w", t, err)
 		}
 
 		allowedArtifactTypes = append(allowedArtifactTypes, at)
