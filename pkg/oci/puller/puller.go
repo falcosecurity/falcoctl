@@ -156,8 +156,8 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 	return &manifest, nil
 }
 
-// PullConfigLayer fetches only the config layer from a given ref.
-func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
+// manifestFromRef retieves the manifest of an artifact, also taking care of resolving to it walking through indexes.
+func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
@@ -214,6 +214,21 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 		return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
 	}
 
+	return &manifest, nil
+}
+
+// PullConfigLayer fetches only the config layer from a given ref.
+func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
+	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
+	if err != nil {
+		return nil, err
+	}
+
+	manifest, err := p.manifestFromRef(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
 	configRef := manifest.Config.Digest.String()
 
 	descriptor, err := repo.Blobs().Resolve(ctx, configRef)
@@ -223,7 +238,7 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 
 	rc, err := repo.Fetch(ctx, descriptor)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch descriptor with digest: %s", desc.Digest.String())
+		return nil, fmt.Errorf("unable to fetch descriptor with digest: %s", descriptor.Digest.String())
 	}
 
 	configBytes, err := io.ReadAll(rc)
@@ -237,4 +252,34 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 	}
 
 	return &artifactConfig, nil
+}
+
+// CheckAllowedType does a preliminary check on the manifest to state whether we are allowed
+// or not to download this type of artifact.
+func (p *Puller) CheckAllowedType(ctx context.Context, ref string, allowedTypes []oci.ArtifactType) error {
+	if len(allowedTypes) == 0 {
+		return fmt.Errorf("cannot download any artifact types because any was allowed")
+	}
+
+	manifest, err := p.manifestFromRef(ctx, ref)
+	if err != nil {
+		return err
+	}
+
+	if len(manifest.Layers) == 0 {
+		return fmt.Errorf("malformed artifact, expected to find at least one layer for ref %q", ref)
+	}
+
+	var allowedMediaTypes []string
+	for _, t := range allowedTypes {
+		allowedMediaTypes = append(allowedMediaTypes, t.ToMediaType())
+	}
+
+	for _, t := range allowedMediaTypes {
+		if manifest.Layers[0].MediaType == t {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("cannot download artifact of type %q: not permitted", manifest.Layers[0].MediaType)
 }
