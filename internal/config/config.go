@@ -94,6 +94,8 @@ const (
 	ArtifactInstallRulesfilesDirKey = "artifact.install.rulesfilesdir"
 	// ArtifactInstallPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
+	// ArtifactInstallResolveDepsKey is the Viper key for installer "resolveDeps" configuration.
+	ArtifactInstallResolveDepsKey = "artifact.install.resolveDeps"
 	// ArtifactAllowedTypesKey is the Viper key for the whitelist of artifacts to be installed in the system.
 	ArtifactAllowedTypesKey = "artifact.allowedTypes"
 )
@@ -134,6 +136,7 @@ type Install struct {
 	Artifacts     []string `mapstructure:"artifacts"`
 	RulesfilesDir string   `mapstructure:"rulesFilesDir"`
 	PluginsDir    string   `mapstructure:"pluginsDir"`
+	ResolveDeps   bool     `mapstructure:"resolveDeps"`
 }
 
 func init() {
@@ -415,6 +418,7 @@ func Installer() (Install, error) {
 		Artifacts:     artifacts,
 		RulesfilesDir: viper.GetString(ArtifactInstallRulesfilesDirKey),
 		PluginsDir:    viper.GetString(ArtifactInstallPluginsDirKey),
+		ResolveDeps:   viper.GetBool(ArtifactInstallResolveDepsKey),
 	}, nil
 }
 
