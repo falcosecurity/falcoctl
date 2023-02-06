@@ -255,10 +255,11 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 }
 
 // CheckAllowedType does a preliminary check on the manifest to state whether we are allowed
-// or not to download this type of artifact.
+// or not to download this type of artifact. If allowedTypes is empty, everything is allowed,
+// else it is used to perform the check.
 func (p *Puller) CheckAllowedType(ctx context.Context, ref string, allowedTypes []oci.ArtifactType) error {
 	if len(allowedTypes) == 0 {
-		return fmt.Errorf("cannot download any artifact types because any was allowed")
+		return nil
 	}
 
 	manifest, err := p.manifestFromRef(ctx, ref)

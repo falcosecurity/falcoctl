@@ -231,7 +231,12 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		"Where to retrieve versions, it can be either an URL or a path to a file")
 	cmd.Flags().DurationVar(&o.timeout, "timeout", defaultBackoffConfig.MaxDelay,
 		"Timeout for initial connection to the Falco versions endpoint")
-	cmd.Flags().Var(&o.allowedTypes, "allowed-types", "whitelist of artifacts type that can be followed")
+	cmd.Flags().Var(&o.allowedTypes, "allowed-types",
+		`list of artifact types that can be followed. If not specified or configured, all types are allowed.
+It accepts comma separated values or it can be repeated multiple times.
+Examples: 
+	--allowed-types="rulesfile,plugin"
+	--allowed-types=rulesfile --allowed-types=plugin`)
 	return cmd
 }
 
