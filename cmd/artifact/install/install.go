@@ -144,7 +144,12 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		"directory where to install rules. Defaults to /etc/falco")
 	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
 		"directory where to install plugins. Defaults to /usr/share/falco/plugins")
-	cmd.Flags().Var(&o.allowedTypes, "allowed-types", "whitelist of artifacts type that can be installed")
+	cmd.Flags().Var(&o.allowedTypes, "allowed-types",
+		`list of artifact types that can be installed. If not specified or configured, all types are allowed.
+It accepts comma separated values or it can be repeated multiple times.
+Examples: 
+	--allowed-types="rulesfile,plugin"
+	--allowed-types=rulesfile --allowed-types=plugin`)
 
 	return cmd
 }

@@ -82,7 +82,7 @@ func (e ArtifactTypeSlice) String() string {
 	return e.CommaSeparatedString
 }
 
-// Set an ArtifactType.
+// Set an ArtifactType. Given that we are appending values, the flag can be repeated multiple times.
 func (e *ArtifactTypeSlice) Set(v string) error {
 	commaSeparatedRegexp := regexp.MustCompile(`^([^,]+)(,[^,]+)*$`)
 	if !commaSeparatedRegexp.MatchString(v) {

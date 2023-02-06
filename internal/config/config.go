@@ -165,9 +165,6 @@ func Load(path string) error {
 	// Set default index
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
 
-	// Set default artifact types
-	viper.SetDefault(ArtifactAllowedTypesKey, []string{oci.Rulesfile.String()})
-
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
 		// If the config is not found, we create the file with the
