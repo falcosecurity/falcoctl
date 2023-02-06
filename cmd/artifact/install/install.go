@@ -72,6 +72,7 @@ type artifactInstallOptions struct {
 	rulesfilesDir string
 	pluginsDir    string
 	allowedTypes  oci.ArtifactTypeSlice
+	resolveDeps   bool
 }
 
 // NewArtifactInstallCmd returns the artifact install command.
@@ -133,6 +134,17 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"allowed-types\" flag: %w", err))
 				}
 			}
+
+			f = cmd.Flags().Lookup("resolve-deps")
+			if f == nil {
+				// should never happen
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag resolve-deps"))
+			} else if !f.Changed && viper.IsSet(config.ArtifactInstallResolveDepsKey) {
+				val := viper.Get(config.ArtifactInstallResolveDepsKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"resolve-deps\" flag: %w", err))
+				}
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunArtifactInstall(ctx, args))
@@ -150,6 +162,8 @@ It accepts comma separated values or it can be repeated multiple times.
 Examples: 
 	--allowed-types="rulesfile,plugin"
 	--allowed-types=rulesfile --allowed-types=plugin`)
+	cmd.Flags().BoolVar(&o.resolveDeps, "resolve-deps", true,
+		"whether this command should resolve dependencies or not")
 
 	return cmd
 }
@@ -227,17 +241,22 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		}
 	}
 
-	// Solve dependencies
-	o.Printer.Info.Println("Resolving dependencies ...")
-	resolvedDepsRefs, err := ResolveDeps(resolver, args...)
-	if err != nil {
-		return err
+	var refs []string
+	if o.resolveDeps {
+		// Solve dependencies
+		o.Printer.Info.Println("Resolving dependencies ...")
+		refs, err = ResolveDeps(resolver, args...)
+		if err != nil {
+			return err
+		}
+	} else {
+		refs = args
 	}
 
-	o.Printer.Info.Printfln("Installing the following artifacts: %v", resolvedDepsRefs)
+	o.Printer.Info.Printfln("Installing the following artifacts: %v", refs)
 
 	// Install artifacts
-	for _, ref := range resolvedDepsRefs {
+	for _, ref := range refs {
 		ref, err = o.IndexCache.ResolveReference(ref)
 		if err != nil {
 			return err
