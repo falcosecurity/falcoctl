@@ -201,10 +201,6 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				}
 			}
 
-			if o.every != 0 && o.cron != "" {
-				o.Printer.CheckErr(fmt.Errorf("can't set both \"cron\" and \"every\" flags"))
-			}
-
 			// Get Falco versions via HTTP endpoint
 			if err := o.retrieveFalcoVersions(ctx); err != nil {
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
@@ -237,6 +233,8 @@ It accepts comma separated values or it can be repeated multiple times.
 Examples: 
 	--allowed-types="rulesfile,plugin"
 	--allowed-types=rulesfile --allowed-types=plugin`)
+	cmd.MarkFlagsMutuallyExclusive("cron", "every")
+
 	return cmd
 }
 
