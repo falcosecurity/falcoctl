@@ -50,6 +50,7 @@ This command is a convenience to not only generate the TLS material, but also dr
 	cmd.Flags().StringVarP(&options.Name, "name", "n", defaultCertsName, "The name to self sign the TLS cert with")
 	cmd.Flags().IntVarP(&options.Days, "days", "d", defaultCertsDays, "The number of days to make self signed TLS cert valid for")
 	cmd.Flags().StringVarP(&options.Path, "path", "p", defaultCertsPath, "The path to write the TLS cert to")
+	cmd.Flags().IntVarP(&options.RSABits, "rsa-size", "s", tls.DefaultRSABits, "The bit size of the RSA key to generate")
 
 	return cmd
 }
