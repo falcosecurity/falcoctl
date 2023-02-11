@@ -27,6 +27,8 @@ type Options struct {
 	Path    string
 	Days    int
 	RSABits int
+	DNSSANs []string
+	IPSANs  []string
 }
 
 // Run executes the business logic of the `install tls` command.
@@ -40,7 +42,7 @@ func (o *Options) Run() error {
 		o.Path = cwd
 	}
 
-	generator := GRPCTLSGenerator(o.Country, o.Org, o.Name, o.Days, o.RSABits)
+	generator := GRPCTLSGenerator(o.Country, o.Org, o.Name, o.Days, o.RSABits, o.DNSSANs, o.IPSANs)
 	err := generator.Generate()
 	if err != nil {
 		return err
