@@ -51,6 +51,8 @@ This command is a convenience to not only generate the TLS material, but also dr
 	cmd.Flags().IntVarP(&options.Days, "days", "d", defaultCertsDays, "The number of days to make self signed TLS cert valid for")
 	cmd.Flags().StringVarP(&options.Path, "path", "p", defaultCertsPath, "The path to write the TLS cert to")
 	cmd.Flags().IntVarP(&options.RSABits, "rsa-size", "s", tls.DefaultRSABits, "The bit size of the RSA key to generate")
+	cmd.Flags().StringSliceVar(&options.DNSSANs, "alternate-names", nil, "A list of comma-separated subject alternate names as valid DNS domain names")
+	cmd.Flags().StringSliceVar(&options.IPSANs, "alternate-addresses", nil, "A list of comma-separated subject alternate names as valid IP addresses")
 
 	return cmd
 }

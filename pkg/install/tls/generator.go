@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"time"
@@ -53,17 +54,24 @@ var certsFilenames = []string{
 
 // A GRPCTLS represents a TLS Generator for Falco
 type GRPCTLS struct {
-	// Size of the private key
+
+	// Size of the private key.
 	RSABits      int
 	Country      string
 	Organization string
 	CommonName   string
 	Expiration   time.Duration
 	certs        map[string]*bytes.Buffer
+
+	// Subject Alternate Names as DNS domain names.
+	DNSSANs []string
+
+	// Subject Alternate Names as IP addresses.
+	IPSANs []string
 }
 
 // GRPCTLSGenerator is used to init a new TLS Generator for Falco
-func GRPCTLSGenerator(country, organization, name string, days, keySize int) *GRPCTLS {
+func GRPCTLSGenerator(country, organization, name string, days, keySize int, alternateNames, alternateAddresses []string) *GRPCTLS {
 	certs := make(map[string]*bytes.Buffer, len(certsFilenames))
 	return &GRPCTLS{
 		RSABits:      keySize,
@@ -72,6 +80,8 @@ func GRPCTLSGenerator(country, organization, name string, days, keySize int) *GR
 		CommonName:   name,
 		Expiration:   time.Duration(days) * 24 * time.Hour,
 		certs:        certs,
+		DNSSANs:      alternateNames,
+		IPSANs:       alternateAddresses,
 	}
 }
 
@@ -157,9 +167,13 @@ func (g *GRPCTLS) Generate() error {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
+		DNSNames:              g.DNSSANs,
 	}
-	// todo(leogr) add support for IPAddresses
 	serverTemplate.DNSNames = append(serverTemplate.DNSNames, g.CommonName)
+
+	for _, san := range g.IPSANs {
+		serverTemplate.IPAddresses = append(serverTemplate.IPAddresses, net.ParseIP(san))
+	}
 
 	b, err = x509.CreateCertificate(rand.Reader, &serverTemplate, &caTemplate, &serverKey.PublicKey, caKey)
 	if err != nil {
