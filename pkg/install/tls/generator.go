@@ -53,6 +53,7 @@ var certsFilenames = []string{
 
 // A GRPCTLS represents a TLS Generator for Falco
 type GRPCTLS struct {
+	// Size of the private key
 	RSABits      int
 	Country      string
 	Organization string
@@ -62,10 +63,10 @@ type GRPCTLS struct {
 }
 
 // GRPCTLSGenerator is used to init a new TLS Generator for Falco
-func GRPCTLSGenerator(country, organization, name string, days int) *GRPCTLS {
+func GRPCTLSGenerator(country, organization, name string, days, keySize int) *GRPCTLS {
 	certs := make(map[string]*bytes.Buffer, len(certsFilenames))
 	return &GRPCTLS{
-		RSABits:      DefaultRSABits,
+		RSABits:      keySize,
 		Country:      country,
 		Organization: organization,
 		CommonName:   name,
