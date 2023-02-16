@@ -15,20 +15,22 @@
 package tls
 
 import (
+	"crypto/elliptic"
 	"fmt"
 	"os"
 )
 
 // Options represents the `install tls` command o.
 type Options struct {
-	Country string
-	Org     string
-	Name    string
-	Path    string
-	Days    int
-	RSABits int
-	DNSSANs []string
-	IPSANs  []string
+	Country   string
+	Org       string
+	Name      string
+	Path      string
+	Days      int
+	RSABits   int
+	DNSSANs   []string
+	IPSANs    []string
+	Algorithm string
 }
 
 // Run executes the business logic of the `install tls` command.
@@ -42,11 +44,39 @@ func (o *Options) Run() error {
 		o.Path = cwd
 	}
 
-	generator := GRPCTLSGenerator(o.Country, o.Org, o.Name, o.Days, o.RSABits, o.DNSSANs, o.IPSANs)
+	keyGenerator := NewKeyGenerator(DSAType(o.Algorithm))
+
+	switch DSAType(o.Algorithm) {
+	case ECDSAType:
+		keyGenerator, ok := keyGenerator.(*ECDSAKeyGenerator)
+		if !ok {
+			return nil
+		}
+		keyGenerator.SetCurve(elliptic.P256())
+	default:
+		keyGenerator, ok := keyGenerator.(*RSAKeyGenerator)
+		if !ok {
+			return nil
+		}
+		keyGenerator.SetSize(o.RSABits)
+	}
+
+	generator := GRPCTLSGenerator(
+		o.Country,
+		o.Org,
+		o.Name,
+		o.Days,
+		o.RSABits,
+		o.DNSSANs,
+		o.IPSANs,
+		o.Algorithm,
+		keyGenerator)
+
 	err := generator.Generate()
 	if err != nil {
 		return err
 	}
+
 	err = generator.FlushToDisk(o.Path)
 	if err != nil {
 		return err
