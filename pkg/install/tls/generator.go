@@ -17,7 +17,6 @@ package tls
 import (
 	"bytes"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -29,28 +28,6 @@ import (
 	"path/filepath"
 	"time"
 )
-
-// DefaultRSABits is the default bit size to generate an RSA keypair
-const DefaultRSABits int = 4096
-
-// Certs material filenames
-const (
-	ServerKey  = "server.key"
-	ClientKey  = "client.key"
-	CAKey      = "ca.key"
-	CACert     = "ca.crt"
-	ServerCert = "server.crt"
-	ClientCert = "client.crt"
-)
-
-var certsFilenames = []string{
-	ServerKey,
-	ClientKey,
-	CAKey,
-	CACert,
-	ServerCert,
-	ClientCert,
-}
 
 // A GRPCTLS represents a TLS Generator for Falco
 type GRPCTLS struct {
@@ -68,11 +45,22 @@ type GRPCTLS struct {
 
 	// Subject Alternate Names as IP addresses.
 	IPSANs []string
+
+	// The digital signing algorithm to sign the key pair.
+	DSA DSAType
+
+	// KeyGenerator is the DSA-signed key generator.
+	KeyGenerator DSAKeyGenerator
 }
 
 // GRPCTLSGenerator is used to init a new TLS Generator for Falco
-func GRPCTLSGenerator(country, organization, name string, days, keySize int, alternateNames, alternateAddresses []string) *GRPCTLS {
+func GRPCTLSGenerator(
+	country, organization, name string,
+	days, keySize int,
+	alternateNames, alternateAddresses []string, algorithm string,
+	keyGenerator DSAKeyGenerator) *GRPCTLS {
 	certs := make(map[string]*bytes.Buffer, len(certsFilenames))
+
 	return &GRPCTLS{
 		RSABits:      keySize,
 		Country:      country,
@@ -82,25 +70,14 @@ func GRPCTLSGenerator(country, organization, name string, days, keySize int, alt
 		certs:        certs,
 		DNSSANs:      alternateNames,
 		IPSANs:       alternateAddresses,
+		DSA:          DSAType(algorithm),
+		KeyGenerator: keyGenerator,
 	}
-}
-
-func (g *GRPCTLS) setKey(filename string, key *rsa.PrivateKey) error {
-	b, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		return err
-	}
-	buf := new(bytes.Buffer)
-	if err := pem.Encode(buf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: b}); err != nil {
-		return err
-	}
-	g.certs[filename] = buf
-	return nil
 }
 
 func (g *GRPCTLS) setCert(filename string, b []byte) error {
 	buf := new(bytes.Buffer)
-	if err := pem.Encode(buf, &pem.Block{Type: "CERTIFICATE", Bytes: b}); err != nil {
+	if err := pem.Encode(buf, &pem.Block{Type: CertificatePEMHeader, Bytes: b}); err != nil {
 		return err
 	}
 	g.certs[filename] = buf
@@ -113,18 +90,43 @@ func (g *GRPCTLS) Generate() error {
 	notBefore := time.Now()
 	notAfter := notBefore.Add(g.Expiration)
 
-	// CA
-	caKey, err := rsa.GenerateKey(rand.Reader, g.RSABits)
+	// CA certificate and key.
+	caTemplate, caKey, err := g.generateCA(notBefore, notAfter, serialNumberLimit)
 	if err != nil {
 		return err
 	}
-	g.setKey(CAKey, caKey)
+
+	// Server certificate and key.
+	err = g.generateServer(caTemplate, caKey, notBefore, notAfter, serialNumberLimit)
+	if err != nil {
+		return err
+	}
+
+	// Client certificate and key.
+	err = g.generateClient(caTemplate, caKey, notBefore, notAfter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *GRPCTLS) generateCA(notBefore, notAfter time.Time, serialNumberLimit *big.Int) (*x509.Certificate, DSAKey, error) {
+	caKey, err := g.KeyGenerator.GenerateKey()
+	if err != nil {
+		return nil, nil, err
+	}
+	g.certs[CAKey], err = g.KeyGenerator.PEMEncode(caKey)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	caTemplate := x509.Certificate{
+
+	caTemplate := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			Organization: []string{g.Organization},
@@ -138,23 +140,30 @@ func (g *GRPCTLS) Generate() error {
 		IsCA:                  true,
 	}
 
-	b, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caKey.PublicKey, caKey)
+	b, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, caKey.Public(), caKey)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	g.setCert(CACert, b)
 
-	// Server
-	serverKey, err := rsa.GenerateKey(rand.Reader, g.RSABits)
-	if err != nil {
-		return err
-	}
-	g.setKey(ServerKey, serverKey)
+	return caTemplate, caKey, nil
+}
 
-	serialNumber, err = rand.Int(rand.Reader, serialNumberLimit)
+func (g *GRPCTLS) generateServer(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time, serialNumberLimit *big.Int) error {
+	serverKey, err := g.KeyGenerator.GenerateKey()
 	if err != nil {
 		return err
 	}
+	g.certs[ServerKey], err = g.KeyGenerator.PEMEncode(serverKey)
+	if err != nil {
+		return err
+	}
+
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return err
+	}
+
 	serverTemplate := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
@@ -175,20 +184,27 @@ func (g *GRPCTLS) Generate() error {
 		serverTemplate.IPAddresses = append(serverTemplate.IPAddresses, net.ParseIP(san))
 	}
 
-	b, err = x509.CreateCertificate(rand.Reader, &serverTemplate, &caTemplate, &serverKey.PublicKey, caKey)
+	b, err := x509.CreateCertificate(rand.Reader, &serverTemplate, caTemplate, serverKey.Public(), caKey)
 	if err != nil {
 		return nil
 	}
 	g.setCert(ServerCert, b)
 
-	// Client
-	clientKey, err := rsa.GenerateKey(rand.Reader, g.RSABits)
+	return nil
+}
+
+// func (g *GRPCTLS) generateClient(notBefore, notAfter time.Time) (*x509.Certificate, DSAKey, error) {
+func (g *GRPCTLS) generateClient(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time) error {
+	clientKey, err := g.KeyGenerator.GenerateKey()
 	if err != nil {
 		return err
 	}
-	g.setKey(ClientKey, clientKey)
+	g.certs[ClientKey], err = g.KeyGenerator.PEMEncode(clientKey)
+	if err != nil {
+		return err
+	}
 
-	clientTemplate := x509.Certificate{
+	clientTemplate := &x509.Certificate{
 		SerialNumber: new(big.Int).SetInt64(4),
 		Subject: pkix.Name{
 			Organization: []string{g.Organization},
@@ -202,7 +218,7 @@ func (g *GRPCTLS) Generate() error {
 		IsCA:                  false,
 	}
 
-	b, err = x509.CreateCertificate(rand.Reader, &clientTemplate, &caTemplate, &clientKey.PublicKey, caKey)
+	b, err := x509.CreateCertificate(rand.Reader, clientTemplate, caTemplate, clientKey.Public(), caKey)
 	if err != nil {
 		return err
 	}
