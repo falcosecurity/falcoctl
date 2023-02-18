@@ -84,6 +84,15 @@ func (g *GRPCTLS) setCert(filename string, b []byte) error {
 	return nil
 }
 
+func (g *GRPCTLS) setKey(filename string, key DSAKey) error {
+	var err error
+	g.certs[filename], err = g.KeyGenerator.PEMEncode(key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Generate is used to first generate TLS material in memory.
 func (g *GRPCTLS) Generate() error {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
@@ -116,7 +125,7 @@ func (g *GRPCTLS) generateCA(notBefore, notAfter time.Time, serialNumberLimit *b
 	if err != nil {
 		return nil, nil, err
 	}
-	g.certs[CAKey], err = g.KeyGenerator.PEMEncode(caKey)
+	err = g.setKey(CAKey, caKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -154,7 +163,7 @@ func (g *GRPCTLS) generateServer(caTemplate *x509.Certificate, caKey DSAKey, not
 	if err != nil {
 		return err
 	}
-	g.certs[ServerKey], err = g.KeyGenerator.PEMEncode(serverKey)
+	err = g.setKey(ServerKey, serverKey)
 	if err != nil {
 		return err
 	}
@@ -199,7 +208,7 @@ func (g *GRPCTLS) generateClient(caTemplate *x509.Certificate, caKey DSAKey, not
 	if err != nil {
 		return err
 	}
-	g.certs[ClientKey], err = g.KeyGenerator.PEMEncode(clientKey)
+	err = g.setKey(ClientKey, clientKey)
 	if err != nil {
 		return err
 	}
