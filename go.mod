@@ -143,8 +143,8 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/mattn/go-isatty v0.0.16
-	github.com/stretchr/testify v1.7.2 // indirect
 	golang.org/x/net v0.7.0 // indirect
+	github.com/stretchr/testify v1.7.2
 	golang.org/x/oauth2 v0.2.0
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0
