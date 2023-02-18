@@ -34,6 +34,7 @@ func (r *RSAKeyGenerator) GenerateKey() (DSAKey, error) {
 	if r.bitSize == 0 {
 		r.bitSize = RSADefaultSize
 	}
+
 	key, err := rsa.GenerateKey(rand.Reader, r.bitSize)
 	if err != nil {
 		return nil, err
@@ -63,6 +64,10 @@ func (r *ECDSAKeyGenerator) SetCurve(curve elliptic.Curve) {
 }
 
 func (r *ECDSAKeyGenerator) GenerateKey() (DSAKey, error) {
+	if r.curve == nil {
+		r.curve = elliptic.P256()
+	}
+
 	key, err := ecdsa.GenerateKey(r.curve, rand.Reader)
 	key.Public()
 	if err != nil {
