@@ -100,19 +100,19 @@ func (g *GRPCTLS) Generate() error {
 	notAfter := notBefore.Add(g.Expiration)
 
 	// CA certificate and key.
-	caTemplate, caKey, err := g.generateCA(notBefore, notAfter, serialNumberLimit)
+	caTemplate, caKey, err := g.GenerateCA(notBefore, notAfter, serialNumberLimit)
 	if err != nil {
 		return err
 	}
 
 	// Server certificate and key.
-	err = g.generateServer(caTemplate, caKey, notBefore, notAfter, serialNumberLimit)
+	err = g.GenerateServer(caTemplate, caKey, notBefore, notAfter, serialNumberLimit)
 	if err != nil {
 		return err
 	}
 
 	// Client certificate and key.
-	err = g.generateClient(caTemplate, caKey, notBefore, notAfter)
+	err = g.GenerateClient(caTemplate, caKey, notBefore, notAfter)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,8 @@ func (g *GRPCTLS) Generate() error {
 	return nil
 }
 
-func (g *GRPCTLS) generateCA(notBefore, notAfter time.Time, serialNumberLimit *big.Int) (*x509.Certificate, DSAKey, error) {
+// GenerateCA returns the certificate and private key pair for a certificate authority, and an error.
+func (g *GRPCTLS) GenerateCA(notBefore, notAfter time.Time, serialNumberLimit *big.Int) (*x509.Certificate, DSAKey, error) {
 	caKey, err := g.KeyGenerator.GenerateKey()
 	if err != nil {
 		return nil, nil, err
@@ -158,7 +159,8 @@ func (g *GRPCTLS) generateCA(notBefore, notAfter time.Time, serialNumberLimit *b
 	return caTemplate, caKey, nil
 }
 
-func (g *GRPCTLS) generateServer(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time, serialNumberLimit *big.Int) error {
+// GenerateServer returns the certificate and private key pair for a server, and an error.
+func (g *GRPCTLS) GenerateServer(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time, serialNumberLimit *big.Int) error {
 	serverKey, err := g.KeyGenerator.GenerateKey()
 	if err != nil {
 		return err
@@ -202,7 +204,8 @@ func (g *GRPCTLS) generateServer(caTemplate *x509.Certificate, caKey DSAKey, not
 	return nil
 }
 
-func (g *GRPCTLS) generateClient(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time) error {
+// GenerateClient returns the certificate and private key pair for a server, and an error.
+func (g *GRPCTLS) GenerateClient(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time) error {
 	clientKey, err := g.KeyGenerator.GenerateKey()
 	if err != nil {
 		return err
@@ -250,6 +253,11 @@ func (g *GRPCTLS) FlushToDisk(path string) error {
 		}
 	}
 	return nil
+}
+
+// Certs returns the certificate material as map of buffers.
+func (g *GRPCTLS) Certs() map[string]*bytes.Buffer {
+	return g.certs
 }
 
 func satisfyDir(dirName string) (string, error) {
