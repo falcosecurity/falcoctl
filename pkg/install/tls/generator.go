@@ -202,7 +202,6 @@ func (g *GRPCTLS) generateServer(caTemplate *x509.Certificate, caKey DSAKey, not
 	return nil
 }
 
-// func (g *GRPCTLS) generateClient(notBefore, notAfter time.Time) (*x509.Certificate, DSAKey, error) {
 func (g *GRPCTLS) generateClient(caTemplate *x509.Certificate, caKey DSAKey, notBefore, notAfter time.Time) error {
 	clientKey, err := g.KeyGenerator.GenerateKey()
 	if err != nil {
