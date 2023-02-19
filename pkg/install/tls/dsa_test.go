@@ -137,7 +137,7 @@ func TestECDSASize(t *testing.T) {
 	key, _ := gen.GenerateKey()
 
 	k, _ := key.(*ecdsa.PrivateKey)
-	assert.Equal(t, elliptic.P224(), k.Curve)
+	assert.Equal(t, elliptic.P256(), k.Curve)
 
 	g, _ := gen.(*tls.ECDSAKeyGenerator)
 	g.SetCurve(elliptic.P521())
