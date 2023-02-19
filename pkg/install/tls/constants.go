@@ -14,7 +14,6 @@
 
 package tls
 
-// Certs material filenames
 const (
 
 	// ServerKey is the default filename of the client private key.
