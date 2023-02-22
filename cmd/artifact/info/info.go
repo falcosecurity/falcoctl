@@ -96,7 +96,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			continue
 		}
 
-		joinedTags := strings.Join(tags, " ")
+		joinedTags := strings.Join(tags, ", ")
 		data = append(data, []string{ref, joinedTags})
 	}
 

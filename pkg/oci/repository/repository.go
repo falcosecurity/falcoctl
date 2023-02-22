@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blang/semver"
 	"oras.land/oras-go/v2/registry/remote"
 )
 
@@ -71,42 +70,6 @@ func (r *Repository) Tags(ctx context.Context) ([]string, error) {
 	err := r.Repository.Tags(ctx, "", tagRetriever)
 	if err != nil {
 		return nil, err
-	}
-
-	result, err = sortTags(result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func sortTags(tags []string) ([]string, error) {
-	var parsedVersions []semver.Version
-	var latest bool
-	for _, t := range tags {
-		if t == "latest" {
-			latest = true
-			continue
-		}
-
-		parsedVersion, err := semver.ParseTolerant(t)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse version %q: %w", t, err)
-		}
-
-		parsedVersions = append(parsedVersions, parsedVersion)
-	}
-
-	semver.Sort(parsedVersions)
-
-	var result []string
-	for _, parsedVersion := range parsedVersions {
-		result = append(result, parsedVersion.String())
-	}
-
-	if latest {
-		result = append(result, "latest")
 	}
 
 	return result, nil
