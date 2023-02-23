@@ -5,7 +5,7 @@
 
 # 🧰 falcoctl
 
-> A CLI tool to work with Falco, and perform useful tasks.
+> The official CLI tool for working with Falco and its ecosystem components.
 
 ## 📣 Call for contributors/maintainers
 
