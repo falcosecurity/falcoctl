@@ -56,13 +56,13 @@ the configured index files, and if found, it will use the registry and repositor
 in the indexes.
 
 Example - Install "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
-	falcoctl artifact follow k8saudit-rules
+	falcoctl artifact install k8saudit-rules
 
 Example - Install all updates from "k8saudit-rules" 0.5.x release series:
-	falcoctl artifact follow k8saudit-rules:0.5
+	falcoctl artifact install k8saudit-rules:0.5
 
 Example - Install "cloudtrail" plugins using a fully qualified reference:
-	falcoctl artifact follow ghcr.io/falcosecurity/plugins/ruleset/k8saudit:latest
+	falcoctl artifact install ghcr.io/falcosecurity/plugins/ruleset/k8saudit:latest
 `
 )
 
