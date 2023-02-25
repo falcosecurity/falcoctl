@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/follower"
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -143,35 +144,35 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			}
 
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("rulesfiles-dir")
+			f = cmd.Flags().Lookup(install.FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag rulesfiles-dir"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", install.FlagRulesFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowRulesfilesDirKey) {
 				val := viper.Get(config.ArtifactFollowRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", install.FlagRulesFilesDir, err))
 				}
 			}
 			// Check if directory exists and is writable
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("rulesfiles-dir: %w", err))
+				o.Printer.CheckErr(fmt.Errorf("%s: %w", install.FlagRulesFilesDir, err))
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("plugins-dir")
+			f = cmd.Flags().Lookup(install.FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag plugins-dir"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", install.FlagPluginsFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowPluginsDirKey) {
 				val := viper.Get(config.ArtifactFollowPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", install.FlagPluginsFilesDir, err))
 				}
 			}
 			// Check if directory exists and is writable
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("plugins-dir: %w", err))
+				o.Printer.CheckErr(fmt.Errorf("%s: %w", install.FlagPluginsFilesDir, err))
 			}
 
 			// Override "tmp-dir" flag with viper config if not set by user.
@@ -187,17 +188,17 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			}
 
 			// Override "allowed-types" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("allowed-types")
+			f = cmd.Flags().Lookup(install.FlagAllowedTypes)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag allowed-types"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", install.FlagAllowedTypes))
 			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
 				val, err := config.ArtifactAllowedTypes()
 				if err != nil {
 					o.Printer.CheckErr(err)
 				}
 				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"allowed-types\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", install.FlagAllowedTypes, err))
 				}
 			}
 
@@ -218,21 +219,21 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 	cmd.Flags().StringVar(&o.cron, "cron", "", "Cron-like string to specify interval how often it checks for a new version of the artifact."+
 		" Cannot be used together with 'every' option.")
 	// TODO (alacuku): move it in a dedicate data structure since they are in common with artifactInstall command.
-	cmd.Flags().StringVarP(&o.rulesfilesDir, "rulesfiles-dir", "", config.RulesfilesDir,
+	cmd.Flags().StringVarP(&o.rulesfilesDir, install.FlagRulesFilesDir, "", config.RulesfilesDir,
 		"Directory where to install rules")
-	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
+	cmd.Flags().StringVarP(&o.pluginsDir, install.FlagPluginsFilesDir, "", config.PluginsDir,
 		"Directory where to install plugins")
 	cmd.Flags().StringVar(&o.tmpDir, "tmp-dir", "", "Directory where to save temporary files")
 	cmd.Flags().StringVar(&o.falcoVersions, "falco-versions", "http://localhost:8765/versions",
 		"Where to retrieve versions, it can be either an URL or a path to a file")
 	cmd.Flags().DurationVar(&o.timeout, "timeout", defaultBackoffConfig.MaxDelay,
 		"Timeout for initial connection to the Falco versions endpoint")
-	cmd.Flags().Var(&o.allowedTypes, "allowed-types",
-		`list of artifact types that can be followed. If not specified or configured, all types are allowed.
+	cmd.Flags().Var(&o.allowedTypes, install.FlagAllowedTypes,
+		fmt.Sprintf(`list of artifact types that can be followed. If not specified or configured, all types are allowed.
 It accepts comma separated values or it can be repeated multiple times.
 Examples: 
-	--allowed-types="rulesfile,plugin"
-	--allowed-types=rulesfile --allowed-types=plugin`)
+	--%s="rulesfile,plugin"
+	--%s=rulesfile --%s=plugin`, install.FlagAllowedTypes, install.FlagAllowedTypes, install.FlagAllowedTypes))
 	cmd.MarkFlagsMutuallyExclusive("cron", "every")
 
 	return cmd

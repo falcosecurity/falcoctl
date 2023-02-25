@@ -88,61 +88,65 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		Short:                 "Install a list of artifacts",
 		Long:                  longInstall,
 		PreRun: func(cmd *cobra.Command, args []string) {
+
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
-			f := cmd.Flags().Lookup("rulesfiles-dir")
+			f := cmd.Flags().Lookup(FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag rulesfiles-dir"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagRulesFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallRulesfilesDirKey) {
+
 				val := viper.Get(config.ArtifactInstallRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"rulesfiles-dir\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagRulesFilesDir, err))
 				}
 			}
-			// Check if directory exists and is writable
+
+			// Check if directory exists and is writable.
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("rulesfiles-dir: %w", err))
+				o.Printer.CheckErr(fmt.Errorf("%s: %w", FlagRulesFilesDir, err))
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("plugins-dir")
+			f = cmd.Flags().Lookup(FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag plugins-dir"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagPluginsFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallPluginsDirKey) {
 				val := viper.Get(config.ArtifactInstallPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"plugins-dir\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagPluginsFilesDir, err))
 				}
 			}
-			// Check if directory exists and is writable
+
+			// Check if directory exists and is writable.
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("plugins-dir: %w", err))
+				o.Printer.CheckErr(fmt.Errorf("%s: %w", FlagPluginsFilesDir, err))
 			}
 
 			// Override "allowed-types" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("allowed-types")
+			f = cmd.Flags().Lookup(FlagAllowedTypes)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag allowed-types"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagAllowedTypes))
 			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
 				val, err := config.ArtifactAllowedTypes()
 				if err != nil {
 					o.Printer.CheckErr(err)
 				}
 				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"allowed-types\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagAllowedTypes, err))
 				}
 			}
 
-			f = cmd.Flags().Lookup("resolve-deps")
+			f = cmd.Flags().Lookup(FlagResolveDeps)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag resolve-deps"))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagResolveDeps))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallResolveDepsKey) {
 				val := viper.Get(config.ArtifactInstallResolveDepsKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"resolve-deps\" flag: %w", err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagResolveDeps, err))
 				}
 			}
 		},
@@ -152,17 +156,17 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 	}
 
 	o.RegistryOptions.AddFlags(cmd)
-	cmd.Flags().StringVarP(&o.rulesfilesDir, "rulesfiles-dir", "", config.RulesfilesDir,
+	cmd.Flags().StringVarP(&o.rulesfilesDir, FlagRulesFilesDir, "", config.RulesfilesDir,
 		"directory where to install rules. Defaults to /etc/falco")
-	cmd.Flags().StringVarP(&o.pluginsDir, "plugins-dir", "", config.PluginsDir,
+	cmd.Flags().StringVarP(&o.pluginsDir, FlagPluginsFilesDir, "", config.PluginsDir,
 		"directory where to install plugins. Defaults to /usr/share/falco/plugins")
-	cmd.Flags().Var(&o.allowedTypes, "allowed-types",
-		`list of artifact types that can be installed. If not specified or configured, all types are allowed.
+	cmd.Flags().Var(&o.allowedTypes, FlagAllowedTypes,
+		fmt.Sprintf(`list of artifact types that can be installed. If not specified or configured, all types are allowed.
 It accepts comma separated values or it can be repeated multiple times.
 Examples: 
-	--allowed-types="rulesfile,plugin"
-	--allowed-types=rulesfile --allowed-types=plugin`)
-	cmd.Flags().BoolVar(&o.resolveDeps, "resolve-deps", true,
+	--%s="rulesfile,plugin"
+	--%s=rulesfile --%s=plugin`, FlagAllowedTypes))
+	cmd.Flags().BoolVar(&o.resolveDeps, FlagResolveDeps, true,
 		"whether this command should resolve dependencies or not")
 
 	return cmd
