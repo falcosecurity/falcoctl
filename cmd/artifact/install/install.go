@@ -157,15 +157,15 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 
 	o.RegistryOptions.AddFlags(cmd)
 	cmd.Flags().StringVarP(&o.rulesfilesDir, FlagRulesFilesDir, "", config.RulesfilesDir,
-		"directory where to install rules. Defaults to /etc/falco")
+		"directory where to install rules.")
 	cmd.Flags().StringVarP(&o.pluginsDir, FlagPluginsFilesDir, "", config.PluginsDir,
-		"directory where to install plugins. Defaults to /usr/share/falco/plugins")
+		"directory where to install plugins.")
 	cmd.Flags().Var(&o.allowedTypes, FlagAllowedTypes,
 		fmt.Sprintf(`list of artifact types that can be installed. If not specified or configured, all types are allowed.
 It accepts comma separated values or it can be repeated multiple times.
 Examples: 
 	--%s="rulesfile,plugin"
-	--%s=rulesfile --%s=plugin`, FlagAllowedTypes))
+	--%s=rulesfile --%s=plugin`, FlagAllowedTypes, FlagAllowedTypes, FlagAllowedTypes))
 	cmd.Flags().BoolVar(&o.resolveDeps, FlagResolveDeps, true,
 		"whether this command should resolve dependencies or not")
 
