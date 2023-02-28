@@ -93,60 +93,60 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 			f := cmd.Flags().Lookup(FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagRulesFilesDir))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagRulesFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallRulesfilesDirKey) {
 
 				val := viper.Get(config.ArtifactInstallRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagRulesFilesDir, err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagRulesFilesDir, err))
 				}
 			}
 
 			// Check if directory exists and is writable.
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("%s: %w", FlagRulesFilesDir, err))
+				o.Printer.CheckErr(fmt.Errorf("%q: %w", FlagRulesFilesDir, err))
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagPluginsFilesDir))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagPluginsFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallPluginsDirKey) {
 				val := viper.Get(config.ArtifactInstallPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagPluginsFilesDir, err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagPluginsFilesDir, err))
 				}
 			}
 
 			// Check if directory exists and is writable.
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("%s: %w", FlagPluginsFilesDir, err))
+				o.Printer.CheckErr(fmt.Errorf("%q: %w", FlagPluginsFilesDir, err))
 			}
 
 			// Override "allowed-types" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(FlagAllowedTypes)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagAllowedTypes))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagAllowedTypes))
 			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
 				val, err := config.ArtifactAllowedTypes()
 				if err != nil {
 					o.Printer.CheckErr(err)
 				}
 				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagAllowedTypes, err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %s flag: %w", FlagAllowedTypes, err))
 				}
 			}
 
 			f = cmd.Flags().Lookup(FlagResolveDeps)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", FlagResolveDeps))
+				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagResolveDeps))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallResolveDepsKey) {
 				val := viper.Get(config.ArtifactInstallResolveDepsKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"%s\" flag: %w", FlagResolveDeps, err))
+					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagResolveDeps, err))
 				}
 			}
 		},
