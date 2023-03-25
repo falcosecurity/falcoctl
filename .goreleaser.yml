@@ -6,16 +6,16 @@ before:
 builds:
   - id: "falcoctl"
     goos:
-    - linux
-    - darwin
-    - windows
+      - linux
+      - darwin
+      - windows
     goarch:
-    - amd64
-    - 386
-    - arm64
+      - amd64
+      - 386
+      - arm64
     ignore:
-    - goos: darwin
-      goarch: 386
+      - goos: darwin
+        goarch: 386
 
     ldflags: |
       -X github.com/falcosecurity/falcoctl/cmd/version.buildDate={{ .Date }}
@@ -38,9 +38,8 @@ snapshot:
   name_template: "{{ .ShortCommit }}"
 
 release:
-  github:
   prerelease: auto
   mode: replace
 
 changelog:
-  use: github
+  use: github-native
