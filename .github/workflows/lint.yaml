@@ -8,23 +8,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{github.event.pull_request.head.repo.full_name}}
           persist-credentials: false
 
       - name: Setup Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: '1.20'
           check-latest: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.2.0
+        uses: golangci/golangci-lint-action@08e2f20817b15149a52b5b3ebe7de50aff2ba8c5 # v3.4.0
         with:
           only-new-issues: true
-          version: v1.48.0
+          version: v1.52
           args: --timeout=900s
 
   gomodtidy:
@@ -33,14 +33,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
           repository: ${{github.event.pull_request.head.repo.full_name}}
           persist-credentials: false
 
       - name: Setup Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: '1.20'
           check-latest: true
@@ -55,7 +55,7 @@ jobs:
       - name: Print a comment in case of failure
         run: |
           echo "The go.mod and/or go.sum files appear not to be correctly tidied.
-          
+
           Please, rerun go mod tidy to fix the issues."
           exit 1
         if: |
