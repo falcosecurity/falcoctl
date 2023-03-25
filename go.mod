@@ -1,6 +1,6 @@
 module github.com/falcosecurity/falcoctl
 
-go 1.19
+go 1.20
 
 require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d

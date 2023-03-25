@@ -16,7 +16,7 @@ BUILD_DATE?=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 PROJECT?=github.com/falcosecurity/falcoctl
 
 # todo(leogr): re-enable race when CLI tests can run with race enabled
-TEST_FLAGS ?= -v -cover# -race 
+TEST_FLAGS ?= -v -cover# -race
 
 .PHONY: falcoctl
 falcoctl:
