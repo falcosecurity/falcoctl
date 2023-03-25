@@ -70,10 +70,7 @@ func (r *Registry) CheckConnection(ctx context.Context) error {
 			return err
 		}
 		if reflect.DeepEqual(cred, auth.EmptyCredential) {
-			if err := r.checkConnectionUnauthenticated(ctx); err != nil {
-				return err
-			}
-			return nil
+			return r.checkConnectionUnauthenticated(ctx)
 		}
 	}
 	return r.Registry.Ping(ctx)

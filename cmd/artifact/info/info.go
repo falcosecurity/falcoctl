@@ -92,7 +92,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 
 		tags, err := repo.Tags(ctx)
 		if err != nil {
-			o.Printer.Warning.Printfln("cannot retrieve tags from %q, %w", ref, err)
+			o.Printer.Warning.Printfln("cannot retrieve tags from %q, %v", ref, err)
 			continue
 		}
 
@@ -100,9 +100,5 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		data = append(data, []string{ref, joinedTags})
 	}
 
-	if err := o.Printer.PrintTable(output.ArtifactInfo, data); err != nil {
-		return err
-	}
-
-	return nil
+	return o.Printer.PrintTable(output.ArtifactInfo, data)
 }

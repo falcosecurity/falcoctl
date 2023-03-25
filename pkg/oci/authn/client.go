@@ -111,11 +111,7 @@ func Login(hostname, user, token string) error {
 		Password: token,
 	}
 
-	if err := store.Store(hostname, cred); err != nil {
-		return err
-	}
-
-	return nil
+	return store.Store(hostname, cred)
 }
 
 // Logout from remote registry.

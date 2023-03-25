@@ -115,7 +115,7 @@ func (s *Store) Erase(registry string) error {
 
 // Credential iterates all the config files, returns the first non-empty
 // credential in a best-effort way.
-func (s *Store) Credential(ctx context.Context, registry string) (auth.Credential, error) {
+func (s *Store) Credential(_ context.Context, registry string) (auth.Credential, error) {
 	for _, c := range s.configs {
 		authConf, err := c.GetCredentialsStore(registry).Get(registry)
 		if err != nil {

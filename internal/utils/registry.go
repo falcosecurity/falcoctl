@@ -83,7 +83,6 @@ func ClientForRegistry(ctx context.Context, reg string, plainHTTP bool, printer 
 		} else {
 			printer.Verbosef("proceeding with empty credentials for registry %q", reg)
 		}
-
 	} else {
 		printer.Verbosef("found basic credentials for registry %q", reg)
 	}

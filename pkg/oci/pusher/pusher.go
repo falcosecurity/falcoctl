@@ -178,6 +178,7 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, err
 	}
 	defer rootReader.Close()
+
 	// Tag the root descriptor remotely.
 	err = repo.PushReference(ctx, *rootDesc, rootReader, repo.Reference.Reference)
 	if err != nil {

@@ -146,9 +146,7 @@ var _ = Describe("Pusher", func() {
 						// Check that the tags have also been pushed.
 						err = repo.Tags(ctx, "", func(tags []string) error {
 							fetchedTags = nil
-							for i := range tags {
-								fetchedTags = append(fetchedTags, tags[i])
-							}
+							fetchedTags = append(fetchedTags, tags...)
 							return nil
 						})
 						Expect(err).ToNot(HaveOccurred())
@@ -301,9 +299,7 @@ var _ = Describe("Pusher", func() {
 				Expect(result).ToNot(BeNil())
 				err = repo.Tags(ctx, "", func(tags []string) error {
 					fetchedTags = nil
-					for i := range tags {
-						fetchedTags = append(fetchedTags, tags[i])
-					}
+					fetchedTags = append(fetchedTags, tags...)
 					return nil
 				})
 				Expect(err).ToNot(HaveOccurred())

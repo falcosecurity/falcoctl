@@ -82,7 +82,6 @@ func TestResolveDeps(t *testing.T) {
 						// no dependencies here
 					},
 				}, nil
-
 			}),
 			expectedOutRef: []string{ref1, dep1},
 			expectedErr:    nil,
@@ -187,7 +186,6 @@ func TestResolveDeps(t *testing.T) {
 						// no dependencies here
 					},
 				}, nil
-
 			}),
 			expectedOutRef: []string{ref1, alt1},
 			expectedErr:    ErrCannotSatisfyDependencies,
@@ -220,7 +218,6 @@ func TestResolveDeps(t *testing.T) {
 						// no dependencies here
 					},
 				}, nil
-
 			}),
 			expectedOutRef: nil,
 			expectedErr:    ErrCannotSatisfyDependencies,
@@ -239,5 +236,4 @@ func TestResolveDeps(t *testing.T) {
 				testCase.scenario, testCase.description, outRef, testCase.expectedOutRef)
 		}
 	}
-
 }

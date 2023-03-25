@@ -21,7 +21,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
@@ -29,7 +28,7 @@ import (
 	"time"
 )
 
-// A GRPCTLS represents a TLS Generator for Falco
+// A GRPCTLS represents a TLS Generator for Falco.
 type GRPCTLS struct {
 
 	// Size of the private key.
@@ -53,7 +52,7 @@ type GRPCTLS struct {
 	KeyGenerator DSAKeyGenerator
 }
 
-// GRPCTLSGenerator is used to init a new TLS Generator for Falco
+// GRPCTLSGenerator is used to init a new TLS Generator for Falco.
 func GRPCTLSGenerator(
 	country, organization, name string,
 	days, keySize int,
@@ -154,7 +153,7 @@ func (g *GRPCTLS) GenerateCA(notBefore, notAfter time.Time, serialNumberLimit *b
 	if err != nil {
 		return nil, nil, err
 	}
-	g.setCert(CACert, b)
+	_ = g.setCert(CACert, b)
 
 	return caTemplate, caKey, nil
 }
@@ -199,7 +198,7 @@ func (g *GRPCTLS) GenerateServer(caTemplate *x509.Certificate, caKey DSAKey, not
 	if err != nil {
 		return nil
 	}
-	g.setCert(ServerCert, b)
+	_ = g.setCert(ServerCert, b)
 
 	return nil
 }
@@ -233,7 +232,8 @@ func (g *GRPCTLS) GenerateClient(caTemplate *x509.Certificate, caKey DSAKey, not
 	if err != nil {
 		return err
 	}
-	g.setCert(ClientCert, b)
+
+	_ = g.setCert(ClientCert, b)
 
 	return nil
 }
@@ -242,16 +242,17 @@ func (g *GRPCTLS) GenerateClient(caTemplate *x509.Certificate, caKey DSAKey, not
 func (g *GRPCTLS) FlushToDisk(path string) error {
 	p, err := satisfyDir(path)
 	if err != nil {
-		return fmt.Errorf("invalid path: %v", err)
+		return fmt.Errorf("invalid path: %w", err)
 	}
 	path = p
 
 	for _, name := range certsFilenames {
 		f := filepath.Join(path, name)
-		if err := ioutil.WriteFile(f, g.certs[name].Bytes(), 0600); err != nil {
-			return fmt.Errorf(`unable to write "%s": %v`, name, err)
+		if err := os.WriteFile(f, g.certs[name].Bytes(), 0o600); err != nil {
+			return fmt.Errorf("unable to write %q: %w", name, err)
 		}
 	}
+
 	return nil
 }
 
@@ -263,11 +264,12 @@ func (g *GRPCTLS) Certs() map[string]*bytes.Buffer {
 func satisfyDir(dirName string) (string, error) {
 	abs, err := filepath.Abs(dirName)
 	if err != nil {
-		return "", fmt.Errorf("unable to calculate absolute path: %v", err)
+		return "", fmt.Errorf("unable to calculate absolute path: %w", err)
 	}
-	err = os.MkdirAll(abs, 0700)
+	err = os.MkdirAll(abs, 0o700)
 	if err == nil || os.IsExist(err) {
 		return abs, nil
 	}
-	return "", fmt.Errorf("unable to ensure dir: %v", err)
+
+	return "", fmt.Errorf("unable to ensure dir: %w", err)
 }

@@ -71,7 +71,7 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 	return cmd
 }
 
-func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []string) error {
+func (o *artifactSearchOptions) RunArtifactSearch(_ context.Context, args []string) error {
 	resultEntries := o.IndexCache.MergedIndexes.SearchByKeywords(o.minScore, args...)
 
 	var data [][]string
@@ -84,9 +84,5 @@ func (o *artifactSearchOptions) RunArtifactSearch(ctx context.Context, args []st
 		data = append(data, row)
 	}
 
-	if err := o.Printer.PrintTable(output.ArtifactSearch, data); err != nil {
-		return err
-	}
-
-	return nil
+	return o.Printer.PrintTable(output.ArtifactSearch, data)
 }
