@@ -177,7 +177,6 @@ func TestSearchByKeywords(t *testing.T) {
 	if len(noDuplicates) != 1 {
 		t.Errorf("error in SearchByKeywords, not expecting duplicates")
 	}
-
 }
 
 func TestNormalize(t *testing.T) {
@@ -218,7 +217,6 @@ func TestNormalize(t *testing.T) {
 	if fmt.Sprintf("%x", hash.Sum(nil)) != fmt.Sprintf("%x", expectedHash.Sum(nil)) {
 		t.Error("Index not normalized as expected", string(indexBytes))
 	}
-
 }
 
 func TestFetch(t *testing.T) {
@@ -266,5 +264,4 @@ func TestConfig(t *testing.T) {
 	if entry == nil {
 		t.Error(fmt.Errorf("entry \"test\" not found"))
 	}
-
 }

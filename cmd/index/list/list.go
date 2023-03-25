@@ -30,7 +30,7 @@ type indexListOptions struct {
 }
 
 // NewIndexListCmd returns the index list command.
-func NewIndexListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewIndexListCmd(_ context.Context, opt *options.CommonOptions) *cobra.Command {
 	o := indexListOptions{
 		CommonOptions: opt,
 	}
@@ -42,15 +42,15 @@ func NewIndexListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Com
 		Long:                  "List all the added indexes that were configured in falcoctl",
 		Args:                  cobra.ExactArgs(0),
 		Aliases:               []string{"ls"},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunIndexList(ctx, args))
+		Run: func(cmd *cobra.Command, _ []string) {
+			o.Printer.CheckErr(o.RunIndexList())
 		},
 	}
 
 	return cmd
 }
 
-func (o *indexListOptions) RunIndexList(ctx context.Context, args []string) error {
+func (o *indexListOptions) RunIndexList() error {
 	indexConfig, err := index.NewConfig(config.IndexesFile)
 	if err != nil {
 		return err
@@ -62,9 +62,5 @@ func (o *indexListOptions) RunIndexList(ctx context.Context, args []string) erro
 		data = append(data, newEntry)
 	}
 
-	if err = o.Printer.PrintTable(output.IndexList, data); err != nil {
-		return err
-	}
-
-	return nil
+	return o.Printer.PrintTable(output.IndexList, data)
 }

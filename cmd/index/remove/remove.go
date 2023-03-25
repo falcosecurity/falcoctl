@@ -28,7 +28,7 @@ import (
 
 type indexRemoveOptions struct {
 	*options.CommonOptions
-	indexConfig *index.Config
+	indexConfig *index.Config //nolint:unused // TODO: check if can be removed
 }
 
 // NewIndexRemoveCmd returns the index remove command.

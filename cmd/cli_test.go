@@ -17,7 +17,7 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,15 +72,12 @@ var tests = []testCase{
 	},
 }
 
-func run(t *testing.T, test testCase) {
+func run(t *testing.T, test *testCase) {
 	// Setup
 	c := New(context.Background(), &options.CommonOptions{})
 	o := bytes.NewBufferString("")
 	c.SetOut(o)
 	c.SetErr(o)
-
-	// test.args = append(test.args, "--dryrun") // todo > add dry run flag
-
 	c.SetArgs(test.args)
 	for k, v := range test.env {
 		if err := os.Setenv(k, v); err != nil {
@@ -97,7 +94,7 @@ func run(t *testing.T, test testCase) {
 		}
 	}
 
-	out, err := ioutil.ReadAll(o)
+	out, err := io.ReadAll(o)
 	if err != nil {
 		t.Fatalf("error reading CLI output: %v", err)
 	}
@@ -121,7 +118,7 @@ func TestCLI(t *testing.T) {
 			test.descr = strings.TrimSuffix(filepath.Base(test.expect.out), ".txt")
 		}
 		if test.expect.out != "" {
-			out, err := ioutil.ReadFile(test.expect.out)
+			out, err := os.ReadFile(test.expect.out)
 			if err != nil {
 				t.Fatalf("output fixture not found: %v", err)
 			}
@@ -129,7 +126,7 @@ func TestCLI(t *testing.T) {
 		}
 
 		t.Run(test.descr, func(t *testing.T) {
-			run(t, test)
+			run(t, &test)
 		})
 	}
 }

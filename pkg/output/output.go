@@ -190,9 +190,7 @@ func (p *Printer) PrintTable(header TableHeader, data [][]string) error {
 		return fmt.Errorf("unsupported output table")
 	}
 
-	for i := range data {
-		table = append(table, data[i])
-	}
+	table = append(table, data...)
 
 	return p.TablePrinter.WithData(table).Render()
 }

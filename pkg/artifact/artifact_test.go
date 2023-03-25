@@ -42,5 +42,4 @@ func TestParseRef(t *testing.T) {
 	if !errors.Is(err, ErrInvalidVersion) {
 		t.Fatal("invalid version error not matched")
 	}
-
 }

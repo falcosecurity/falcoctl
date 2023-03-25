@@ -53,7 +53,7 @@ func NewArtifactListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 	return cmd
 }
 
-func (o *artifactListOptions) RunArtifactList(ctx context.Context, args []string) error {
+func (o *artifactListOptions) RunArtifactList(_ context.Context, _ []string) error {
 	var data [][]string
 	for _, entry := range o.IndexCache.MergedIndexes.Entries {
 		if o.artifactType != "" && o.artifactType != oci.ArtifactType(entry.Type) {
@@ -69,9 +69,5 @@ func (o *artifactListOptions) RunArtifactList(ctx context.Context, args []string
 		data = append(data, row)
 	}
 
-	if err := o.Printer.PrintTable(output.ArtifactSearch, data); err != nil {
-		return err
-	}
-
-	return nil
+	return o.Printer.PrintTable(output.ArtifactSearch, data)
 }

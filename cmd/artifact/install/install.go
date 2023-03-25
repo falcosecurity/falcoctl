@@ -88,14 +88,12 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		Short:                 "Install a list of artifacts",
 		Long:                  longInstall,
 		PreRun: func(cmd *cobra.Command, args []string) {
-
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
 			f := cmd.Flags().Lookup(FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
 				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagRulesFilesDir))
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallRulesfilesDirKey) {
-
 				val := viper.Get(config.ArtifactInstallRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagRulesFilesDir, err))
