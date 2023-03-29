@@ -17,7 +17,6 @@ package push
 import (
 	"context"
 	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -87,14 +86,12 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		Args:                  cobra.MinimumNArgs(2),
 		SilenceErrors:         false,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Initialize()
 			o.Printer.CheckErr(o.validate())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunPush(ctx, args))
 		},
 	}
-	o.CommonOptions.AddFlags(cmd.Flags())
 	o.RegistryOptions.AddFlags(cmd)
 	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
 
