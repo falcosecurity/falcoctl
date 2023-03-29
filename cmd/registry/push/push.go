@@ -17,8 +17,11 @@ package push
 import (
 	"context"
 	"fmt"
+
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
@@ -87,6 +90,16 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		SilenceErrors:         false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.validate())
+
+			// Perform authentications using basic auth.
+			basicAuths, err := config.BasicAuths()
+			opt.Printer.CheckErr(err)
+			opt.Printer.CheckErr(login.PerformBasicAuthsLogin(ctx, basicAuths))
+
+			// Perform authentications using oauth auth.
+			oauthAuths, err := config.OauthAuths()
+			opt.Printer.CheckErr(err)
+			opt.Printer.CheckErr(login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunPush(ctx, args))

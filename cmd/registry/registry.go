@@ -16,13 +16,13 @@ package registry
 
 import (
 	"context"
-	"github.com/falcosecurity/falcoctl/internal/config"
 
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/cmd/registry/auth"
 	"github.com/falcosecurity/falcoctl/cmd/registry/pull"
 	"github.com/falcosecurity/falcoctl/cmd/registry/push"
+	"github.com/falcosecurity/falcoctl/internal/config"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 

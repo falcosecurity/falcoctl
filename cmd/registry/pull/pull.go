@@ -21,6 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -78,6 +80,16 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		Args:                  cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.Validate())
+
+			// Perform authentications using basic auth.
+			basicAuths, err := config.BasicAuths()
+			opt.Printer.CheckErr(err)
+			opt.Printer.CheckErr(login.PerformBasicAuthsLogin(ctx, basicAuths))
+
+			// Perform authentications using oauth auth.
+			oauthAuths, err := config.OauthAuths()
+			opt.Printer.CheckErr(err)
+			opt.Printer.CheckErr(login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Printer.CheckErr(o.RunPull(ctx, args))
