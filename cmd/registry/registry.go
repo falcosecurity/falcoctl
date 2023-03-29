@@ -16,6 +16,7 @@ package registry
 
 import (
 	"context"
+	"github.com/falcosecurity/falcoctl/internal/config"
 
 	"github.com/spf13/cobra"
 
@@ -32,6 +33,10 @@ func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 		DisableFlagsInUseLine: true,
 		Short:                 "Interact with OCI registries",
 		Long:                  "Interact with OCI registries",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Load configuration from ENV variables and/or config file.
+			opt.Printer.CheckErr(config.Load(opt.ConfigFile))
+		},
 	}
 
 	cmd.AddCommand(auth.NewAuthCmd(ctx, opt))
