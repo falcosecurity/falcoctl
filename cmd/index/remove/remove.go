@@ -21,14 +21,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type indexRemoveOptions struct {
 	*options.CommonOptions
-	indexConfig *index.Config //nolint:unused // TODO: check if can be removed
 }
 
 // NewIndexRemoveCmd returns the index remove command.
@@ -53,21 +51,30 @@ func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 }
 
 func (o *indexRemoveOptions) RunIndexRemove(ctx context.Context, args []string) error {
-	var err error
+	o.Printer.Verbosef("Creating in-memory cache using indexes file %q and indexes directory %q", config.IndexesFile, config.IndexesDir)
 	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
 	if err != nil {
 		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
 	for _, name := range args {
+		o.Printer.Info.Printfln("Removing index %q", name)
 		if err = indexCache.Remove(name); err != nil {
 			return fmt.Errorf("unable to remove index: %w", err)
 		}
 	}
 
+	o.Printer.Verbosef("Writing cache to disk")
 	if _, err = indexCache.Write(); err != nil {
 		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
 
-	return config.RemoveIndexes(args, o.ConfigFile)
+	o.Printer.Verbosef("Removing indexes entries from configuration file %q", o.ConfigFile)
+	if err = config.RemoveIndexes(args, o.ConfigFile); err != nil {
+		return err
+	}
+
+	o.Printer.Success.Printfln("Indexes successfully removed")
+
+	return nil
 }
