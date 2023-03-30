@@ -57,21 +57,32 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 	name := args[0]
 	url := args[1]
 
+	o.Printer.Verbosef("Creating in-memory cache using indexes file %q and indexes directory %q", config.IndexesFile, config.IndexesDir)
 	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
 	if err != nil {
 		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
+	o.Printer.Info.Printfln("Adding index")
+
 	if err = indexCache.Add(ctx, name, url); err != nil {
 		return fmt.Errorf("unable to add index: %w", err)
 	}
 
+	o.Printer.Verbosef("Writing cache to disk")
 	if _, err = indexCache.Write(); err != nil {
 		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
 
-	return config.AddIndexes([]config.Index{{
+	o.Printer.Verbosef("Adding new index entry to configuration file %q", o.ConfigFile)
+	if err = config.AddIndexes([]config.Index{{
 		Name: name,
 		URL:  url,
-	}}, o.ConfigFile)
+	}}, o.ConfigFile); err != nil {
+		return fmt.Errorf("index entry %q: %w", name, err)
+	}
+
+	o.Printer.Success.Printfln("Index %q successfully added", name)
+
+	return nil
 }
