@@ -37,6 +37,10 @@ func Fetch(ctx context.Context, url, name string) (*Index, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode <= http.StatusNetworkAuthenticationRequired {
+		return nil, fmt.Errorf("cannot fetch index: %s", resp.Status)
+	}
+
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read bytes from response body: %w", err)
