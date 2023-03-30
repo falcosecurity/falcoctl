@@ -21,14 +21,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type indexUpdateOptions struct {
 	*options.CommonOptions
-	indexConfig *index.Config //nolint:unused // TODO: check if can be removed
 }
 
 // NewIndexUpdateCmd returns the index update command.
@@ -52,20 +50,25 @@ func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.C
 }
 
 func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) error {
+	o.Printer.Verbosef("Creating in-memory cache using indexes file %q and indexes directory %q", config.IndexesFile, config.IndexesDir)
 	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
 	if err != nil {
 		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
 	for _, arg := range args {
+		o.Printer.Info.Printfln("Updating index %q", arg)
 		if err := indexCache.Update(ctx, arg); err != nil {
 			return fmt.Errorf("an error occurred while updating index %q: %w", arg, err)
 		}
 	}
 
+	o.Printer.Verbosef("Writing cache to disk")
 	if _, err = indexCache.Write(); err != nil {
 		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
+
+	o.Printer.Success.Printfln("Indexes successfully updated")
 
 	return nil
 }
