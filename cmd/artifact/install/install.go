@@ -172,6 +172,7 @@ Examples:
 
 // RunArtifactInstall executes the business logic for the artifact install command.
 func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []string) error {
+	arch := utils.PlatformArchitecture(runtime.GOARCH)
 	// Retrieve configuration for installer
 	configuredInstaller, err := config.Installer()
 	if err != nil {
@@ -225,7 +226,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return nil, err
 		}
 
-		artifactConfig, err := puller.PullConfigLayer(ctx, ref)
+		artifactConfig, err := puller.PullConfigLayer(ctx, ref, arch)
 		if err != nil {
 			return nil, err
 		}
@@ -276,12 +277,12 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		if err := puller.CheckAllowedType(ctx, ref, o.allowedTypes.Types); err != nil {
+		if err := puller.CheckAllowedType(ctx, ref, arch, o.allowedTypes.Types); err != nil {
 			return err
 		}
 
 		// Install will always install artifact for the current OS and architecture
-		result, err := puller.Pull(ctx, ref, tmpDir, runtime.GOOS, runtime.GOARCH)
+		result, err := puller.Pull(ctx, ref, tmpDir, runtime.GOOS, arch)
 		if err != nil {
 			return err
 		}

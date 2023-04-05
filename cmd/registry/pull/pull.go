@@ -123,7 +123,7 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		o.Printer.Info.Printfln("Pulling artifact in %q directory", o.destDir)
 	}
 
-	os, arch := runtime.GOOS, runtime.GOARCH
+	os, arch := runtime.GOOS, utils.PlatformArchitecture(runtime.GOARCH)
 	if len(o.ArtifactOptions.Platforms) > 0 {
 		os, arch = o.OSArch(0)
 	}

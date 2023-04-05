@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"sync"
 	"time"
 
@@ -241,6 +242,7 @@ Examples:
 
 // RunArtifactFollow executes the business logic for the artifact follow command.
 func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []string) error {
+	arch := utils.PlatformArchitecture(runtime.GOARCH)
 	// Retrieve configuration for follower
 	configuredFollower, err := config.Follower()
 	if err != nil {
@@ -309,7 +311,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			FalcoVersions:     o.versions,
 			AllowedTypes:      o.allowedTypes,
 		}
-		fol, err := follower.New(ctx, ref, o.Printer, cfg)
+		fol, err := follower.New(ctx, ref, arch, o.Printer, cfg)
 		if err != nil {
 			return fmt.Errorf("unable to create the follower for ref %q: %w", ref, err)
 		}

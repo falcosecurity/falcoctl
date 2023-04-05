@@ -46,6 +46,7 @@ type Follower struct {
 	tag           string
 	tmpDir        string
 	currentDigest string
+	platformArch  string
 	*ocipuller.Puller
 	*Config
 	*output.Printer
@@ -84,7 +85,7 @@ var (
 
 // New creates a Follower configured with the passed parameters and ready to be used.
 // It does not check the correctness of the parameters, make sure everything is initialized.
-func New(ctx context.Context, ref string, printer *output.Printer, config *Config) (*Follower, error) {
+func New(ctx context.Context, ref, platformArch string, printer *output.Printer, cfg *Config) (*Follower, error) {
 	reg, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract registry from ref %q: %w", ref, err)
@@ -96,18 +97,18 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 	}
 	tag := parsedRef.Reference
 
-	client, err := utils.ClientForRegistry(ctx, reg, config.PlainHTTP, printer)
+	client, err := utils.ClientForRegistry(ctx, reg, cfg.PlainHTTP, printer)
 	if err != nil {
 		return nil, err
 	}
 
-	puller := ocipuller.NewPuller(client, config.PlainHTTP, nil)
+	puller := ocipuller.NewPuller(client, cfg.PlainHTTP, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create temp dir where to put pulled artifacts.
-	tmpDir, err := os.MkdirTemp(config.TmpDir, "falcoctl-")
+	tmpDir, err := os.MkdirTemp(cfg.TmpDir, "falcoctl-")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
@@ -119,9 +120,10 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 		tag:           tag,
 		tmpDir:        tmpDir,
 		Puller:        puller,
-		Config:        config,
+		Config:        cfg,
+		platformArch:  platformArch,
 		Printer:       customPrinter,
-		FalcoVersions: config.FalcoVersions,
+		FalcoVersions: cfg.FalcoVersions,
 	}, nil
 }
 
@@ -167,7 +169,7 @@ func (f *Follower) follow(ctx context.Context) {
 	f.Info.Printfln("found new version under tag %q", f.tag)
 
 	// Pull config layer to check falco versions
-	artifactConfig, err := f.PullConfigLayer(ctx, f.ref)
+	artifactConfig, err := f.PullConfigLayer(ctx, f.ref, f.platformArch)
 	if err != nil {
 		f.Error.Printfln("unable to pull config layer for ref %q: %v", f.ref, err)
 		return
@@ -239,13 +241,13 @@ func (f *Follower) follow(ctx context.Context) {
 // pull downloads, extracts, and installs the artifact.
 func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.RegistryResult, err error) {
 	f.Verbosef("check if pulling an allowed type of artifact")
-	if err := f.Puller.CheckAllowedType(ctx, f.ref, f.Config.AllowedTypes.Types); err != nil {
+	if err := f.Puller.CheckAllowedType(ctx, f.ref, f.platformArch, f.Config.AllowedTypes.Types); err != nil {
 		return nil, nil, err
 	}
 
 	// Pull the artifact from the repository.
 	f.Verbosef("pulling artifact %q", f.ref)
-	res, err = f.Pull(ctx, f.ref, f.tmpDir, runtime.GOOS, runtime.GOARCH)
+	res, err = f.Pull(ctx, f.ref, f.tmpDir, runtime.GOOS, f.platformArch)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to pull artifact %q: %w", f.ref, err)
 	}

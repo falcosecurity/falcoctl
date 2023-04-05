@@ -160,7 +160,7 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 }
 
 // manifestFromRef retieves the manifest of an artifact, also taking care of resolving to it walking through indexes.
-func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest, error) {
+func (p *Puller) manifestFromRef(ctx context.Context, ref, arch string) (*v1.Manifest, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 		found := false
 		for _, manifest := range index.Manifests {
 			if manifest.Platform.OS == runtime.GOOS &&
-				manifest.Platform.Architecture == runtime.GOARCH {
+				manifest.Platform.Architecture == arch {
 				desc = manifest
 				found = true
 				break
@@ -198,7 +198,7 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 		}
 
 		if !found {
-			return nil, fmt.Errorf("unable to find a manifest matching the given platform: %s %s", runtime.GOOS, runtime.GOARCH)
+			return nil, fmt.Errorf("unable to find a manifest matching the given platform: %s %s", runtime.GOOS, arch)
 		}
 
 		manifestReader, err = repo.Fetch(ctx, desc)
@@ -221,13 +221,13 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 }
 
 // PullConfigLayer fetches only the config layer from a given ref.
-func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
+func (p *Puller) PullConfigLayer(ctx context.Context, ref, arch string) (*oci.ArtifactConfig, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}
 
-	manifest, err := p.manifestFromRef(ctx, ref)
+	manifest, err := p.manifestFromRef(ctx, ref, arch)
 	if err != nil {
 		return nil, err
 	}
@@ -260,12 +260,12 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 // CheckAllowedType does a preliminary check on the manifest to state whether we are allowed
 // or not to download this type of artifact. If allowedTypes is empty, everything is allowed,
 // else it is used to perform the check.
-func (p *Puller) CheckAllowedType(ctx context.Context, ref string, allowedTypes []oci.ArtifactType) error {
+func (p *Puller) CheckAllowedType(ctx context.Context, ref, arch string, allowedTypes []oci.ArtifactType) error {
 	if len(allowedTypes) == 0 {
 		return nil
 	}
 
-	manifest, err := p.manifestFromRef(ctx, ref)
+	manifest, err := p.manifestFromRef(ctx, ref, arch)
 	if err != nil {
 		return err
 	}
