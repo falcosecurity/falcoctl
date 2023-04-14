@@ -16,7 +16,10 @@ package push
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -115,6 +118,10 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	ref := args[0]
 	paths := args[1:]
+	// When creating the tar.gz archives we need to remove them after we are done.
+	// We save the temporary dir where they live here.
+	var toBeDeleted string
+
 	o.Printer.Info.Printfln("Preparing to push artifact %q of type %q", args[0], o.ArtifactType)
 
 	registry, err := utils.GetRegistryFromRef(ref)
@@ -125,6 +132,30 @@ func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
 	pusher, err := utils.PusherForRegistry(ctx, o.PlainHTTP, registry, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the pusher for registry %s: %w", registry, err)
+	}
+
+	// Make sure to remove temporary working dir.
+	defer func() {
+		if err := os.RemoveAll(toBeDeleted); err != nil {
+			o.Printer.Warning.Printfln("Unable to remove temporary dir %q: %s", toBeDeleted, err.Error())
+		}
+	}()
+
+	for i, p := range paths {
+		if err = utils.IsTarGz(filepath.Clean(p)); err != nil && !errors.Is(err, utils.ErrNotTarGz) {
+			return err
+		} else if err == nil {
+			continue
+		} else {
+			path, err := utils.CreateTarGzArchive(p)
+			if err != nil {
+				return err
+			}
+			paths[i] = path
+			if toBeDeleted == "" {
+				toBeDeleted = filepath.Dir(path)
+			}
+		}
 	}
 
 	// Setup OCI artifact configuration
