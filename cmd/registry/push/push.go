@@ -105,7 +105,7 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 			opt.Printer.CheckErr(login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths))
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunPush(ctx, args))
+			o.Printer.CheckErr(o.runPush(ctx, args))
 		},
 	}
 	o.RegistryOptions.AddFlags(cmd)
@@ -114,8 +114,8 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 	return cmd
 }
 
-// RunPush executes the business logic for the push command.
-func (o *pushOptions) RunPush(ctx context.Context, args []string) error {
+// runPush executes the business logic for the push command.
+func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	ref := args[0]
 	paths := args[1:]
 	// When creating the tar.gz archives we need to remove them after we are done.
