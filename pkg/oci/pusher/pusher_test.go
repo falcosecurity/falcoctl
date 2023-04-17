@@ -29,6 +29,7 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
 	"github.com/falcosecurity/falcoctl/pkg/output"
+	"github.com/falcosecurity/falcoctl/pkg/test"
 )
 
 var _ = Describe("Pusher", func() {
@@ -132,7 +133,7 @@ var _ = Describe("Pusher", func() {
 						Expect(result).ToNot(BeNil())
 						d, reader, err := repo.FetchReference(ctx, ref)
 						Expect(err).ToNot(HaveOccurred())
-						index, err := imageIndexFromReader(reader)
+						index, err := test.ImageIndexFromReader(reader)
 						Expect(err).ToNot(HaveOccurred())
 						// Being the artifact of type plugin we expect that the retrieved descriptor is of type image index.
 						Expect(d.MediaType).To(Equal(v1.MediaTypeImageIndex))
@@ -174,7 +175,7 @@ var _ = Describe("Pusher", func() {
 						// Since we have not specified a tag for the artifact we expect that the pusher will add it.
 						d, reader, err := repo.FetchReference(ctx, ref+":latest")
 						Expect(err).ToNot(HaveOccurred())
-						index, err := imageIndexFromReader(reader)
+						index, err := test.ImageIndexFromReader(reader)
 						Expect(err).ToNot(HaveOccurred())
 						// Being the artifact of type plugin we expect that the retrieved descriptor is of type image index.
 						Expect(d.MediaType).To(Equal(v1.MediaTypeImageIndex))
@@ -211,7 +212,7 @@ var _ = Describe("Pusher", func() {
 					Expect(result).ToNot(BeNil())
 					d, reader, err := repo.FetchReference(ctx, ref)
 					Expect(err).ToNot(HaveOccurred())
-					manifest, err := manifestFromReader(reader)
+					manifest, err := test.ManifestFromReader(reader)
 					Expect(err).ToNot(HaveOccurred())
 					// Being the artifact of type rulesfile we expect that the retrieved descriptor is of type manifest.
 					Expect(d.MediaType).To(Equal(v1.MediaTypeImageManifest))
@@ -260,7 +261,7 @@ var _ = Describe("Pusher", func() {
 					Expect(result).ToNot(BeNil())
 					d, reader, err := repo.FetchReference(ctx, ref+":latest")
 					Expect(err).ToNot(HaveOccurred())
-					manifest, err := manifestFromReader(reader)
+					manifest, err := test.ManifestFromReader(reader)
 					Expect(err).ToNot(HaveOccurred())
 					// Being the artifact of type rulesfile we expect that the retrieved descriptor is of type manifest.
 					Expect(d.MediaType).To(Equal(v1.MediaTypeImageManifest))
@@ -272,7 +273,7 @@ var _ = Describe("Pusher", func() {
 					// Fetch the config layer
 					reader, err = repo.Fetch(ctx, manifest.Config)
 					Expect(err).ToNot(HaveOccurred())
-					dep, err := dependenciesFromReader(reader)
+					dep, err := test.DependenciesFromReader(reader)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(dep).ToNot(BeNil())
 					// Check that we have the same number of deps that we set before.
