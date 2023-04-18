@@ -16,9 +16,22 @@
 package main
 
 import (
+	"context"
+	"os"
+
 	"github.com/falcosecurity/falcoctl/cmd"
+	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 func main() {
-	cmd.Execute()
+	// Set up the root cmd.
+	opt := options.NewOptions()
+	opt.Initialize(options.WithWriter(os.Stdout))
+	rootCmd := cmd.New(context.Background(), opt)
+
+	// Execute the command.
+	if err := cmd.Execute(rootCmd, opt.Printer); err != nil {
+		os.Exit(1)
+	}
+	os.Exit(0)
 }

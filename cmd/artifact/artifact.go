@@ -18,17 +18,14 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2/clientcredentials"
-	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/cmd/artifact/follow"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/info"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/list"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/search"
-	"github.com/falcosecurity/falcoctl/cmd/registry/auth/basic"
-	"github.com/falcosecurity/falcoctl/cmd/registry/auth/oauth"
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -40,45 +37,47 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 		DisableFlagsInUseLine: true,
 		Short:                 "Interact with Falco artifacts",
 		Long:                  "Interact with Falco artifacts",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		SilenceErrors:         true,
+		SilenceUsage:          true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			var indexes []config.Index
+			var indexCache *cache.Cache
+			var basicAuths []config.BasicAuth
+			var oauthAuths []config.OauthAuth
+			var err error
+
 			opt.Initialize()
-			opt.Printer.CheckErr(config.Load(opt.ConfigFile))
+			if err = config.Load(opt.ConfigFile); err != nil {
+				return err
+			}
 
 			// add indexes if needed
 			// Set up basic authentication
-			indexes, err := config.Indexes()
-			opt.Printer.CheckErr(err)
+			if indexes, err = config.Indexes(); err != nil {
+				return err
+			}
 
 			// Create the index cache.
-			indexCache, err := cache.NewFromConfig(ctx, config.IndexesFile, config.IndexesDir, indexes)
-			opt.Printer.CheckErr(err)
-
-			basicAuths, err := config.BasicAuths()
-			opt.Printer.CheckErr(err)
-			for _, basicAuth := range basicAuths {
-				cred := &auth.Credential{
-					Username: basicAuth.User,
-					Password: basicAuth.Password,
-				}
-
-				opt.Printer.CheckErr(basic.DoLogin(ctx, basicAuth.Registry, cred))
+			if indexCache, err = cache.NewFromConfig(ctx, config.IndexesFile, config.IndexesDir, indexes); err != nil {
+				return err
 			}
-
-			oauthAuths, err := config.OauthAuths()
-			opt.Printer.CheckErr(err)
-			for _, auth := range oauthAuths {
-				oauthMgr := oauth.RegistryOauthOptions{
-					CommonOptions: opt,
-					Conf: clientcredentials.Config{
-						ClientID:     auth.ClientID,
-						ClientSecret: auth.ClientSecret,
-						TokenURL:     auth.TokenURL,
-					},
-				}
-				opt.Printer.CheckErr(oauthMgr.RunOauth(ctx, []string{auth.Registry}))
-			}
-
+			// Save the index cache for later use by the sub commands.
 			opt.Initialize(commonoptions.WithIndexCache(indexCache))
+
+			// Perform authentication using basic auth.
+			if basicAuths, err = config.BasicAuths(); err != nil {
+				return err
+			}
+			if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
+				return err
+			}
+
+			// Perform authentications using oauth auth.
+			if oauthAuths, err = config.OauthAuths(); err != nil {
+				return err
+			}
+
+			return login.PerformOauthAuths(ctx, opt, oauthAuths)
 		},
 	}
 

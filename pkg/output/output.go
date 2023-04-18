@@ -23,7 +23,6 @@ import (
 
 	isatty "github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
-	"k8s.io/kubectl/pkg/cmd/util"
 )
 
 // TableHeader is used to print out the correct header for a command.
@@ -136,36 +135,34 @@ func NewPrinter(scope string, disableStyling, verbose bool, writer io.Writer) *P
 	return printer.WithScope(scope).WithWriter(writer)
 }
 
-// CheckErr prints a user-friendly error and exits with a non-zero exit code.
-// Based on the printer's configuration it will print through it or will use the
-// STDERR.
+// CheckErr prints a user-friendly error based on the active printer.
 func (p *Printer) CheckErr(err error) {
+	var handlerFunc func(msg string)
 	switch {
 	case err == nil:
 		return
 
 	// Print the error through the spinner, if active.
 	case p != nil && p.Spinner.IsActive:
-		util.BehaviorOnFatal(func(msg string, code int) {
+		handlerFunc = func(msg string) {
 			p.Spinner.Fail(msg)
-			os.Exit(code)
-		})
+		}
 
 	// If the printer is initialized then print the error through it.
 	case p != nil:
-		util.BehaviorOnFatal(func(msg string, code int) {
+		handlerFunc = func(msg string) {
 			msg = strings.TrimPrefix(msg, "error: ")
 			p.Error.Println(strings.TrimRight(msg, "\n"))
-			os.Exit(code)
-		})
+		}
 
 	// Otherwise, restore the default behavior.
 	default:
-		util.DefaultBehaviorOnFatal()
+		handlerFunc = func(msg string) {
+			fmt.Printf("%s (it seems that the printer has not been initialized, that's why you are seeing this message", msg)
+		}
 	}
 
-	// Here we are leveraging a package from kubectl.
-	util.CheckErr(err)
+	handlerFunc(err.Error())
 }
 
 // Verbosef outputs verbose messages if the verbose flags is set.
@@ -238,9 +235,10 @@ func (p *Printer) EnableStyling() {
 	pterm.EnableStyling()
 }
 
-// ExitOnErr aborts the execution in case of errors, without printing any error message.
-func ExitOnErr(err error) {
+// ExitOnErr aborts the execution in case of errors, and prints the error using the configured printer.
+func ExitOnErr(p *Printer, err error) {
 	if err != nil {
-		os.Exit(util.DefaultErrorExitCode)
+		p.CheckErr(err)
+		os.Exit(1)
 	}
 }

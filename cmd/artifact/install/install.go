@@ -87,69 +87,72 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		DisableFlagsInUseLine: true,
 		Short:                 "Install a list of artifacts",
 		Long:                  longInstall,
-		PreRun: func(cmd *cobra.Command, args []string) {
+		SilenceErrors:         true,
+		SilenceUsage:          true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
 			f := cmd.Flags().Lookup(FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagRulesFilesDir))
+				return fmt.Errorf("unable to retrieve flag %q", FlagRulesFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallRulesfilesDirKey) {
 				val := viper.Get(config.ArtifactInstallRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagRulesFilesDir, err))
+					return fmt.Errorf("unable to overwrite %q flag: %w", FlagRulesFilesDir, err)
 				}
 			}
 
 			// Check if directory exists and is writable.
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("%q: %w", FlagRulesFilesDir, err))
+				return fmt.Errorf("%q: %w", FlagRulesFilesDir, err)
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagPluginsFilesDir))
+				return fmt.Errorf("unable to retrieve flag %q", FlagPluginsFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallPluginsDirKey) {
 				val := viper.Get(config.ArtifactInstallPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagPluginsFilesDir, err))
+					return fmt.Errorf("unable to overwrite %q flag: %w", FlagPluginsFilesDir, err)
 				}
 			}
 
 			// Check if directory exists and is writable.
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("%q: %w", FlagPluginsFilesDir, err))
+				return fmt.Errorf("%q: %w", FlagPluginsFilesDir, err)
 			}
 
 			// Override "allowed-types" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(FlagAllowedTypes)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagAllowedTypes))
+				return fmt.Errorf("unable to retrieve flag %q", FlagAllowedTypes)
 			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
 				val, err := config.ArtifactAllowedTypes()
 				if err != nil {
-					o.Printer.CheckErr(err)
+					return err
 				}
 				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %s flag: %w", FlagAllowedTypes, err))
+					return fmt.Errorf("unable to overwrite %s flag: %w", FlagAllowedTypes, err)
 				}
 			}
 
 			f = cmd.Flags().Lookup(FlagResolveDeps)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", FlagResolveDeps))
+				return fmt.Errorf("unable to retrieve flag %q", FlagResolveDeps)
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallResolveDepsKey) {
 				val := viper.Get(config.ArtifactInstallResolveDepsKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", FlagResolveDeps, err))
+					return fmt.Errorf("unable to overwrite %q flag: %w", FlagResolveDeps, err)
 				}
 			}
+			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunArtifactInstall(ctx, args))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.RunArtifactInstall(ctx, args)
 		},
 	}
 
@@ -175,7 +178,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	// Retrieve configuration for installer
 	configuredInstaller, err := config.Installer()
 	if err != nil {
-		o.Printer.CheckErr(fmt.Errorf("unable to retrieve the configured installer: %w", err))
+		return fmt.Errorf("unable to retrieve the configured installer: %w", err)
 	}
 
 	// Set args as configured if no arg was passed
