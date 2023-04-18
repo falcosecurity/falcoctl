@@ -29,6 +29,7 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
 	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -90,26 +91,38 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		Short:                 "Push a Falco OCI artifact to remote registry",
 		Long:                  longPush,
 		Args:                  cobra.MinimumNArgs(2),
-		SilenceErrors:         false,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.validate())
+		SilenceErrors:         true,
+		SilenceUsage:          true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			var basicAuths []config.BasicAuth
+			var oauthAuths []config.OauthAuth
+			var err error
+
+			if err := o.validate(); err != nil {
+				return err
+			}
 
 			// Perform authentications using basic auth.
-			basicAuths, err := config.BasicAuths()
-			opt.Printer.CheckErr(err)
-			opt.Printer.CheckErr(login.PerformBasicAuthsLogin(ctx, basicAuths))
+			if basicAuths, err = config.BasicAuths(); err != nil {
+				return err
+			}
+			if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
+				return err
+			}
 
 			// Perform authentications using oauth auth.
-			oauthAuths, err := config.OauthAuths()
-			opt.Printer.CheckErr(err)
-			opt.Printer.CheckErr(login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths))
+			if oauthAuths, err = config.OauthAuths(); err != nil {
+				return err
+			}
+
+			return login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.runPush(ctx, args))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.runPush(ctx, args)
 		},
 	}
 	o.RegistryOptions.AddFlags(cmd)
-	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
+	output.ExitOnErr(o.Printer, o.ArtifactOptions.AddFlags(cmd))
 
 	return cmd
 }

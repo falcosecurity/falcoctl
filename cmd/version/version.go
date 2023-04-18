@@ -24,7 +24,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -85,15 +84,17 @@ func NewVersionCmd(opt *commonoptions.CommonOptions) *cobra.Command {
 
 	v := newVersion()
 	cmd := &cobra.Command{
-		Use:   "version",
-		Short: "Print the falcoctl version information",
-		Long:  "Print the falcoctl version information",
-		Args:  cobra.NoArgs,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.validate())
+		Use:           "version",
+		Short:         "Print the falcoctl version information",
+		Long:          "Print the falcoctl version information",
+		Args:          cobra.NoArgs,
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return o.validate()
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			output.ExitOnErr(o.Run(&v))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.Run(&v)
 		},
 	}
 	cmd.Flags().StringVarP(&o.Output, "output", "o", "", "One of 'yaml' or 'json'")

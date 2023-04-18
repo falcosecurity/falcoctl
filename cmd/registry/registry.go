@@ -33,9 +33,10 @@ func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 		DisableFlagsInUseLine: true,
 		Short:                 "Interact with OCI registries",
 		Long:                  "Interact with OCI registries",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		SilenceErrors:         true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Load configuration from ENV variables and/or config file.
-			opt.Printer.CheckErr(config.Load(opt.ConfigFile))
+			return config.Load(opt.ConfigFile)
 		},
 	}
 

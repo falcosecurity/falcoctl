@@ -103,19 +103,21 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 	}
 
 	cmd := &cobra.Command{
-		Use:   "follow [ref1 [ref2 ...]] [flags]",
-		Short: "Install a list of artifacts and continuously checks if there are updates",
-		Long:  longFollow,
-		PreRun: func(cmd *cobra.Command, args []string) {
+		Use:           "follow [ref1 [ref2 ...]] [flags]",
+		Short:         "Install a list of artifacts and continuously checks if there are updates",
+		Long:          longFollow,
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Override "every" flag with viper config if not set by user.
 			f := cmd.Flags().Lookup("every")
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag every"))
+				return fmt.Errorf("unable to retrieve flag every")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowEveryKey) {
 				val := viper.Get(config.ArtifactFollowEveryKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"every\" flag: %w", err))
+					return fmt.Errorf("unable to overwrite \"every\" flag: %w", err)
 				}
 			}
 
@@ -123,11 +125,11 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			f = cmd.Flags().Lookup("cron")
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag cron"))
+				return fmt.Errorf("unable to retrieve flag cron")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowCronKey) {
 				val := viper.Get(config.ArtifactFollowCronKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"cron\" flag: %w", err))
+					return fmt.Errorf("unable to overwrite \"cron\" flag: %w", err)
 				}
 			}
 
@@ -135,11 +137,11 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			f = cmd.Flags().Lookup("falco-versions")
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag falco-versions"))
+				return fmt.Errorf("unable to retrieve flag falco-versions")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowFalcoVersionsKey) {
 				val := viper.Get(config.ArtifactFollowFalcoVersionsKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"falco-versions\" flag: %w", err))
+					return fmt.Errorf("unable to overwrite \"falco-versions\" flag: %w", err)
 				}
 			}
 
@@ -147,43 +149,43 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			f = cmd.Flags().Lookup(install.FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", install.FlagRulesFilesDir))
+				return fmt.Errorf("unable to retrieve flag %q", install.FlagRulesFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowRulesfilesDirKey) {
 				val := viper.Get(config.ArtifactFollowRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", install.FlagRulesFilesDir, err))
+					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagRulesFilesDir, err)
 				}
 			}
 			// Check if directory exists and is writable
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("%q: %w", install.FlagRulesFilesDir, err))
+				return fmt.Errorf("%q: %w", install.FlagRulesFilesDir, err)
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(install.FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %q", install.FlagPluginsFilesDir))
+				return fmt.Errorf("unable to retrieve flag %q", install.FlagPluginsFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowPluginsDirKey) {
 				val := viper.Get(config.ArtifactFollowPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", install.FlagPluginsFilesDir, err))
+					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagPluginsFilesDir, err)
 				}
 			}
 			// Check if directory exists and is writable
 			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("%q: %w", install.FlagPluginsFilesDir, err))
+				return fmt.Errorf("%q: %w", install.FlagPluginsFilesDir, err)
 			}
 
 			// Override "tmp-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup("tmp-dir")
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag tmp-dir"))
+				return fmt.Errorf("unable to retrieve flag tmp-dir")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowTmpDirKey) {
 				val := viper.Get(config.ArtifactFollowTmpDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite \"tmp-dir\" flag: %w", err))
+					return fmt.Errorf("unable to overwrite \"tmp-dir\" flag: %w", err)
 				}
 			}
 
@@ -191,25 +193,26 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 			f = cmd.Flags().Lookup(install.FlagAllowedTypes)
 			if f == nil {
 				// should never happen
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve flag %s", install.FlagAllowedTypes))
+				return fmt.Errorf("unable to retrieve flag %s", install.FlagAllowedTypes)
 			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
 				val, err := config.ArtifactAllowedTypes()
 				if err != nil {
-					o.Printer.CheckErr(err)
+					return err
 				}
 				if err := cmd.Flags().Set(f.Name, val.String()); err != nil {
-					o.Printer.CheckErr(fmt.Errorf("unable to overwrite %q flag: %w", install.FlagAllowedTypes, err))
+					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagAllowedTypes, err)
 				}
 			}
 
 			// Get Falco versions via HTTP endpoint
 			if err := o.retrieveFalcoVersions(ctx); err != nil {
-				o.Printer.CheckErr(fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
-					"and correctly exposing the version endpoint: %w", err))
+				return fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
+					"and correctly exposing the version endpoint: %w", err)
 			}
+			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunArtifactFollow(ctx, args))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.RunArtifactFollow(ctx, args)
 		},
 	}
 

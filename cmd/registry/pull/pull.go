@@ -25,6 +25,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -78,26 +79,39 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		Short:                 "Pull a Falco OCI artifact from remote registry",
 		Long:                  longPull,
 		Args:                  cobra.ExactArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.Validate())
+		SilenceErrors:         true,
+		SilenceUsage:          true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			var basicAuths []config.BasicAuth
+			var oauthAuths []config.OauthAuth
+			var err error
+
+			if err := o.Validate(); err != nil {
+				return err
+			}
 
 			// Perform authentications using basic auth.
-			basicAuths, err := config.BasicAuths()
-			opt.Printer.CheckErr(err)
-			opt.Printer.CheckErr(login.PerformBasicAuthsLogin(ctx, basicAuths))
+			if basicAuths, err = config.BasicAuths(); err != nil {
+				return err
+			}
+			if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
+				return err
+			}
 
 			// Perform authentications using oauth auth.
-			oauthAuths, err := config.OauthAuths()
-			opt.Printer.CheckErr(err)
-			opt.Printer.CheckErr(login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths))
+			if oauthAuths, err = config.OauthAuths(); err != nil {
+				return err
+			}
+
+			return login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunPull(ctx, args))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.RunPull(ctx, args)
 		},
 	}
 
 	o.RegistryOptions.AddFlags(cmd)
-	o.Printer.CheckErr(o.ArtifactOptions.AddFlags(cmd))
+	output.ExitOnErr(o.Printer, o.ArtifactOptions.AddFlags(cmd))
 	cmd.Flags().StringVarP(&o.destDir, "dest-dir", "o", "", "destination dir where to save the artifacts(default: current directory)")
 	return cmd
 }

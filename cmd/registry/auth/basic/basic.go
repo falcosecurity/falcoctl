@@ -55,11 +55,13 @@ func NewBasicCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 		Short:                 "Login to an OCI registry",
 		Long:                  "Login to an OCI registry to push and pull artifacts",
 		Args:                  cobra.MaximumNArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.Validate(args))
+		SilenceErrors:         true,
+		SilenceUsage:          true,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return o.Validate(args)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunBasic(ctx, args))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.RunBasic(ctx, args)
 		},
 	}
 

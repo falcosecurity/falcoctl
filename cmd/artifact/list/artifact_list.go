@@ -42,8 +42,10 @@ func NewArtifactListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 		Short:                 "List all artifacts",
 		Long:                  "List all artifacts",
 		Aliases:               []string{"ls"},
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Printer.CheckErr(o.RunArtifactList(ctx, args))
+		SilenceErrors:         true,
+		SilenceUsage:          true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.RunArtifactList(ctx, args)
 		},
 	}
 
