@@ -53,8 +53,7 @@ var _ = BeforeSuite(func() {
 	localRegistryHost = config.HTTP.Addr
 
 	// Create the oras registry.
-	localRegistry, err = remote.NewRegistry(localRegistryHost)
-	localRegistry.PlainHTTP = true
+	localRegistry, err = testutils.NewOrasRegistry(localRegistryHost, true)
 	Expect(err).ToNot(HaveOccurred())
 
 	// Start the local registry.
