@@ -29,7 +29,7 @@ import (
 const TmpDirPrefix = "falcoctl-registry-push"
 
 // CreateTarGzArchive compresses and saves in a tar archive the passed file.
-func CreateTarGzArchive(path string) (string, error) {
+func CreateTarGzArchive(path string) (file string, err error) {
 	cleanedPath := filepath.Clean(path)
 	// Create output file.
 	tmpDir, err := os.MkdirTemp("", TmpDirPrefix)
@@ -38,6 +38,16 @@ func CreateTarGzArchive(path string) (string, error) {
 	}
 	nameTokens := strings.Split(filepath.Base(path), ".")
 	outFile, err := os.Create(filepath.Clean(filepath.Join(tmpDir, nameTokens[0]+".tar.gz")))
+	if err != nil {
+		return "", err
+	}
+
+	fInfo, err := os.Stat(cleanedPath)
+	if err != nil {
+		return "", err
+	}
+
+	header, err := tar.FileInfoHeader(fInfo, fInfo.Name())
 	if err != nil {
 		return "", err
 	}
@@ -65,18 +75,8 @@ func CreateTarGzArchive(path string) (string, error) {
 		}
 	}()
 
-	fInfo, err := os.Stat(cleanedPath)
-	if err != nil {
-		return "", err
-	}
-
-	header, err := tar.FileInfoHeader(fInfo, fInfo.Name())
-	if err != nil {
-		return "", err
-	}
-
 	// write the header
-	if err := tw.WriteHeader(header); err != nil {
+	if err = tw.WriteHeader(header); err != nil {
 		return "", err
 	}
 
@@ -86,7 +86,7 @@ func CreateTarGzArchive(path string) (string, error) {
 	}
 
 	// copy file data into tar writer
-	if _, err := io.Copy(tw, f); err != nil {
+	if _, err = io.Copy(tw, f); err != nil {
 		return "", err
 	}
 
