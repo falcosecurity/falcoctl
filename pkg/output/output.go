@@ -196,6 +196,7 @@ func (p *Printer) PrintTable(header TableHeader, data [][]string) error {
 func (p Printer) WithWriter(writer io.Writer) *Printer {
 	if writer != nil {
 		p.Info = p.Info.WithWriter(writer)
+		p.Success = p.Success.WithWriter(writer)
 		p.Warning = p.Warning.WithWriter(writer)
 		p.Error = p.Error.WithWriter(writer)
 		p.Spinner = p.Spinner.WithWriter(writer)
