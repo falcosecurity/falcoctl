@@ -71,6 +71,20 @@ func (e *ArtifactType) ToMediaType() string {
 	return ""
 }
 
+// HumanReadableMediaType converts MediaType to its corresponding
+// type in a human readable format.
+func HumanReadableMediaType(s string) string {
+	switch s {
+	case FalcoRulesfileLayerMediaType:
+		return string(Rulesfile)
+	case FalcoPluginLayerMediaType:
+		return string(Plugin)
+	}
+
+	// should never happen
+	return ""
+}
+
 // ArtifactTypeSlice is a slice of ArtifactType, can be passed as comma separated values.
 type ArtifactTypeSlice struct {
 	Types                []ArtifactType
