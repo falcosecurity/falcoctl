@@ -274,16 +274,11 @@ func (p *Puller) CheckAllowedType(ctx context.Context, ref string, allowedTypes 
 		return fmt.Errorf("malformed artifact, expected to find at least one layer for ref %q", ref)
 	}
 
-	var allowedMediaTypes []string
 	for _, t := range allowedTypes {
-		allowedMediaTypes = append(allowedMediaTypes, t.ToMediaType())
-	}
-
-	for _, t := range allowedMediaTypes {
-		if manifest.Layers[0].MediaType == t {
+		if manifest.Layers[0].MediaType == t.ToMediaType() {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("cannot download artifact of type %q: not permitted", manifest.Layers[0].MediaType)
+	return fmt.Errorf("cannot download artifact of type %q: type not permitted", oci.HumanReadableMediaType(manifest.Layers[0].MediaType))
 }
