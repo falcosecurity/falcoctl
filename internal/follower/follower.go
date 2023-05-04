@@ -190,6 +190,13 @@ func (f *Follower) follow(ctx context.Context) {
 
 	dstDir := f.destinationDir(res)
 
+	// Check if directory exists and is writable.
+	err = utils.ExistsAndIsWritable(dstDir)
+	if err != nil {
+		f.Error.Printfln("cannot use directory %q as install destination: %v", dstDir, err)
+		return
+	}
+
 	// Install the artifacts if necessary.
 	for _, path := range filePaths {
 		baseName := filepath.Base(path)

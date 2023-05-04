@@ -102,11 +102,6 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 				}
 			}
 
-			// Check if directory exists and is writable.
-			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				return fmt.Errorf("%q: %w", FlagRulesFilesDir, err)
-			}
-
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(FlagPluginsFilesDir)
 			if f == nil {
@@ -117,11 +112,6 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					return fmt.Errorf("unable to overwrite %q flag: %w", FlagPluginsFilesDir, err)
 				}
-			}
-
-			// Check if directory exists and is writable.
-			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				return fmt.Errorf("%q: %w", FlagPluginsFilesDir, err)
 			}
 
 			// Override "allowed-types" flag with viper config if not set by user.
@@ -295,6 +285,12 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			destDir = o.pluginsDir
 		case oci.Rulesfile:
 			destDir = o.rulesfilesDir
+		}
+
+		// Check if directory exists and is writable.
+		err = utils.ExistsAndIsWritable(destDir)
+		if err != nil {
+			return fmt.Errorf("cannot use directory %q as install destination: %w", destDir, err)
 		}
 
 		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("INFO: Extracting and installing %q %q", result.Type, result.Filename))

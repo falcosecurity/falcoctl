@@ -156,10 +156,6 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagRulesFilesDir, err)
 				}
 			}
-			// Check if directory exists and is writable
-			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				return fmt.Errorf("%q: %w", install.FlagRulesFilesDir, err)
-			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(install.FlagPluginsFilesDir)
@@ -171,10 +167,6 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagPluginsFilesDir, err)
 				}
-			}
-			// Check if directory exists and is writable
-			if err := utils.ExistsAndIsWritable(f.Value.String()); err != nil {
-				return fmt.Errorf("%q: %w", install.FlagPluginsFilesDir, err)
 			}
 
 			// Override "tmp-dir" flag with viper config if not set by user.
