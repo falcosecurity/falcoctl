@@ -30,11 +30,11 @@ const (
 
 Client credentials will be saved in the ~/.config directory.
 
-Example 
+Example
 	falcoctl registry oauth \
 		--token-url="http://localhost:9096/token" \
 		--client-id=000000 \
-		--client-secret=999999  --scopes="my-scope" \ 
+		--client-secret=999999  --scopes="my-scope" \
 		hostname
 `
 )

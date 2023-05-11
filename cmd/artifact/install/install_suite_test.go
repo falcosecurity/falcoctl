@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd_test
+package install_test
 
 import (
 	"context"
@@ -34,24 +34,28 @@ import (
 	testutils "github.com/falcosecurity/falcoctl/pkg/test"
 )
 
+//nolint:unused // false positive
 const (
-	rulesfiletgz  = "../pkg/test/data/rules.tar.gz"
-	rulesfileyaml = "../pkg/test/data/rules.yaml"
-	plugintgz     = "../pkg/test/data/plugin.tar.gz"
+	rulesfiletgz  = "../../../pkg/test/data/rules.tar.gz"
+	rulesfileyaml = "../../../pkg/test/data/rules.yaml"
+	plugintgz     = "../../../pkg/test/data/plugin.tar.gz"
 )
 
+//nolint:unused // false positive
 var (
 	registry     string
 	ctx          = context.Background()
 	output       = gbytes.NewBuffer()
 	rootCmd      *cobra.Command
-	opt          *commonoptions.Common
+	opt          *commonoptions.CommonOptions
 	port         int
 	orasRegistry *remote.Registry
 	configFile   string
+	err          error
+	args         []string
 )
 
-func TestRoot(t *testing.T) {
+func TestInstall(t *testing.T) {
 	var err error
 	RegisterFailHandler(Fail)
 	port, err = testutils.FreePort()
@@ -81,6 +85,7 @@ var _ = BeforeSuite(func() {
 	// Create temporary directory used to save the configuration file.
 	configFile, err = testutils.CreateEmptyFile("falcoctl.yaml")
 	Expect(err).Should(Succeed())
+
 })
 
 var _ = AfterSuite(func() {
@@ -88,6 +93,7 @@ var _ = AfterSuite(func() {
 	Expect(os.RemoveAll(configDir)).Should(Succeed())
 })
 
+//nolint:unused // false positive
 func executeRoot(args []string) error {
 	rootCmd.SetArgs(args)
 	rootCmd.SetOut(output)

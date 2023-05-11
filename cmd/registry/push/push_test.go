@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd_test
+package push_test
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ import (
 	testutils "github.com/falcosecurity/falcoctl/pkg/test"
 )
 
-//nolint:lll // no need to check for line length.
+//nolint:lll,unused // no need to check for line length.
 var registryPushUsage = `Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
@@ -54,7 +54,7 @@ Global Flags:
 
 `
 
-//nolint:lll // no need to check for line length.
+//nolint:lll,unused // no need to check for line length.
 var registryPushHelp = `Push Falco "rulesfile" or "plugin" OCI artifacts to remote registry
 
 Example - Push artifact "myplugin.tar.gz" of type "plugin" for the platform where falcoctl is running (default):
@@ -108,6 +108,7 @@ Global Flags:
   -v, --verbose           Enable verbose logs (default false)
 `
 
+//nolint:unused // false positive
 var pushAssertFailedBehavior = func(usage, specificError string) {
 	It("check that fails and the usage is not printed", func() {
 		Expect(err).To(HaveOccurred())
@@ -116,11 +117,13 @@ var pushAssertFailedBehavior = func(usage, specificError string) {
 	})
 }
 
+//nolint:unused // false positive
 var randomRulesRepoName = func(registry, repo string) (string, string) {
 	rName := fmt.Sprintf("%s-%d", repo, rand.Int())
 	return rName, fmt.Sprintf("%s/%s", registry, rName)
 }
 
+//nolint:unused // false positive
 var registryPushTests = Describe("push", func() {
 	var (
 		registryCmd = "registry"
