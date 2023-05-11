@@ -40,17 +40,17 @@ When providing just the name of the artifact, the command will search for the ar
 the configured index files, and if found, it will use the registry and repository specified 
 in the indexes.
 
-Example - Pull artifact "myplugin" of type "plugin" for the platform where falcoctl is running (default) in the current working directory (default):
-	falcoctl registry pull localhost:5000/myplugin:latest --type plugin
+Example - Pull artifact "myplugin" for the platform where falcoctl is running (default) in the current working directory (default):
+	falcoctl registry pull localhost:5000/myplugin:latest
 
-Example - Pull artifact "myplugin" of type "plugin" for platform "linux/aarch64" in the current working directory (default):
-	falcoctl registry pull localhost:5000/myplugin:latest --type plugin --platform linux/aarch64
+Example - Pull artifact "myplugin" for platform "linux/aarch64" in the current working directory (default):
+	falcoctl registry pull localhost:5000/myplugin:latest --platform linux/aarch64
 
-Example - Pull artifact "myplugin" of type "plugin" for platform "linux/aarch64" in "myDir" directory:
-	falcoctl registry pull localhost:5000/myplugin:latest --type plugin --platform linux/aarch64 --dest-dir=./myDir
+Example - Pull artifact "myplugin" for platform "linux/aarch64" in "myDir" directory:
+	falcoctl registry pull localhost:5000/myplugin:latest --platform linux/aarch64 --dest-dir=./myDir
 
-Example - Pull artifact "myrulesfile" of type "rulesfile":
-	falcoctl registry pull localhost:5000/myrulesfile:latest --type rulesfile
+Example - Pull artifact "myrulesfile":
+	falcoctl registry pull localhost:5000/myrulesfile:latest
 `
 )
 
