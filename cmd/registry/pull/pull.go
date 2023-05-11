@@ -30,13 +30,13 @@ import (
 const (
 	longPull = `Pull Falco "rulesfile" or "plugin" OCI artifacts from remote registry.
 
-Artifact references are passed as arguments. 
+Artifact references are passed as arguments.
 
-A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
+A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"),
 optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).
 
-When providing just the name of the artifact, the command will search for the artifacts in 
-the configured index files, and if found, it will use the registry and repository specified 
+When providing just the name of the artifact, the command will search for the artifacts in
+the configured index files, and if found, it will use the registry and repository specified
 in the indexes.
 
 Example - Pull artifact "myplugin" for the platform where falcoctl is running (default) in the current working directory (default):
