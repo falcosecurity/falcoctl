@@ -16,6 +16,7 @@ package list
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -23,6 +24,9 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
+
+// CommandName name of the command. It has to be the first word in the use line.
+const CommandName = "list"
 
 type artifactListOptions struct {
 	*options.CommonOptions
@@ -37,7 +41,7 @@ func NewArtifactListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "list [flags]",
+		Use:                   fmt.Sprintf("%s [flags]", CommandName),
 		DisableFlagsInUseLine: true,
 		Short:                 "List all artifacts",
 		Long:                  "List all artifacts",
