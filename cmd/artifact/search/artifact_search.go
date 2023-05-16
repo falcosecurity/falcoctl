@@ -27,6 +27,8 @@ import (
 
 const (
 	defaultMinScore = 0.65
+	// CommandName name of the command. It has to be the first word in the use line.
+	CommandName = "search"
 )
 
 type artifactSearchOptions struct {
@@ -50,7 +52,7 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "search [keyword1 [keyword2 ...]] [flags]",
+		Use:                   fmt.Sprintf("%s [keyword1 [keyword2 ...]] [flags]", CommandName),
 		DisableFlagsInUseLine: true,
 		Short:                 "Search an artifact by keywords",
 		Long:                  "Search an artifact by keywords",

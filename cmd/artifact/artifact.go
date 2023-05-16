@@ -64,20 +64,27 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 			// Save the index cache for later use by the sub commands.
 			opt.Initialize(commonoptions.WithIndexCache(indexCache))
 
-			// Perform authentication using basic auth.
-			if basicAuths, err = config.BasicAuths(); err != nil {
-				return err
-			}
-			if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
-				return err
+			// Authenticate for commands that requires it.
+			if cmd.CalledAs() != list.CommandName && cmd.CalledAs() != search.CommandName {
+				// Perform authentication using basic auth.
+				if basicAuths, err = config.BasicAuths(); err != nil {
+					return err
+				}
+				if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
+					return err
+				}
+
+				// Perform authentications using oauth auth.
+				if oauthAuths, err = config.OauthAuths(); err != nil {
+					return err
+				}
+
+				if err = login.PerformOauthAuths(ctx, opt, oauthAuths); err != nil {
+					return err
+				}
 			}
 
-			// Perform authentications using oauth auth.
-			if oauthAuths, err = config.OauthAuths(); err != nil {
-				return err
-			}
-
-			return login.PerformOauthAuths(ctx, opt, oauthAuths)
+			return nil
 		},
 	}
 
