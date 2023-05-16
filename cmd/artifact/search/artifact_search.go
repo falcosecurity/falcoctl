@@ -58,6 +58,7 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		Long:                  "Search an artifact by keywords",
 		Args:                  cobra.MinimumNArgs(1),
 		SilenceErrors:         true,
+		SilenceUsage:          true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return o.Validate()
 		},
