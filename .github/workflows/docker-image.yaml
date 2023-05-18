@@ -89,6 +89,5 @@ jobs:
         env:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           TAGS: ${{ steps.meta_falcoctl.outputs.tags }}
-          COSIGN_EXPERIMENTAL: "true"
           COSIGN_YES: "true"
         run: echo "${TAGS}" | xargs -I {} cosign sign {}@${DIGEST}
