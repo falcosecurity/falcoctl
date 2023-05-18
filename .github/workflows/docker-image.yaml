@@ -12,6 +12,10 @@ on:
       build_date:
         required: true
         type: string
+      sign:
+        required: false
+        default: false
+        type: boolean
     outputs:
       digest:
         description: The digest of the pushed image.
@@ -42,11 +46,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_SECRET }}
       
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@03d0fecf172873164a163bbc64bed0f3bf114ed7 # v3.4.0
-        with:
-          cosign-release: 'v2.0.2'
-
       - name: Docker Meta
         id: meta_falcoctl
         uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # v4.3.0
@@ -73,9 +72,18 @@ jobs:
             RELEASE=${{ inputs.release }}
             COMMIT=${{ inputs.commit }}
             BUILD_DATE=${{ inputs.build_date }}
-      
+
+      - name: Install Cosign
+        if: inputs.sign
+        uses: sigstore/cosign-installer@03d0fecf172873164a163bbc64bed0f3bf114ed7 # v3.4.0
+        with:
+          cosign-release: 'v2.0.2'
+
       - name: Sign the images with GitHub OIDC Token
+        if: inputs.sign
         env:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           TAGS: ${{ steps.meta_falcoctl.outputs.tags }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign -y {}@${DIGEST}
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_YES: "true"
+        run: echo "${TAGS}" | xargs -I {} cosign sign {}@${DIGEST}

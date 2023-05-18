@@ -118,6 +118,7 @@ jobs:
       release: ${{ needs.docker-configure.outputs.release }}
       commit: ${{ needs.docker-configure.outputs.commit }}
       build_date: ${{ needs.docker-configure.outputs.build_date }}
+      sign: true
 
   provenance-for-images:
     needs: [docker-configure, docker-image]
