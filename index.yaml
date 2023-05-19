@@ -23,6 +23,7 @@
     - user-activity
     - api-usage
     - aws
+    - cloudtrail
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
@@ -53,7 +54,8 @@
   repository: falcosecurity/plugins/plugin/dummy
   description: Reference plugin used to document interface
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/dummy
-  keywords: []
+  keywords:
+    - dummy
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
@@ -66,7 +68,8 @@
   repository: falcosecurity/plugins/plugin/dummy_c
   description: Like dummy, but written in C++
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/dummy_c
-  keywords: []
+  keywords:
+    - dummy_c
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
@@ -98,6 +101,7 @@
     - log-events
     - webhook
     - github-activity
+    - github
     - github
   license: Apache-2.0
   maintainers:
@@ -134,6 +138,7 @@
     - json-events
     - json-payload
     - extractor
+    - json
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
@@ -151,6 +156,7 @@
     - audit-log
     - audit-events
     - kubernetes
+    - k8saudit
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
@@ -163,7 +169,8 @@
   repository: falcosecurity/plugins/plugin/k8saudit-eks
   description: Read Kubernetes Audit Events from AWS EKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit-eks
-  keywords: []
+  keywords:
+    - k8saudit-eks
   license: Apache-2.0
   maintainers: []
   sources:
@@ -195,6 +202,7 @@
   keywords:
     - audit
     - log-events
+    - okta
     - okta
   license: Apache-2.0
   maintainers:
