@@ -21,11 +21,6 @@ on:
         description: The digest of the pushed image.
         value: ${{ jobs.docker-image.outputs.digest }}
 
-permissions:
-  contents: read
-  packages: write
-  id-token: write # needed for signing the images with GitHub OIDC Token
-
 jobs:
   docker-image:
     runs-on: ubuntu-22.04
