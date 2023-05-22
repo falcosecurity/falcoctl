@@ -85,7 +85,7 @@ jobs:
           cosign-release: 'v2.0.2'
 
       - name: Sign the images with GitHub OIDC Token
-        if: inputs.sign
+        if: ${{ inputs.sign }}
         env:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           TAGS: ${{ steps.meta_falcoctl.outputs.tags }}
