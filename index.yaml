@@ -102,7 +102,6 @@
     - webhook
     - github-activity
     - github
-    - github
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
@@ -170,6 +169,12 @@
   description: Read Kubernetes Audit Events from AWS EKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit-eks
   keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+    - eks
+    - aws
     - k8saudit-eks
   license: Apache-2.0
   maintainers: []
@@ -202,7 +207,6 @@
   keywords:
     - audit
     - log-events
-    - okta
     - okta
   license: Apache-2.0
   maintainers:
