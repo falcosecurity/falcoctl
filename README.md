@@ -361,7 +361,8 @@ $ falcoctl registry oauth
 
 # Container image signature verification
 
-Official container images for Falcoctl are signed with [cosign](https://github.com/sigstore/cosign) v2. To verify the signature run:
+Official container images for Falcoctl, starting from version 0.5.0, are signed with [cosign](https://github.com/sigstore/cosign) v2. To verify the signature run:
+
 ```bash
 $ FALCOCTL_VERSION=x.y.z # e.g. 0.5.0
 $ cosign verify docker.io/falcosecurity/falcoctl:$FALCOCTL_VERSION --certificate-oidc-issuer=https://token.actions.githubusercontent.com --certificate-identity-regexp=https://github.com/falcosecurity/falcoctl/ --certificate-github-workflow-ref=refs/tags/v$FALCOCTL_VERSION
