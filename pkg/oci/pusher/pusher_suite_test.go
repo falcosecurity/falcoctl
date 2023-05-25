@@ -35,7 +35,7 @@ var (
 	testPluginTarball   = "../../test/data/plugin.tar.gz"
 	testPluginPlatform1 = "linux/amd64"
 	testPluginPlatform2 = "windows/amd64"
-	testPluginPlatform3 = "linux/aarch64"
+	testPluginPlatform3 = "linux/arm64"
 	ctx                 = context.Background()
 )
 

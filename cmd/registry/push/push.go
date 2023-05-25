@@ -38,13 +38,13 @@ const (
 Example - Push artifact "myplugin.tar.gz" of type "plugin" for the platform where falcoctl is running (default):
 	falcoctl registry push --type plugin --version "1.2.3" localhost:5000/myplugin:latest myplugin.tar.gz
 
-Example - Push artifact "myplugin.tar.gz" of type "plugin" for platform "linux/aarch64":
-	falcoctl registry push --type plugin --version "1.2.3" localhost:5000/myplugin:latest myplugin.tar.gz --platform linux/aarch64
+Example - Push artifact "myplugin.tar.gz" of type "plugin" for platform "linux/arm64":
+	falcoctl registry push --type plugin --version "1.2.3" localhost:5000/myplugin:latest myplugin.tar.gz --platform linux/arm64
 
 Example - Push artifact "myplugin.tar.gz" of type "plugin" for multiple platforms:
 	falcoctl registry push --type plugin --version "1.2.3" localhost:5000/myplugin:latest \
 		myplugin-linux-x86_64.tar.gz --platform linux/x86_64 \
-		myplugin-linux-arm64.tar.gz --platform linux/aarch64
+		myplugin-linux-arm64.tar.gz --platform linux/arm64
 
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile":
 	falcoctl registry push --type rulesfile --version "0.1.2" localhost:5000/myrulesfile:latest myrulesfile.tar.gz
