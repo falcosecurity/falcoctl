@@ -23,7 +23,6 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
-	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 	"github.com/falcosecurity/falcoctl/pkg/options"
@@ -31,16 +30,6 @@ import (
 
 type loginOptions struct {
 	*options.CommonOptions
-	hostname string
-}
-
-func (o *loginOptions) Validate(args []string) error {
-	if len(args) != 0 {
-		o.hostname = args[0]
-	} else {
-		o.hostname = oci.DefaultRegistry
-	}
-	return nil
 }
 
 // NewBasicCmd returns the basic command.
@@ -54,12 +43,9 @@ func NewBasicCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 		DisableFlagsInUseLine: true,
 		Short:                 "Login to an OCI registry",
 		Long:                  "Login to an OCI registry to push and pull artifacts",
-		Args:                  cobra.MaximumNArgs(1),
+		Args:                  cobra.ExactArgs(1),
 		SilenceErrors:         true,
 		SilenceUsage:          true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return o.Validate(args)
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunBasic(ctx, args)
 		},
@@ -70,13 +56,7 @@ func NewBasicCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 
 // RunBasic executes the business logic for the basic command.
 func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
-	var reg string
-
-	if n := len(args); n == 1 {
-		reg = args[0]
-	} else {
-		reg = oci.DefaultRegistry
-	}
+	reg := args[0]
 
 	user, token, err := utils.GetCredentials(o.Printer)
 	if err != nil {
