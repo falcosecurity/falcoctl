@@ -31,8 +31,6 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/follower"
-	"github.com/falcosecurity/falcoctl/internal/utils"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -248,21 +246,6 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			return fmt.Errorf("no artifacts to follow, please configure artifacts or pass them as arguments to this command")
 		}
 		args = configuredFollower.Artifacts
-	}
-
-	o.Printer.Info.Printfln("Reading all configured index files from %q", config.IndexesFile)
-	indexConfig, err := index.NewConfig(config.IndexesFile)
-	if err != nil {
-		return err
-	}
-
-	mergedIndexes, err := utils.Indexes(indexConfig, config.IndexesDir)
-	if err != nil {
-		return err
-	}
-
-	if len(mergedIndexes.Entries) < 1 {
-		o.Printer.Warning.Println("No configured index. Consider to configure one using the 'index add' command.")
 	}
 
 	var sched cron.Schedule
