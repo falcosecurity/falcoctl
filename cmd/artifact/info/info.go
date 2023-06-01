@@ -22,8 +22,8 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2/registry"
 
-	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci/repository"
+	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -60,6 +60,13 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 
 func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string) error {
 	var data [][]string
+
+	client, err := ociutils.Client()
+	if err != nil {
+		return err
+	}
+
+	// resolve references
 	for _, name := range args {
 		var ref string
 		parsedRef, err := registry.ParseReference(name)
@@ -73,16 +80,6 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		} else {
 			parsedRef.Reference = ""
 			ref = parsedRef.String()
-		}
-
-		reg, err := utils.GetRegistryFromRef(ref)
-		if err != nil {
-			return err
-		}
-
-		client, err := utils.ClientForRegistry(ctx, reg, o.PlainHTTP, o.Printer)
-		if err != nil {
-			return err
 		}
 
 		repo, err := repository.NewRepository(ref,

@@ -12,6 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.10.0
 	github.com/onsi/gomega v1.27.8
 	github.com/opencontainers/image-spec v1.1.0-rc3
+	github.com/oras-project/oras-credentials-go v0.1.1
 	github.com/pterm/pterm v0.12.62
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.7.0

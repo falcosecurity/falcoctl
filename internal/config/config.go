@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/cli/cli/config"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
@@ -44,6 +45,8 @@ var (
 	ClientCredentialsFile string
 	// DefaultIndex is the default index for the falcosecurity organization.
 	DefaultIndex Index
+	// DefaultRegistryCredentialConfPath is the default path for the credential store configuration file.
+	DefaultRegistryCredentialConfPath = filepath.Join(config.Dir(), "config.json")
 
 	// Useful regexps for parsing.
 
@@ -68,6 +71,9 @@ const (
 
 	// Viper configuration keys.
 
+	// RegistryCredentialConfigKey is the Viper key for the credentials store path configuration.
+	//#nosec G101 -- false positive
+	RegistryCredentialConfigKey = "registry.creds.config"
 	// RegistryAuthOauthKey is the Viper key for OAuth authentication configuration.
 	RegistryAuthOauthKey = "registry.auth.oauth"
 	// RegistryAuthBasicKey is the Viper key for basic authentication configuration.
@@ -167,6 +173,8 @@ func Load(path string) error {
 
 	// Set default index
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
+	// Set default registry auth config path
+	viper.SetDefault(RegistryCredentialConfigKey, DefaultRegistryCredentialConfPath)
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
@@ -255,6 +263,11 @@ func indexListHookFunc() mapstructure.DecodeHookFuncType {
 			return nil, nil
 		}
 	}
+}
+
+// RegistryCredentialConfPath retrieves the path to the credential store configuration.
+func RegistryCredentialConfPath() string {
+	return viper.GetString(RegistryCredentialConfigKey)
 }
 
 // BasicAuths retrieves the basicAuths section of the config file.

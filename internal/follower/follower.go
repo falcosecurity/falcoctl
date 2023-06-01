@@ -35,6 +35,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
+	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -84,8 +85,8 @@ var (
 
 // New creates a Follower configured with the passed parameters and ready to be used.
 // It does not check the correctness of the parameters, make sure everything is initialized.
-func New(ctx context.Context, ref string, printer *output.Printer, config *Config) (*Follower, error) {
-	reg, err := utils.GetRegistryFromRef(ref)
+func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
+	_, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract registry from ref %q: %w", ref, err)
 	}
@@ -96,18 +97,18 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 	}
 	tag := parsedRef.Reference
 
-	client, err := utils.ClientForRegistry(ctx, reg, config.PlainHTTP, printer)
+	client, err := ociutils.Client()
 	if err != nil {
 		return nil, err
 	}
 
-	puller := ocipuller.NewPuller(client, config.PlainHTTP, nil)
+	puller := ocipuller.NewPuller(client, conf.PlainHTTP, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create temp dir where to put pulled artifacts.
-	tmpDir, err := os.MkdirTemp(config.TmpDir, "falcoctl-")
+	tmpDir, err := os.MkdirTemp(conf.TmpDir, "falcoctl-")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
@@ -119,9 +120,9 @@ func New(ctx context.Context, ref string, printer *output.Printer, config *Confi
 		tag:           tag,
 		tmpDir:        tmpDir,
 		Puller:        puller,
-		Config:        config,
+		Config:        conf,
 		Printer:       customPrinter,
-		FalcoVersions: config.FalcoVersions,
+		FalcoVersions: conf.FalcoVersions,
 	}, nil
 }
 
