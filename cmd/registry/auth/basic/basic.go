@@ -18,13 +18,13 @@ import (
 	"context"
 	"fmt"
 
+	credentials "github.com/oras-project/oras-credentials-go"
 	"github.com/spf13/cobra"
-	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/login/basic"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
-	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -63,59 +63,22 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 		return err
 	}
 
-	cred := &auth.Credential{
-		Username: user,
-		Password: token,
-	}
+	// create empty client
+	client := authn.NewClient()
 
-	if err = DoLogin(ctx, reg, cred); err != nil {
-		return err
-	}
-
-	currentAuths, err := config.BasicAuths()
-	if err != nil {
-		return fmt.Errorf("unable to get basicAuths from viper: %w", err)
-	}
-
-	for _, a := range currentAuths {
-		if a.Registry == reg {
-			o.Printer.Verbosef("credentials for registry %q already exists in the config file %q", reg, config.ConfigPath)
-			return nil
-		}
-	}
-
-	currentAuths = append(currentAuths, config.BasicAuth{
-		Registry: reg,
-		User:     user,
-		Password: token,
+	// create credential store
+	credentialStore, err := credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
+		AllowPlaintextPut: true,
 	})
-
-	if err := config.UpdateConfigFile(config.RegistryAuthBasicKey, currentAuths, o.ConfigFile); err != nil {
-		return fmt.Errorf("unable to update basic auths credential list in the config file %q: %w", config.ConfigPath, err)
+	if err != nil {
+		return fmt.Errorf("unable to create new store: %w", err)
 	}
-	o.Printer.Verbosef("credentials added to config file %q", config.ConfigPath)
 
+	if err := basic.Login(ctx, client, credentialStore, reg, user, token); err != nil {
+		return err
+	}
+	o.Printer.Verbosef("credentials added to credential store")
 	o.Printer.Success.Println("Login succeeded")
-	return nil
-}
-
-// DoLogin checks if passed credentials are correct and stores them.
-func DoLogin(ctx context.Context, reg string, cred *auth.Credential) error {
-	client := authn.NewClient(authn.WithCredentials(cred))
-	r, err := registry.NewRegistry(reg, registry.WithClient(client))
-	if err != nil {
-		return err
-	}
-
-	if err := r.CheckConnection(ctx); err != nil {
-		return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
-	}
-
-	// Store validated credentials
-	err = authn.Login(reg, cred.Username, cred.Password)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

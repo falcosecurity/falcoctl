@@ -27,6 +27,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
+	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -185,19 +186,15 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	}
 	defer os.RemoveAll(tmpDir)
 
+	// Create registry puller with auto login enabled
+	puller, err := ociutils.Puller(o.PlainHTTP, o.Printer)
+	if err != nil {
+		return err
+	}
+
 	// Specify how to pull config layer for each artifact requested by user.
 	resolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 		ref, err := o.IndexCache.ResolveReference(ref)
-		if err != nil {
-			return nil, err
-		}
-
-		reg, err := utils.GetRegistryFromRef(ref)
-		if err != nil {
-			return nil, err
-		}
-
-		puller, err := utils.PullerForRegistry(ctx, reg, o.PlainHTTP, o.Printer)
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +231,6 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 	o.Printer.Info.Printfln("Installing the following artifacts: %v", refs)
 
-	// Install artifacts
 	for _, ref := range refs {
 		ref, err = o.IndexCache.ResolveReference(ref)
 		if err != nil {
@@ -242,16 +238,6 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		}
 
 		o.Printer.Info.Printfln("Preparing to pull %q", ref)
-
-		reg, err := utils.GetRegistryFromRef(ref)
-		if err != nil {
-			return err
-		}
-
-		puller, err := utils.PullerForRegistry(ctx, reg, o.PlainHTTP, o.Printer)
-		if err != nil {
-			return err
-		}
 
 		if err := puller.CheckAllowedType(ctx, ref, o.allowedTypes.Types); err != nil {
 			return err

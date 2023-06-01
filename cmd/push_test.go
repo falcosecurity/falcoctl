@@ -200,8 +200,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, "noregistry/testrules", "--config", configFile, rulesfiletgz,
 					"--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: an error occurred while creating the pusher for registry "+
-				"noregistry: unable to connect to remote "+
+			pushAssertFailedBehavior(registryPushUsage, "ERRO: unable to connect to remote "+
 				"registry \"noregistry\": Get \"http://noregistry/v2/\": dial tcp: lookup noregistry")
 		})
 

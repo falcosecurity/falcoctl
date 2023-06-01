@@ -16,13 +16,12 @@ package oauth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/utils"
+	"github.com/falcosecurity/falcoctl/internal/login/oauth"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -61,7 +60,7 @@ func NewOauthCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 		SilenceErrors:         true,
 		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.RunOauth(ctx, args)
+			return o.RunOAuth(ctx, args)
 		},
 	}
 
@@ -85,46 +84,12 @@ func NewOauthCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command
 	return cmd
 }
 
-// RunOauth implements the registry oauth command.
-func (o *RegistryOauthOptions) RunOauth(ctx context.Context, args []string) error {
+// RunOAuth executes the business logic for the oauth command.
+func (o *RegistryOauthOptions) RunOAuth(ctx context.Context, args []string) error {
 	reg := args[0]
-
-	// Check that we can retrieve token using the passed credentials.
-	_, err := o.Conf.Token(ctx)
-	if err != nil {
-		return fmt.Errorf("wrong client credentials, unable to retrieve token: %w", err)
+	if err := oauth.Login(ctx, reg, &o.Conf); err != nil {
+		return err
 	}
-
-	// Save client credentials to file.
-	if err = utils.WriteClientCredentials(reg, &o.Conf); err != nil {
-		return fmt.Errorf("unable to save token: %w", err)
-	}
-
-	currentAuths, err := config.OauthAuths()
-	if err != nil {
-		return fmt.Errorf("unable to get oauthAuths from viper: %w", err)
-	}
-
-	for _, a := range currentAuths {
-		if a.Registry == reg {
-			o.Printer.Verbosef("credentials for registry %q already exists in the config file %q", reg, config.ConfigPath)
-			return nil
-		}
-	}
-
-	currentAuths = append(currentAuths, config.OauthAuth{
-		Registry:     reg,
-		ClientSecret: o.Conf.ClientSecret,
-		ClientID:     o.Conf.ClientID,
-		TokenURL:     o.Conf.TokenURL,
-	})
-
-	if err := config.UpdateConfigFile(config.RegistryAuthOauthKey, currentAuths, o.ConfigFile); err != nil {
-		return fmt.Errorf("unable to update oauth auths credential list in the config file %q: %w", config.ConfigPath, err)
-	}
-	o.Printer.Verbosef("credentials added to config file %q", config.ConfigPath)
-
 	o.Printer.Success.Printfln("client credentials correctly saved in %q", config.ClientCredentialsFile)
-
 	return nil
 }

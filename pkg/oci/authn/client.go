@@ -20,8 +20,7 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/oauth2/clientcredentials"
-	"oras.land/oras-go/v2/registry/remote"
+	credentials "github.com/oras-project/oras-credentials-go"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
@@ -31,100 +30,109 @@ const (
 
 // Options used for the HTTP client that can authenticate with auth.Credentials or via OAuth2.0 Options Credentials flow.
 type Options struct {
-	Ctx               context.Context
-	Credentials       *auth.Credential
-	Oauth             bool
-	ClientCredentials *clientcredentials.Config
+	Ctx                   context.Context
+	CredentialsFuncsCache map[string]func(context.Context, string) (auth.Credential, error)
+	CredentialsFuncs      []func(context.Context, string) (auth.Credential, error)
+	AutoLoginHandler      *AutoLoginHandler
 }
 
 // NewClient creates a new authenticated client to interact with a remote registry.
-func NewClient(options ...func(*Options)) remote.Client {
-	opt := &Options{}
+func NewClient(options ...func(*Options)) *auth.Client {
+	opt := &Options{
+		CredentialsFuncsCache: make(map[string]func(context.Context, string) (auth.Credential, error)),
+	}
 
 	for _, o := range options {
 		o(opt)
 	}
 
-	if opt.Oauth && opt.ClientCredentials != nil {
-		return opt.ClientCredentials.Client(opt.Ctx)
-	} else {
-		authClient := auth.Client{
-			Client: &http.Client{
-				Transport: &http.Transport{
-					Proxy: http.ProxyFromEnvironment,
-					DialContext: (&net.Dialer{
-						Timeout:   30 * time.Second,
-						KeepAlive: 30 * time.Second,
-					}).DialContext,
-					ForceAttemptHTTP2:     true,
-					MaxIdleConns:          100,
-					IdleConnTimeout:       90 * time.Second,
-					TLSHandshakeTimeout:   10 * time.Second,
-					ExpectContinueTimeout: 1 * time.Second,
-					// TODO(loresuso, alacuku): tls config.
-				},
+	authClient := auth.Client{
+		Client: &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				ForceAttemptHTTP2:     true,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				// TODO(loresuso, alacuku): tls config.
 			},
-			Cache: auth.NewCache(),
-			Credential: func(ctx context.Context, registry string) (auth.Credential, error) {
-				return *opt.Credentials, nil
-			},
-		}
+		},
+		Cache: auth.NewCache(),
+		Credential: func(ctx context.Context, reg string) (auth.Credential, error) {
+			// try cred func from cache first
+			credFunc, exists := opt.CredentialsFuncsCache[reg]
+			if exists {
+				return credFunc(ctx, reg)
+			}
 
-		authClient.SetUserAgent(falcoctlUserAgent)
+			// if auto login is on check if we tried logging in to registry
+			if opt.AutoLoginHandler != nil {
+				if err := opt.AutoLoginHandler.Login(ctx, reg); err != nil {
+					return auth.EmptyCredential, err
+				}
+			}
 
-		return &authClient
+			// if we did not cache the correct cred function yet search available ones
+			for _, credFunc := range opt.CredentialsFuncs {
+				cred, err := credFunc(ctx, reg)
+				if err != nil {
+					return auth.EmptyCredential, err
+				}
+
+				if cred != auth.EmptyCredential {
+					// remember cred function for this reg for next time
+					opt.CredentialsFuncsCache[reg] = credFunc
+					return cred, nil
+				}
+			}
+			// remember empty cred func for registries we dont have creds for
+			opt.CredentialsFuncsCache[reg] = EmptyCredentialFunc
+			return auth.EmptyCredential, nil
+		},
+	}
+
+	authClient.SetUserAgent(falcoctlUserAgent)
+
+	return &authClient
+}
+
+// WithAutoLogin enables the clients auto login feature.
+func WithAutoLogin(handler *AutoLoginHandler) func(c *Options) {
+	return func(c *Options) {
+		c.AutoLoginHandler = handler
 	}
 }
 
-// WithCredentials sets the credentials for the client.
+// EmptyCredentialFunc provides empty auth credentials.
+func EmptyCredentialFunc(context.Context, string) (auth.Credential, error) {
+	return auth.EmptyCredential, nil
+}
+
+// WithOAuthCredentials adds the oauth credential store as credential source to the client.
+func WithOAuthCredentials() func(c *Options) {
+	return func(c *Options) {
+		oauthStore := NewOauthClientCredentialsStore()
+		c.CredentialsFuncs = append(c.CredentialsFuncs, oauthStore.Credential)
+	}
+}
+
+// WithCredentials adds a static credential function to the client.
 func WithCredentials(cred *auth.Credential) func(c *Options) {
 	return func(c *Options) {
-		c.Credentials = cred
+		c.CredentialsFuncs = append(c.CredentialsFuncs, func(context.Context, string) (auth.Credential, error) {
+			return *cred, nil
+		})
 	}
 }
 
-// WithOauth is used to enable OAuth2.0 Options Credentials flow.
-func WithOauth(ctx context.Context, oauth bool) func(c *Options) {
+// WithStore adds the basic auth credential store as credential source to the client.
+func WithStore(store credentials.Store) func(c *Options) {
 	return func(c *Options) {
-		c.Oauth = oauth
-		c.Ctx = ctx
+		c.CredentialsFuncs = append(c.CredentialsFuncs, credentials.Credential(store))
 	}
-}
-
-// WithClientCredentials sets the client ID, client secret, token URL and scopes for OAuth2.0 client.
-func WithClientCredentials(cred *clientcredentials.Config) func(c *Options) {
-	return func(c *Options) {
-		c.ClientCredentials = cred
-	}
-}
-
-// Login to remote registry.
-// For now, only support login with token.
-func Login(hostname, user, token string) error {
-	store, err := NewStore([]string{}...)
-	if err != nil {
-		return err
-	}
-
-	cred := auth.Credential{
-		Username: user,
-		Password: token,
-	}
-
-	return store.Store(hostname, cred)
-}
-
-// Logout from remote registry.
-func Logout(hostname string) error {
-	store, err := NewStore([]string{}...)
-	if err != nil {
-		return err
-	}
-
-	err = store.Erase(hostname)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

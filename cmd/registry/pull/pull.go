@@ -21,9 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/internal/utils"
+	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -82,28 +81,17 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		SilenceErrors:         true,
 		SilenceUsage:          true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var basicAuths []config.BasicAuth
-			var oauthAuths []config.OauthAuth
-			var err error
-
 			if err := o.Validate(); err != nil {
 				return err
 			}
 
-			// Perform authentications using basic auth.
-			if basicAuths, err = config.BasicAuths(); err != nil {
-				return err
-			}
-			if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
-				return err
-			}
+			ref := args[0]
 
-			// Perform authentications using oauth auth.
-			if oauthAuths, err = config.OauthAuths(); err != nil {
+			_, err := utils.GetRegistryFromRef(ref)
+			if err != nil {
 				return err
 			}
-
-			return login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths)
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunPull(ctx, args)
@@ -119,17 +107,23 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 // RunPull executes the business logic for the pull command.
 func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 	ref := args[0]
-	o.Printer.Info.Printfln("Preparing to pull artifact %q", args[0])
 
 	registry, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
 		return err
 	}
 
-	puller, err := utils.PullerForRegistry(ctx, registry, o.PlainHTTP, o.Printer)
+	puller, err := ociutils.Puller(o.PlainHTTP, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the puller for registry %s: %w", registry, err)
 	}
+
+	err = ociutils.CheckConnectionForRegistry(ctx, puller.Client, o.PlainHTTP, registry)
+	if err != nil {
+		return err
+	}
+
+	o.Printer.Info.Printfln("Preparing to pull artifact %q", args[0])
 
 	if o.destDir == "" {
 		o.Printer.Info.Printfln("Pulling artifact in the current directory")

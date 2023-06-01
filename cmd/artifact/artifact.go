@@ -25,7 +25,6 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/artifact/list"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/search"
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/pkg/index/cache"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -42,8 +41,6 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			var indexes []config.Index
 			var indexCache *cache.Cache
-			var basicAuths []config.BasicAuth
-			var oauthAuths []config.OauthAuth
 			var err error
 
 			opt.Initialize()
@@ -63,26 +60,6 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobr
 			}
 			// Save the index cache for later use by the sub commands.
 			opt.Initialize(commonoptions.WithIndexCache(indexCache))
-
-			// Authenticate for commands that requires it.
-			if cmd.CalledAs() != list.CommandName && cmd.CalledAs() != search.CommandName {
-				// Perform authentication using basic auth.
-				if basicAuths, err = config.BasicAuths(); err != nil {
-					return err
-				}
-				if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
-					return err
-				}
-
-				// Perform authentications using oauth auth.
-				if oauthAuths, err = config.OauthAuths(); err != nil {
-					return err
-				}
-
-				if err = login.PerformOauthAuths(ctx, opt, oauthAuths); err != nil {
-					return err
-				}
-			}
 
 			return nil
 		},

@@ -23,11 +23,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/login"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
+	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -94,28 +93,18 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		SilenceErrors:         true,
 		SilenceUsage:          true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var basicAuths []config.BasicAuth
-			var oauthAuths []config.OauthAuth
-			var err error
-
 			if err := o.validate(); err != nil {
 				return err
 			}
 
-			// Perform authentications using basic auth.
-			if basicAuths, err = config.BasicAuths(); err != nil {
-				return err
-			}
-			if err = login.PerformBasicAuthsLogin(ctx, basicAuths); err != nil {
+			ref := args[0]
+
+			_, err := utils.GetRegistryFromRef(ref)
+			if err != nil {
 				return err
 			}
 
-			// Perform authentications using oauth auth.
-			if oauthAuths, err = config.OauthAuths(); err != nil {
-				return err
-			}
-
-			return login.PerformOauthAuths(ctx, o.CommonOptions, oauthAuths)
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.runPush(ctx, args)
@@ -135,17 +124,22 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	// We save the temporary dir where they live here.
 	var toBeDeleted string
 
-	o.Printer.Info.Printfln("Preparing to push artifact %q of type %q", args[0], o.ArtifactType)
-
 	registry, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
 		return err
 	}
 
-	pusher, err := utils.PusherForRegistry(ctx, o.PlainHTTP, registry, o.Printer)
+	pusher, err := ociutils.Pusher(o.PlainHTTP, o.Printer)
 	if err != nil {
 		return fmt.Errorf("an error occurred while creating the pusher for registry %s: %w", registry, err)
 	}
+
+	err = ociutils.CheckConnectionForRegistry(ctx, pusher.Client, o.PlainHTTP, registry)
+	if err != nil {
+		return err
+	}
+
+	o.Printer.Info.Printfln("Preparing to push artifact %q of type %q", args[0], o.ArtifactType)
 
 	// Make sure to remove temporary working dir.
 	defer func() {

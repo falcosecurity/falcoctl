@@ -16,16 +16,11 @@ package utils
 
 import (
 	"bufio"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"os"
 	"strings"
 
-	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/term"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -49,70 +44,4 @@ func GetCredentials(p *output.Printer) (username, password string, err error) {
 
 	password = string(bytePassword)
 	return strings.TrimSpace(username), strings.TrimSpace(password), nil
-}
-
-// RegistryClientCredentials is used to store registry:clientCrendetials key value.
-// This is done to be in accordance with the way Docker stores credentials, so that
-// users will be able to store only one credential per registry.
-type RegistryClientCredentials map[string]clientcredentials.Config
-
-// WriteClientCredentials writes client credentials to config file.
-func WriteClientCredentials(registry string, cred *clientcredentials.Config) error {
-	creds, err := readClientCredentials()
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	if creds == nil {
-		creds = make(RegistryClientCredentials)
-	}
-	creds[registry] = *cred
-
-	data, err := json.Marshal(creds)
-	if err != nil {
-		return fmt.Errorf("unable to marshal %+v", creds)
-	}
-
-	if err = os.WriteFile(config.ClientCredentialsFile, data, 0o600); err != nil {
-		return fmt.Errorf("unable to write to %s: %w", config.ClientCredentialsFile, err)
-	}
-
-	return nil
-}
-
-// readClientCredentials reads client credentials from config file.
-func readClientCredentials() (RegistryClientCredentials, error) {
-	data, err := os.ReadFile(config.ClientCredentialsFile)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read from %s: %w", config.ClientCredentialsFile, err)
-	}
-
-	var creds RegistryClientCredentials
-	err = json.Unmarshal(data, &creds)
-	if err != nil {
-		return nil, fmt.Errorf("unable to unmarshal client credentials: %w", err)
-	}
-
-	return creds, nil
-}
-
-// ClientCredentials retrieves the client credentials for a specific registry.
-func ClientCredentials(reg string) (*clientcredentials.Config, error) {
-	regCreds, err := readClientCredentials()
-	if err != nil && errors.Is(err, os.ErrNotExist) {
-		// Legit, will proceed with empty creds
-		return nil, nil
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	regCred, ok := regCreds[reg]
-	if ok {
-		return &regCred, nil
-	}
-
-	// Legit, will proceed with empty creds
-	return nil, nil
 }
