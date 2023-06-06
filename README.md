@@ -1,17 +1,8 @@
-<p align="center"><img src="https://raw.githubusercontent.com/falcosecurity/community/master/logo/primary-logo.png" width="360"></p>
-<p align="center"><b>Cloud Native Runtime Security.</b></p>
-
-<hr>
-
 # 🧰 falcoctl
 
-> The official CLI tool for working with Falco and its ecosystem components.
+[![Falco Core Repository](https://github.com/falcosecurity/evolution/blob/main/repos/badges/falco-core-blue.svg)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#core-scope) [![Stable](https://img.shields.io/badge/status-stable-brightgreen?style=for-the-badge)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#stable) [![License](https://img.shields.io/github/license/falcosecurity/falcoctl?style=for-the-badge)](./LICENSE)
 
-## 📣 Call for contributors/maintainers
-
-This is a Go project that has a lot of potential in the Falco ecosystem, but needs contributions and even a maintainer or two.
-
-If you would like to get involved with contributing to this specific project, please check out [the Falco community](https://github.com/falcosecurity/community) to get involved.
+The official CLI tool for working with Falco and its ecosystem components.
 
 ## Installation
 ### Install falcoctl manually
