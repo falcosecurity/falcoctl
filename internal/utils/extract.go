@@ -61,8 +61,10 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err = copyInChunks(outFile, tarReader); err != nil {
+			if written, err := io.Copy(outFile, tarReader); err != nil {
 				return nil, err
+			} else if written != header.Size {
+				return nil, io.ErrShortWrite
 			}
 			if err = outFile.Close(); err != nil {
 				return nil, err
@@ -75,18 +77,4 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
 	}
 
 	return files, nil
-}
-
-func copyInChunks(dst io.Writer, src io.Reader) error {
-	for {
-		_, err := io.CopyN(dst, src, 1024)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return err
-		}
-	}
-
-	return nil
 }
