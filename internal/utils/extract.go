@@ -61,7 +61,7 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
 			if err != nil {
 				return nil, err
 			}
-			if written, err := io.Copy(outFile, tarReader); err != nil {
+			if written, err := io.CopyN(outFile, tarReader, header.Size); err != nil {
 				return nil, err
 			} else if written != header.Size {
 				return nil, io.ErrShortWrite
