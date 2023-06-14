@@ -220,6 +220,7 @@ func TestNormalize(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
+	fetcher := NewFetcher()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
 			t.Errorf("invalid request")
@@ -236,7 +237,7 @@ func TestFetch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := Fetch(context.Background(), ts.URL, "falcosecurity")
+	_, err := fetcher.Fetch(context.Background(), "http", ts.URL, "falcosecurity")
 	if err != nil {
 		t.Errorf("cannot fetch index")
 	}

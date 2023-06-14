@@ -110,8 +110,9 @@ const (
 
 // Index represents a configured index.
 type Index struct {
-	Name string `mapstructure:"name"`
-	URL  string `mapstructure:"url"`
+	Name    string `mapstructure:"name"`
+	URL     string `mapstructure:"url"`
+	Backend string `mapstructure:"backend"`
 }
 
 // OauthAuth represents an OAuth credential.
