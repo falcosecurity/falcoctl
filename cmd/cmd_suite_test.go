@@ -51,7 +51,7 @@ var (
 	configFile   string
 )
 
-func TestPush(t *testing.T) {
+func TestRoot(t *testing.T) {
 	var err error
 	RegisterFailHandler(Fail)
 	port, err = testutils.FreePort()
@@ -81,7 +81,6 @@ var _ = BeforeSuite(func() {
 	// Create temporary directory used to save the configuration file.
 	configFile, err = testutils.CreateEmptyFile("falcoctl.yaml")
 	Expect(err).Should(Succeed())
-
 })
 
 var _ = AfterSuite(func() {

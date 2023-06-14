@@ -37,11 +37,11 @@ func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Comm
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "add [NAME] [URL] [flags]",
+		Use:                   "add [NAME] [URL] [BACKEND] [flags]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Add an index to the local falcoctl configuration",
 		Long:                  "Add an index to the local falcoctl configuration. Indexes are used to perform search operations for artifacts",
-		Args:                  cobra.ExactArgs(2),
+		Args:                  cobra.RangeArgs(2, 3),
 		SilenceErrors:         true,
 		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,6 +58,10 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 
 	name := args[0]
 	url := args[1]
+	backend := ""
+	if len(args) > 2 {
+		backend = args[2]
+	}
 
 	o.Printer.Verbosef("Creating in-memory cache using indexes file %q and indexes directory %q", config.IndexesFile, config.IndexesDir)
 	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
@@ -67,7 +71,7 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 
 	o.Printer.Info.Printfln("Adding index")
 
-	if err = indexCache.Add(ctx, name, url); err != nil {
+	if err = indexCache.Add(ctx, name, backend, url); err != nil {
 		return fmt.Errorf("unable to add index: %w", err)
 	}
 
@@ -78,8 +82,9 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 
 	o.Printer.Verbosef("Adding new index entry to configuration file %q", o.ConfigFile)
 	if err = config.AddIndexes([]config.Index{{
-		Name: name,
-		URL:  url,
+		Name:    name,
+		URL:     url,
+		Backend: backend,
 	}}, o.ConfigFile); err != nil {
 		return fmt.Errorf("index entry %q: %w", name, err)
 	}

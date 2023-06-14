@@ -12,26 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd_test
-
-import (
-	. "github.com/onsi/ginkgo/v2"
-)
-
-var (
-	err  error
-	args []string
-)
-
-var _ = Describe("root", func() {
-	Describe("index command", func() {
-		Context("add subcommand", func() {
-			var _ = indexAddTests
-		})
-	})
-	Describe("registry command", func() {
-		Context("push subcommand", func() {
-			var _ = registryPushTests
-		})
-	})
-})
+// Package http implements all the logic for fetching indexes from HTTP/S backends.
+package http

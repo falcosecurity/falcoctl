@@ -36,6 +36,7 @@ type ConfigEntry struct {
 	// Password              string `yaml:"password"`
 	UpdatedTimestamp string `yaml:"updated_timestamp"`
 	URL              string `yaml:"url"`
+	Backend          string `yaml:"backend"`
 	// Username              string `yaml:"username"`
 }
 

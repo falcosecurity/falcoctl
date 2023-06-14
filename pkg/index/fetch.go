@@ -17,33 +17,49 @@ package index
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
+	"strings"
 
+	"github.com/falcosecurity/falcoctl/pkg/index/fetch/http"
 	"gopkg.in/yaml.v3"
 )
 
+// FetchFunc is a prototype for fetching indices for a specific index backend.
+type FetchFunc func(context.Context, string) ([]byte, error)
+
+// Fetcher can fetch indices from various storage backends.
+type Fetcher struct {
+	fetchFuncs map[string]FetchFunc
+}
+
+// NewFetcher creates a new index fetcher.
+func NewFetcher() *Fetcher {
+	return &Fetcher{
+		fetchFuncs: map[string]FetchFunc{
+			"":      http.Fetch,
+			"http":  http.Fetch,
+			"https": http.Fetch,
+		},
+	}
+}
+
+func (f *Fetcher) get(backend string) (FetchFunc, error) {
+	fetchFunc, ok := f.fetchFuncs[strings.ToLower(backend)]
+	if !ok {
+		return nil, fmt.Errorf("unsupported index backend type: %s", backend)
+	}
+	return fetchFunc, nil
+}
+
 // Fetch retrieves a remote index using its URL.
-func Fetch(ctx context.Context, url, name string) (*Index, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+func (f *Fetcher) Fetch(ctx context.Context, backend, url, name string) (*Index, error) {
+	fetcher, err := f.get(backend)
 	if err != nil {
-		return nil, fmt.Errorf("cannot fetch index: %w", err)
+		return nil, err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	bytes, err := fetcher(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("cannot fetch index: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode <= http.StatusNetworkAuthenticationRequired {
-		return nil, fmt.Errorf("cannot fetch index: %s", resp.Status)
-	}
-
-	bytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read bytes from response body: %w", err)
+		return nil, fmt.Errorf("unable to fetch index: %w", err)
 	}
 
 	i := New(name)

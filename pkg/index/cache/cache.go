@@ -31,6 +31,7 @@ import (
 // Cache manages the index files.
 type Cache struct {
 	*index.MergedIndexes
+	fetcher          *index.Fetcher
 	localIndexes     *index.Config
 	localIndexesFile string
 	indexesDir       string
@@ -53,6 +54,7 @@ func New(ctx context.Context, indexFile, indexesDir string) (*Cache, error) {
 	}
 
 	c := &Cache{
+		fetcher:          index.NewFetcher(),
 		localIndexes:     indexConfig,
 		localIndexesFile: indexFile,
 		indexesDir:       indexesDir,
@@ -65,7 +67,7 @@ func New(ctx context.Context, indexFile, indexesDir string) (*Cache, error) {
 		if idx, err = c.loadIndex(cfg.Name); err != nil && errors.Is(err, fs.ErrNotExist) {
 			// If the index is not found in the local persistent cache we fetch it from the url.
 			ts := time.Now().Format(consts.TimeFormat)
-			if idx, err = index.Fetch(ctx, cfg.URL, cfg.Name); err != nil {
+			if idx, err = c.fetcher.Fetch(ctx, cfg.Backend, cfg.URL, cfg.Name); err != nil {
 				return nil, fmt.Errorf("unable to fetch index %q with URL %q: %w", cfg.Name, cfg.URL, err)
 			}
 			// If correctly fetched, we need to update the metadata of the config entry.
@@ -104,7 +106,7 @@ func NewFromConfig(ctx context.Context, indexFile, indexesDir string, indexes []
 		ts := time.Now().Format(consts.TimeFormat)
 		if idx, err = c.loadIndex(cfg.Name); err != nil && errors.Is(err, fs.ErrNotExist) {
 			// If the index is not found in the local persistent cache we fetch it from the url.
-			if idx, err = index.Fetch(ctx, cfg.URL, cfg.Name); err != nil {
+			if idx, err = c.fetcher.Fetch(ctx, cfg.Backend, cfg.URL, cfg.Name); err != nil {
 				return nil, fmt.Errorf("unable to fetch index %q with URL %q: %w", cfg.Name, cfg.URL, err)
 			}
 			c.fetchedIndexes = append(c.fetchedIndexes, idx)
@@ -127,7 +129,7 @@ func NewFromConfig(ctx context.Context, indexFile, indexesDir string, indexes []
 // Add adds a new index file to the cache. If the index file already exists in the cache it
 // does nothing. On the other hand, it fetches the index file using the provided URL and adds
 // it to the in memory cache. It does not write it to the filesystem. It is idempotent.
-func (c *Cache) Add(ctx context.Context, name, url string) error {
+func (c *Cache) Add(ctx context.Context, name, backend, url string) error {
 	var remoteIndex *index.Index
 	var err error
 
@@ -139,7 +141,7 @@ func (c *Cache) Add(ctx context.Context, name, url string) error {
 	}
 
 	// If the index is not locally cached we fetch it using the provided url.
-	if remoteIndex, err = index.Fetch(ctx, url, name); err != nil {
+	if remoteIndex, err = c.fetcher.Fetch(ctx, backend, url, name); err != nil {
 		return fmt.Errorf("unable to fetch index %q with URL %q: %w", name, url, err)
 	}
 
@@ -150,6 +152,7 @@ func (c *Cache) Add(ctx context.Context, name, url string) error {
 		AddedTimestamp:   ts,
 		UpdatedTimestamp: ts,
 		URL:              url,
+		Backend:          backend,
 	}
 	c.localIndexes.Add(*entry)
 
@@ -225,7 +228,7 @@ func (c *Cache) Update(ctx context.Context, name string) error {
 
 	ts := time.Now().Format(consts.TimeFormat)
 	// Fetch the index from the remote url.
-	updatedIndex, err := index.Fetch(ctx, entry.URL, name)
+	updatedIndex, err := c.fetcher.Fetch(ctx, entry.Backend, entry.URL, name)
 	if err != nil {
 		return fmt.Errorf("unable to fetch index %q with URL %q: %w", name, entry.URL, err)
 	}
