@@ -78,6 +78,8 @@ const (
 	RegistryAuthOauthKey = "registry.auth.oauth"
 	// RegistryAuthBasicKey is the Viper key for basic authentication configuration.
 	RegistryAuthBasicKey = "registry.auth.basic"
+	// RegistryAuthGkeKey is the Viper key for gke authentication configuration.
+	RegistryAuthGkeKey = "registry.auth.gke"
 	// IndexesKey is the Viper key for indexes configuration.
 	IndexesKey = "indexes"
 	// ArtifactFollowEveryKey is the Viper key for follower "every" configuration.
@@ -125,6 +127,11 @@ type BasicAuth struct {
 	Registry string `mapstructure:"registry"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
+}
+
+// BasicAuth represents a Basic credential.
+type GkeAuth struct {
+	Registry string `mapstructure:"registry"`
 }
 
 // Follow represents the follower configuration.

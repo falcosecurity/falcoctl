@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/cmd/registry/auth/basic"
+	"github.com/falcosecurity/falcoctl/cmd/registry/auth/gke"
 	"github.com/falcosecurity/falcoctl/cmd/registry/auth/oauth"
 	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -36,6 +37,7 @@ func NewAuthCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Co
 
 	cmd.AddCommand(basic.NewBasicCmd(ctx, opt))
 	cmd.AddCommand(oauth.NewOauthCmd(ctx, opt))
+	cmd.AddCommand(gke.NewGkeCmd(ctx, opt))
 
 	return cmd
 }
