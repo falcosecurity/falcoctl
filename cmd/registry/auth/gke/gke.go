@@ -16,9 +16,11 @@ package gke
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/gke"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -59,12 +61,23 @@ func NewGkeCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	return cmd
 }
 
-// RunOAuth executes the business logic for the oauth command.
+// RunGke executes the business logic for the gke command.
 func (o *RegistryGkeOptions) RunGke(ctx context.Context, args []string) error {
+	var err error
 	reg := args[0]
-	if err := gke.Login(ctx, reg); err != nil {
+	if err = gke.Login(ctx, reg); err != nil {
 		return err
 	}
 	o.Printer.Success.Printfln("GKE source correctly set for %q", o.registry)
+
+	o.Printer.Verbosef("Adding new gke entry to configuration file %q", o.ConfigFile)
+	if err = config.AddGke([]config.GkeAuth{{
+		Registry: reg,
+	}}, o.ConfigFile); err != nil {
+		return fmt.Errorf("index entry %q: %w", reg, err)
+	}
+
+	o.Printer.Success.Printfln("Gke auth entry for %q successfully added", reg)
+
 	return nil
 }

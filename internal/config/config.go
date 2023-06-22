@@ -129,7 +129,7 @@ type BasicAuth struct {
 	Password string `mapstructure:"password"`
 }
 
-// BasicAuth represents a Basic credential.
+// GkeAuth represents a Gke credential.
 type GkeAuth struct {
 	Registry string `mapstructure:"registry"`
 }
@@ -221,6 +221,17 @@ func Indexes() ([]Index, error) {
 	}
 
 	return indexes, nil
+}
+
+// Gkes retrieves the indexes section of the config file.
+func Gkes() ([]GkeAuth, error) {
+	var auths []GkeAuth
+
+	if err := viper.UnmarshalKey(RegistryAuthGkeKey, &auths, viper.DecodeHook(gkeAuthListHookFunc())); err != nil {
+		return nil, fmt.Errorf("unable to get gkeAuths: %w", err)
+	}
+
+	return auths, nil
 }
 
 // indexListHookFunc returns a DecodeHookFunc that converts
@@ -400,6 +411,46 @@ func oathAuthListHookFunc() mapstructure.DecodeHookFuncType {
 	}
 }
 
+// oauthAuthListHookFunc returns a DecodeHookFunc that converts
+// strings to string slices, when the target type is DotSeparatedStringList.
+// when passed as env should be in the following format:
+// "registry;registry1".
+func gkeAuthListHookFunc() mapstructure.DecodeHookFuncType {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String && f.Kind() != reflect.Slice {
+			return data, nil
+		}
+
+		if t != reflect.TypeOf([]GkeAuth{}) {
+			return data, fmt.Errorf("unable to decode data since destination variable is not of type %T", []GkeAuth{})
+		}
+
+		switch f.Kind() {
+		case reflect.String:
+			if !SemicolonSeparatedRegexp.MatchString(data.(string)) {
+				return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), data.(string))
+			}
+			tokens := strings.Split(data.(string), ";")
+			auths := make([]GkeAuth, len(tokens))
+			for i, token := range tokens {
+
+				auths[i] = GkeAuth{
+					Registry: token,
+				}
+			}
+			return auths, nil
+		case reflect.Slice:
+			var auths []GkeAuth
+			if err := mapstructure.WeakDecode(data, &auths); err != nil {
+				return err, nil
+			}
+			return auths, nil
+		default:
+			return nil, nil
+		}
+	}
+}
+
 // Follower retrieves the follower section of the config file.
 func Follower() (Follow, error) {
 	// with Follow we can just use nested keys.
@@ -552,6 +603,37 @@ func RemoveIndexes(names []string, configFile string) error {
 func findIndexInSlice(slice []Index, val *Index) (int, bool) {
 	for i, item := range slice {
 		if item.Name == val.Name {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+// AddGke appends the provided gkes to a configuration file if not present.
+func AddGke(gkes []GkeAuth, configFile string) error {
+	var currGkes []GkeAuth
+	var err error
+
+	// Retrieve the current gkes from configuration.
+	if currGkes, err = Gkes(); err != nil {
+		return err
+	}
+	for i, gke := range gkes {
+		if _, ok := findGkeInSlice(currGkes, &gkes[i]); !ok {
+			currGkes = append(currGkes, gke)
+		}
+	}
+
+	if err := UpdateConfigFile(RegistryAuthGkeKey, currGkes, configFile); err != nil {
+		return fmt.Errorf("unable to update gkes list in the config file %q: %w", configFile, err)
+	}
+
+	return nil
+}
+
+func findGkeInSlice(slice []GkeAuth, val *GkeAuth) (int, bool) {
+	for i, item := range slice {
+		if item.Registry == val.Registry {
 			return i, true
 		}
 	}

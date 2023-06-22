@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
 
@@ -33,6 +35,18 @@ func Login(ctx context.Context, reg string) error {
 	_, err = ts.Token()
 	if err != nil {
 		return fmt.Errorf("wrong gke credentials, unable to retrieve token: %w", err)
+	}
+
+	// Check connection to the registry
+	client := oauth2.NewClient(ctx, ts)
+
+	r, err := registry.NewRegistry(reg, registry.WithClient(client))
+	if err != nil {
+		return err
+	}
+
+	if err := r.CheckConnection(ctx); err != nil {
+		return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
 	}
 
 	return nil
