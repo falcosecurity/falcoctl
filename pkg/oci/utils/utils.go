@@ -66,6 +66,7 @@ func Client() (remote.Client, error) {
 		authn.WithAutoLogin(authn.NewAutoLoginHandler(credentialStore)),
 		authn.WithStore(credentialStore),
 		authn.WithOAuthCredentials(),
+		authn.WithGkeCredentials(),
 	}
 	client := authn.NewClient(ops...)
 

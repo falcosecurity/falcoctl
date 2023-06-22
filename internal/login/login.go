@@ -23,6 +23,7 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/basic"
+	"github.com/falcosecurity/falcoctl/internal/login/gke"
 	"github.com/falcosecurity/falcoctl/internal/login/oauth"
 )
 
@@ -49,6 +50,16 @@ func PerformAuthsFromConfigWithMap(ctx context.Context, client *auth.Client, cre
 		if err := PerformBasicAuthsLogin(ctx, client, credStore, basicAuths, registrySet); err != nil {
 			return err
 		}
+	}
+
+	// Perform authentications using gke auth.
+	gkeAuths, err := config.Gkes()
+	if err != nil {
+		return err
+	}
+
+	if err := PerformGkeAuthsLogin(ctx, gkeAuths, registrySet); err != nil {
+		return err
 	}
 
 	// Perform authentications using oauth auth.
@@ -85,6 +96,21 @@ func PerformOauthAuths(ctx context.Context, auths []config.OauthAuth, registrySe
 				TokenURL:     auth.TokenURL,
 			}
 			if err := oauth.Login(ctx, auth.Registry, creds); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// PerformGkeAuths logins to the registries.
+func PerformGkeAuthsLogin(
+	ctx context.Context, auths []config.GkeAuth, registrySet map[string]bool,
+) error {
+	for _, gkeAuth := range auths {
+		if _, exists := registrySet[gkeAuth.Registry]; exists {
+			if err := gke.Login(ctx, gkeAuth.Registry); err != nil {
 				return err
 			}
 		}
