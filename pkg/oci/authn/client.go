@@ -124,8 +124,7 @@ func WithOAuthCredentials() func(c *Options) {
 // WithGkeCredentials adds the gke source to the client.
 func WithGkeCredentials() func(c *Options) {
 	return func(c *Options) {
-		gkeStore := NewGkeClientCredentialsStore()
-		c.CredentialsFuncs = append(c.CredentialsFuncs, gkeStore.Credential)
+		c.CredentialsFuncs = append(c.CredentialsFuncs, GKECredential)
 	}
 }
 

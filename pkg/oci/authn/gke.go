@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -25,43 +26,39 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 )
 
-// GkeClientCredentialsStore provides credential retrieval for gke client credentials.
-type GkeClientCredentialsStore struct {
-	Gke2TokenSources map[string]oauth2.TokenSource
-}
+var (
+	// SavedTokenSource saved for all registries using gcp credentials.
+	SavedTokenSource oauth2.TokenSource
+)
 
-// NewOauthClientCredentialsStore creates a new Gke client credential store.
-func NewGkeClientCredentialsStore() GkeClientCredentialsStore {
-	return GkeClientCredentialsStore{
-		Gke2TokenSources: make(map[string]oauth2.TokenSource),
-	}
-}
-
-// Credential retrieves a valid access token auth credential for the given registry.
-func (o *GkeClientCredentialsStore) Credential(ctx context.Context, reg string) (auth.Credential, error) {
-	tokenSource, exists := o.Gke2TokenSources[reg]
-	// if we did not already load a token source for this registry check the config file
-	if !exists {
-		gkeAuths, err := config.Gkes()
-		if err != nil {
-			return auth.EmptyCredential, fmt.Errorf("unable to retrieve gke credentials %w", err)
-		}
-
-		for _, gke := range gkeAuths {
-			if gke.Registry == reg {
-				tokenSource, err = google.DefaultTokenSource(ctx)
-				if err != nil {
-					return auth.EmptyCredential, fmt.Errorf("wrong gke source, unable to find a valid source: %w", err)
-				}
-			}
-
-		}
-		// cache nil result as well to avoid reading creds file every time we check for the registry
-		o.Gke2TokenSources[reg] = tokenSource
+// GKECredential retrieves a valid access token from gke source to perform registry authentication.
+func GKECredential(ctx context.Context, reg string) (auth.Credential, error) {
+	var tokenSource oauth2.TokenSource
+	gkeAuths, err := config.Gkes()
+	if err != nil {
+		return auth.EmptyCredential, fmt.Errorf("unable to retrieve gke authentication config %w", err)
 	}
 
-	if tokenSource == nil {
+	idx := slices.IndexFunc(gkeAuths, func(c config.GkeAuth) bool { return c.Registry == reg })
+
+	// gke auth not set for this registry
+	if idx == -1 {
 		return auth.EmptyCredential, nil
+	}
+
+	// load saved tokenSource or saves it
+	if SavedTokenSource != nil {
+		tokenSource = SavedTokenSource
+	} else {
+		tokenSource, err = google.DefaultTokenSource(ctx)
+		if err != nil {
+			return auth.EmptyCredential, fmt.Errorf("wrong gke source, unable to find a valid source: %w", err)
+		}
+		if tokenSource == nil {
+			return auth.EmptyCredential, fmt.Errorf("unable to retrieve gke credentials from identified source %w", err)
+		}
+		tokenSource = oauth2.ReuseTokenSource(nil, tokenSource)
+		SavedTokenSource = tokenSource
 	}
 
 	token, err := tokenSource.Token()

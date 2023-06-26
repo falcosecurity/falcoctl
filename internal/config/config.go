@@ -223,7 +223,7 @@ func Indexes() ([]Index, error) {
 	return indexes, nil
 }
 
-// Gkes retrieves the indexes section of the config file.
+// Gkes retrieves the gke auth section of the config file.
 func Gkes() ([]GkeAuth, error) {
 	var auths []GkeAuth
 
