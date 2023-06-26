@@ -18,9 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 )
 
 // Login checks if passed oauth credentials are correct and stores them.
