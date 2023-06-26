@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gke
+package gcp
 
 import (
 	"context"
@@ -21,63 +21,63 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/login/gke"
+	"github.com/falcosecurity/falcoctl/internal/login/gcp"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 const (
-	longGke = `Register a registry to use Workload Identity to connect to it.
+	longGcp = `Register a registry to use GCE Metadata server or gcloud Application Default credentials to connect to it.
 
 Example 
-	falcoctl registry gke europe-docker.pkg.dev
+	falcoctl registry gcp europe-docker.pkg.dev
 `
 )
 
-// RegistryGkeOptions contains the options for the registry gke command.
-type RegistryGkeOptions struct {
+// RegistryGcpOptions contains the options for the registry gcp command.
+type RegistryGcpOptions struct {
 	*options.CommonOptions
 	registry string
 }
 
-// NewGkeCmd returns the gke command.
-func NewGkeCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
-	o := RegistryGkeOptions{
+// NewGcpCmd returns the gcp command.
+func NewGcpCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+	o := RegistryGcpOptions{
 		CommonOptions: opt,
 	}
 
 	cmd := &cobra.Command{
-		Use:                   "gke [REGISTRY]",
+		Use:                   "gcp [REGISTRY]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Register an OCI registry to log in using Workload identity",
-		Long:                  longGke,
+		Short:                 "Register an OCI registry to log in using GCP common credentials",
+		Long:                  longGcp,
 		Args:                  cobra.ExactArgs(1),
 		SilenceErrors:         true,
 		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.RunGke(ctx, args)
+			return o.RunGcp(ctx, args)
 		},
 	}
 
 	return cmd
 }
 
-// RunGke executes the business logic for the gke command.
-func (o *RegistryGkeOptions) RunGke(ctx context.Context, args []string) error {
+// RunGcp executes the business logic for the gcp command.
+func (o *RegistryGcpOptions) RunGcp(ctx context.Context, args []string) error {
 	var err error
 	reg := args[0]
-	if err = gke.Login(ctx, reg); err != nil {
+	if err = gcp.Login(ctx, reg); err != nil {
 		return err
 	}
-	o.Printer.Success.Printfln("GKE source correctly set for %q", o.registry)
+	o.Printer.Success.Printfln("GCP authentication successful for %q", reg)
 
-	o.Printer.Verbosef("Adding new gke entry to configuration file %q", o.ConfigFile)
-	if err = config.AddGke([]config.GkeAuth{{
+	o.Printer.Verbosef("Adding new gcp entry to configuration file %q", o.ConfigFile)
+	if err = config.AddGcp([]config.GcpAuth{{
 		Registry: reg,
 	}}, o.ConfigFile); err != nil {
 		return fmt.Errorf("index entry %q: %w", reg, err)
 	}
 
-	o.Printer.Success.Printfln("Gke auth entry for %q successfully added", reg)
+	o.Printer.Success.Printfln("GCP authentication entry for %q successfully added in configuration file", reg)
 
 	return nil
 }

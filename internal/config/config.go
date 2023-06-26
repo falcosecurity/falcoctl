@@ -78,8 +78,8 @@ const (
 	RegistryAuthOauthKey = "registry.auth.oauth"
 	// RegistryAuthBasicKey is the Viper key for basic authentication configuration.
 	RegistryAuthBasicKey = "registry.auth.basic"
-	// RegistryAuthGkeKey is the Viper key for gke authentication configuration.
-	RegistryAuthGkeKey = "registry.auth.gke"
+	// RegistryAuthGcpKey is the Viper key for gcp authentication configuration.
+	RegistryAuthGcpKey = "registry.auth.gcp"
 	// IndexesKey is the Viper key for indexes configuration.
 	IndexesKey = "indexes"
 	// ArtifactFollowEveryKey is the Viper key for follower "every" configuration.
@@ -129,8 +129,8 @@ type BasicAuth struct {
 	Password string `mapstructure:"password"`
 }
 
-// GkeAuth represents a Gke credential.
-type GkeAuth struct {
+// GcpAuth represents a Gcp activation setting.
+type GcpAuth struct {
 	Registry string `mapstructure:"registry"`
 }
 
@@ -223,12 +223,12 @@ func Indexes() ([]Index, error) {
 	return indexes, nil
 }
 
-// Gkes retrieves the gke auth section of the config file.
-func Gkes() ([]GkeAuth, error) {
-	var auths []GkeAuth
+// Gcps retrieves the gcp auth section of the config file.
+func Gcps() ([]GcpAuth, error) {
+	var auths []GcpAuth
 
-	if err := viper.UnmarshalKey(RegistryAuthGkeKey, &auths, viper.DecodeHook(gkeAuthListHookFunc())); err != nil {
-		return nil, fmt.Errorf("unable to get gkeAuths: %w", err)
+	if err := viper.UnmarshalKey(RegistryAuthGcpKey, &auths, viper.DecodeHook(gcpAuthListHookFunc())); err != nil {
+		return nil, fmt.Errorf("unable to get gcpAuths: %w", err)
 	}
 
 	return auths, nil
@@ -415,14 +415,14 @@ func oathAuthListHookFunc() mapstructure.DecodeHookFuncType {
 // strings to string slices, when the target type is DotSeparatedStringList.
 // when passed as env should be in the following format:
 // "registry;registry1".
-func gkeAuthListHookFunc() mapstructure.DecodeHookFuncType {
+func gcpAuthListHookFunc() mapstructure.DecodeHookFuncType {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 		if f.Kind() != reflect.String && f.Kind() != reflect.Slice {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf([]GkeAuth{}) {
-			return data, fmt.Errorf("unable to decode data since destination variable is not of type %T", []GkeAuth{})
+		if t != reflect.TypeOf([]GcpAuth{}) {
+			return data, fmt.Errorf("unable to decode data since destination variable is not of type %T", []GcpAuth{})
 		}
 
 		switch f.Kind() {
@@ -431,16 +431,16 @@ func gkeAuthListHookFunc() mapstructure.DecodeHookFuncType {
 				return data, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), data.(string))
 			}
 			tokens := strings.Split(data.(string), ";")
-			auths := make([]GkeAuth, len(tokens))
+			auths := make([]GcpAuth, len(tokens))
 			for i, token := range tokens {
 
-				auths[i] = GkeAuth{
+				auths[i] = GcpAuth{
 					Registry: token,
 				}
 			}
 			return auths, nil
 		case reflect.Slice:
-			var auths []GkeAuth
+			var auths []GcpAuth
 			if err := mapstructure.WeakDecode(data, &auths); err != nil {
 				return err, nil
 			}
@@ -609,29 +609,29 @@ func findIndexInSlice(slice []Index, val *Index) (int, bool) {
 	return -1, false
 }
 
-// AddGke appends the provided gkes to a configuration file if not present.
-func AddGke(gkes []GkeAuth, configFile string) error {
-	var currGkes []GkeAuth
+// AddGcp appends the provided gcps to a configuration file if not present.
+func AddGcp(gcps []GcpAuth, configFile string) error {
+	var currGcps []GcpAuth
 	var err error
 
-	// Retrieve the current gkes from configuration.
-	if currGkes, err = Gkes(); err != nil {
+	// Retrieve the current gcps from configuration.
+	if currGcps, err = Gcps(); err != nil {
 		return err
 	}
-	for i, gke := range gkes {
-		if _, ok := findGkeInSlice(currGkes, &gkes[i]); !ok {
-			currGkes = append(currGkes, gke)
+	for i, gcp := range gcps {
+		if _, ok := findGcpInSlice(currGcps, &gcps[i]); !ok {
+			currGcps = append(currGcps, gcp)
 		}
 	}
 
-	if err := UpdateConfigFile(RegistryAuthGkeKey, currGkes, configFile); err != nil {
-		return fmt.Errorf("unable to update gkes list in the config file %q: %w", configFile, err)
+	if err := UpdateConfigFile(RegistryAuthGcpKey, currGcps, configFile); err != nil {
+		return fmt.Errorf("unable to update gcps list in the config file %q: %w", configFile, err)
 	}
 
 	return nil
 }
 
-func findGkeInSlice(slice []GkeAuth, val *GkeAuth) (int, bool) {
+func findGcpInSlice(slice []GcpAuth, val *GcpAuth) (int, bool) {
 	for i, item := range slice {
 		if item.Registry == val.Registry {
 			return i, true
