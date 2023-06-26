@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package oauth defines the logic to authenticate against an OCI registry via OAuth2.0.
-package gke
+// Package gcp defines the logic to authenticate against an Artifact registry using GCP credentials.
+package gcp

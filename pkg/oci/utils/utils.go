@@ -62,11 +62,12 @@ func Client() (remote.Client, error) {
 	// 1. auto logins into registries
 	// 2. checks basic auth credential store
 	// 3. checks oauth2 clientcredentials
+	// 4. checks gcp credentials if enabled
 	ops := []func(*authn.Options){
 		authn.WithAutoLogin(authn.NewAutoLoginHandler(credentialStore)),
 		authn.WithStore(credentialStore),
 		authn.WithOAuthCredentials(),
-		authn.WithGkeCredentials(),
+		authn.WithGcpCredentials(),
 	}
 	client := authn.NewClient(ops...)
 

@@ -31,34 +31,34 @@ var (
 	SavedTokenSource oauth2.TokenSource
 )
 
-// GKECredential retrieves a valid access token from gke source to perform registry authentication.
-func GKECredential(ctx context.Context, reg string) (auth.Credential, error) {
+// GCPCredential retrieves a valid access token from gcp source to perform registry authentication.
+func GCPCredential(ctx context.Context, reg string) (auth.Credential, error) {
 	var tokenSource oauth2.TokenSource
-	gkeAuths, err := config.Gkes()
+	gcpAuths, err := config.Gcps()
 	if err != nil {
-		return auth.EmptyCredential, fmt.Errorf("unable to retrieve gke authentication config %w", err)
+		return auth.EmptyCredential, fmt.Errorf("unable to retrieve gcp authentication config %w", err)
 	}
 
-	idx := slices.IndexFunc(gkeAuths, func(c config.GkeAuth) bool { return c.Registry == reg })
+	idx := slices.IndexFunc(gcpAuths, func(c config.GcpAuth) bool { return c.Registry == reg })
 
-	// gke auth not set for this registry
+	// gcp auth not set for this registry
 	if idx == -1 {
 		return auth.EmptyCredential, nil
 	}
 
 	// load saved tokenSource or saves it
-	if SavedTokenSource != nil {
-		tokenSource = SavedTokenSource
-	} else {
+	if SavedTokenSource == nil {
 		tokenSource, err = google.DefaultTokenSource(ctx)
 		if err != nil {
-			return auth.EmptyCredential, fmt.Errorf("wrong gke source, unable to find a valid source: %w", err)
+			return auth.EmptyCredential, fmt.Errorf("wrong gcp source, unable to find a valid source: %w", err)
 		}
 		if tokenSource == nil {
-			return auth.EmptyCredential, fmt.Errorf("unable to retrieve gke credentials from identified source %w", err)
+			return auth.EmptyCredential, fmt.Errorf("unable to retrieve gcp credentials from identified source %w", err)
 		}
 		tokenSource = oauth2.ReuseTokenSource(nil, tokenSource)
 		SavedTokenSource = tokenSource
+	} else {
+		tokenSource = SavedTokenSource
 	}
 
 	token, err := tokenSource.Token()

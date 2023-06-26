@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package oauth implements oauth client credentials login functionality.
-package gke
+// Package gcp implements gcp credentials login functionality.
+package gcp

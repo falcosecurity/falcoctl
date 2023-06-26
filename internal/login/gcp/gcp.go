@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gke
+package gcp
 
 import (
 	"context"
@@ -24,18 +24,18 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci/registry"
 )
 
-// Login checks if passed oauth credentials are correct and stores them.
+// Login checks if passed gcp credentials are correct.
 func Login(ctx context.Context, reg string) error {
-	// Check that we can find a valid token source using ApplicationDefaultCredentials logic.
+	// Check that we can find a valid token source using GCE or ApplicationDefault.
 	ts, err := google.DefaultTokenSource(ctx)
 	if err != nil {
-		return fmt.Errorf("wrong gke source, unable to find a valid source: %w", err)
+		return fmt.Errorf("wrong GCP token source, unable to find a valid source: %w", err)
 	}
 
-	// Check that we can retrieve token using ApplicationDefaultCredentials logic.
+	// Check that we can retrieve token.
 	_, err = ts.Token()
 	if err != nil {
-		return fmt.Errorf("wrong gke credentials, unable to retrieve token: %w", err)
+		return fmt.Errorf("wrong GCP credentials, unable to retrieve token: %w", err)
 	}
 
 	// Check connection to the registry
