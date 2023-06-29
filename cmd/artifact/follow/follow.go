@@ -31,6 +31,7 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/follower"
+	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -89,6 +90,7 @@ type artifactFollowOptions struct {
 	timeout       time.Duration
 	closeChan     chan bool
 	allowedTypes  oci.ArtifactTypeSlice
+	noVerify      bool
 }
 
 // NewArtifactFollowCmd returns the artifact follow command.
@@ -194,6 +196,18 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				}
 			}
 
+			// Override "no-verify" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup(install.FlagNoVerify)
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag %s", install.FlagNoVerify)
+			} else if !f.Changed && viper.IsSet(config.ArtifactNoVerifyKey) {
+				val := viper.Get(config.ArtifactFollowPluginsDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagNoVerify, err)
+				}
+			}
+
 			// Get Falco versions via HTTP endpoint
 			if err := o.retrieveFalcoVersions(ctx); err != nil {
 				return fmt.Errorf("unable to retrieve Falco versions, please check if it is running "+
@@ -227,6 +241,8 @@ It accepts comma separated values or it can be repeated multiple times.
 Examples: 
 	--%s="rulesfile,plugin"
 	--%s=rulesfile --%s=plugin`, install.FlagAllowedTypes, install.FlagAllowedTypes, install.FlagAllowedTypes))
+	cmd.Flags().BoolVar(&o.noVerify, install.FlagNoVerify, false,
+		"whether this command should skip signature verification")
 	cmd.MarkFlagsMutuallyExclusive("cron", "every")
 
 	return cmd
@@ -274,6 +290,11 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			return fmt.Errorf("unable to parse artifact reference for %q: %w", a, err)
 		}
 
+		var sig *index.Signature
+		if !o.noVerify {
+			sig = o.IndexCache.SignatureForIndexRef(a)
+		}
+
 		cfg := &follower.Config{
 			WaitGroup:         &wg,
 			Resync:            sched,
@@ -286,6 +307,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			TmpDir:            o.tmpDir,
 			FalcoVersions:     o.versions,
 			AllowedTypes:      o.allowedTypes,
+			Signature:         sig,
 		}
 		fol, err := follower.New(ref, o.Printer, cfg)
 		if err != nil {

@@ -27,4 +27,7 @@ const (
 
 	// FlagResolveDeps is the name of the flag to enable artifact dependencies resolution.
 	FlagResolveDeps = "resolve-deps"
+
+	// FlagNoVerify is the name of the flag to disable signature verification.
+	FlagNoVerify = "no-verify"
 )

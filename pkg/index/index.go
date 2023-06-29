@@ -34,10 +34,11 @@ import (
 // Entry describes an entry of the index stored remotely and cached locally.
 type Entry struct {
 	// Mandatory fields
-	Name       string `yaml:"name"`
-	Type       string `yaml:"type"`
-	Registry   string `yaml:"registry"`
-	Repository string `yaml:"repository"`
+	Name       string     `yaml:"name"`
+	Type       string     `yaml:"type"`
+	Registry   string     `yaml:"registry"`
+	Repository string     `yaml:"repository"`
+	Signature  *Signature `yaml:"signature"`
 	// Optional fields
 	Description string   `yaml:"description"`
 	Home        string   `yaml:"home"`
@@ -48,6 +49,22 @@ type Entry struct {
 		Name  string `yaml:"name"`
 	} `yaml:"maintainers"`
 	Sources []string `yaml:"sources"`
+}
+
+func (e *Entry) RegRepo() string {
+	return fmt.Sprintf("%s/%s", e.Registry, e.Repository)
+}
+
+type CosignSignature struct {
+	CertificateOidcIssuer       string `yaml:"certificate-oidc-issuer"`
+	CertificateOidcIssuerRegexp string `yaml:"certificate-oidc-issuer-regexp"`
+	CertificateIdentity         string `yaml:"certificate-identity"`
+	CertificateIdentityRegexp   string `yaml:"certificate-identity-regexp"`
+	CertificateGithubWorkflow   string `yaml:"certificate-github-workflow"`
+}
+
+type Signature struct {
+	Cosign *CosignSignature `yaml:"cosign"`
 }
 
 // Index represents an index.
@@ -238,7 +255,30 @@ func (m *MergedIndexes) IndexByEntry(entry *Entry) *Index {
 	return m.indexByEntry[entry]
 }
 
-// ResolveReference is a helper function that parse with the followig logic:
+// SignatureForIndexRef is a helper function that will identify signature data if available for the specified name
+// corresponding to an entry in the index.
+// Returns nil if not found or if the specified name is a full reference
+func (m *MergedIndexes) SignatureForIndexRef(name string) *Signature {
+	_, err := registry.ParseReference(name)
+	// If we have a full reference we cannot determine the signature
+	if err == nil {
+		return nil
+	}
+
+	entryName, _, _, err := parseIndexRef(name)
+	if err != nil {
+		return nil
+	}
+
+	entry, ok := m.EntryByName(entryName)
+	if !ok {
+		return nil
+	}
+
+	return entry.Signature
+}
+
+// ResolveReference is a helper function that parse with the following logic:
 //
 //  1. if name is the name of an artifact, it will use the merged index to compute
 //     its reference. The tag latest is always appended.
@@ -258,21 +298,9 @@ func (m *MergedIndexes) ResolveReference(name string) (string, error) {
 
 	switch {
 	case err != nil:
-		var entryName, tag, digest string
-
-		switch {
-		case !strings.ContainsAny(name, ":@"):
-			entryName = name
-		case strings.Contains(name, ":") && !strings.Contains(name, "@"):
-			splittedName := strings.Split(name, ":")
-			entryName = splittedName[0]
-			tag = splittedName[1]
-		case strings.Contains(name, "@"):
-			splittedName := strings.Split(name, "@")
-			entryName = splittedName[0]
-			digest = splittedName[1]
-		default:
-			return "", fmt.Errorf("cannot parse %q", name)
+		entryName, tag, digest, err := parseIndexRef(name)
+		if err != nil {
+			return "", err
 		}
 
 		entry, ok := m.EntryByName(entryName)
@@ -299,6 +327,26 @@ func (m *MergedIndexes) ResolveReference(name string) (string, error) {
 	}
 
 	return ref, nil
+}
+
+func parseIndexRef(name string) (string, string, string, error) {
+	var entryName, tag, digest string
+	switch {
+	case !strings.ContainsAny(name, ":@"):
+		entryName = name
+	case strings.Contains(name, ":") && !strings.Contains(name, "@"):
+		splittedName := strings.Split(name, ":")
+		entryName = splittedName[0]
+		tag = splittedName[1]
+	case strings.Contains(name, "@"):
+		splittedName := strings.Split(name, "@")
+		entryName = splittedName[0]
+		digest = splittedName[1]
+	default:
+		return "", "", "", fmt.Errorf("cannot parse %q", name)
+	}
+
+	return entryName, tag, digest, nil
 }
 
 // levenshteinDistance computes the edit distance between two strings.

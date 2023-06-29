@@ -32,7 +32,9 @@ import (
 	"oras.land/oras-go/v2/registry"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/sign"
 	"github.com/falcosecurity/falcoctl/internal/utils"
+	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
@@ -77,6 +79,8 @@ type Config struct {
 	FalcoVersions config.FalcoVersions
 	// AllowedTypes specify a list of artifacts that we are allowed to download.
 	AllowedTypes oci.ArtifactTypeSlice
+	// Signature has the data needed for signature checking
+	Signature *index.Signature
 }
 
 var (
@@ -256,6 +260,15 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	res, err = f.Pull(ctx, f.ref, f.tmpDir, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to pull artifact %q: %w", f.ref, err)
+	}
+
+	// Verify the signature if needed
+	if f.Config.Signature != nil {
+		f.Verbosef("verifying signature")
+		err = sign.VerifySignature(res.RootDigest, f.Config.Signature)
+		if err != nil {
+			return filePaths, res, fmt.Errorf("could not verify signature for %s: %w", res.RootDigest, err)
+		}
 	}
 
 	f.Verbosef("extracting artifact")

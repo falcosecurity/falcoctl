@@ -106,6 +106,8 @@ const (
 	ArtifactInstallResolveDepsKey = "artifact.install.resolveDeps"
 	// ArtifactAllowedTypesKey is the Viper key for the whitelist of artifacts to be installed in the system.
 	ArtifactAllowedTypesKey = "artifact.allowedTypes"
+	// ArtifactNoVerifyKey is the Viper key for skipping signature verification
+	ArtifactNoVerifyKey = "artifact.noVerify"
 )
 
 // Index represents a configured index.
@@ -143,6 +145,7 @@ type Follow struct {
 	RulesfilesDir string        `mapstructure:"rulesFilesDir"`
 	PluginsDir    string        `mapstructure:"pluginsDir"`
 	TmpDir        string        `mapstructure:"pluginsDir"`
+	NoVerify      bool          `mapstructure:"noVerify"`
 }
 
 // Install represents the installer configuration.
@@ -151,6 +154,7 @@ type Install struct {
 	RulesfilesDir string   `mapstructure:"rulesFilesDir"`
 	PluginsDir    string   `mapstructure:"pluginsDir"`
 	ResolveDeps   bool     `mapstructure:"resolveDeps"`
+	NoVerify      bool     `mapstructure:"noVerify"`
 }
 
 func init() {
@@ -470,6 +474,7 @@ func Follower() (Follow, error) {
 		RulesfilesDir: viper.GetString(ArtifactFollowRulesfilesDirKey),
 		PluginsDir:    viper.GetString(ArtifactFollowPluginsDirKey),
 		TmpDir:        viper.GetString(ArtifactFollowTmpDirKey),
+		NoVerify:      viper.GetBool(ArtifactNoVerifyKey),
 	}, nil
 }
 
@@ -490,6 +495,7 @@ func Installer() (Install, error) {
 		RulesfilesDir: viper.GetString(ArtifactInstallRulesfilesDirKey),
 		PluginsDir:    viper.GetString(ArtifactInstallPluginsDirKey),
 		ResolveDeps:   viper.GetBool(ArtifactInstallResolveDepsKey),
+		NoVerify:      viper.GetBool(ArtifactNoVerifyKey),
 	}, nil
 }
 
