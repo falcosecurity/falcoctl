@@ -29,6 +29,17 @@ func GetRegistryFromRef(ref string) (string, error) {
 	return ref[0:index], nil
 }
 
+// RepositoryFromRef extracts the registry+repository from a ref string.
+func RepositoryFromRef(ref string) (string, error) {
+	name, err := NameFromRef(ref)
+	if err != nil {
+		return "", fmt.Errorf("cannot extract artifact repository: %w", err)
+	}
+
+	parts := strings.Split(ref, "/")
+	return strings.Join(append(parts[:len(parts)-1], name), "/"), nil
+}
+
 // NameFromRef extracts the name of the artifact from a ref string.
 func NameFromRef(ref string) (string, error) {
 	// todo: check and improve parsing logic

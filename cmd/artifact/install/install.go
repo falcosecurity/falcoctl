@@ -17,6 +17,8 @@ package install
 import (
 	"context"
 	"fmt"
+	"github.com/falcosecurity/falcoctl/internal/sign"
+	"github.com/falcosecurity/falcoctl/pkg/index"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -73,6 +75,7 @@ type artifactInstallOptions struct {
 	pluginsDir    string
 	allowedTypes  oci.ArtifactTypeSlice
 	resolveDeps   bool
+	noVerify      bool
 }
 
 // NewArtifactInstallCmd returns the artifact install command.
@@ -139,6 +142,18 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 					return fmt.Errorf("unable to overwrite %q flag: %w", FlagResolveDeps, err)
 				}
 			}
+
+			f = cmd.Flags().Lookup(FlagNoVerify)
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag %q", FlagNoVerify)
+			} else if !f.Changed && viper.IsSet(config.ArtifactNoVerifyKey) {
+				val := viper.Get(config.ArtifactNoVerifyKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite %q flag: %w", FlagNoVerify, err)
+				}
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -159,6 +174,8 @@ Examples:
 	--%s=rulesfile --%s=plugin`, FlagAllowedTypes, FlagAllowedTypes, FlagAllowedTypes))
 	cmd.Flags().BoolVar(&o.resolveDeps, FlagResolveDeps, true,
 		"whether this command should resolve dependencies or not")
+	cmd.Flags().BoolVar(&o.noVerify, FlagNoVerify, false,
+		"whether this command should skip signature verification")
 
 	return cmd
 }
@@ -209,12 +226,18 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		}, nil
 	})
 
+	signatures := make(map[string]*index.Signature)
+
 	// Compute input to install dependencies
 	for i, arg := range args {
-		args[i], err = o.IndexCache.ResolveReference(arg)
+		ref, err := o.IndexCache.ResolveReference(arg)
 		if err != nil {
 			return err
 		}
+		if sig := o.IndexCache.SignatureForIndexRef(arg); sig != nil {
+			signatures[ref] = sig
+		}
+		args[i] = ref
 	}
 
 	var refs []string
@@ -232,7 +255,18 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	o.Printer.Info.Printfln("Installing the following artifacts: %v", refs)
 
 	for _, ref := range refs {
+		var sig *index.Signature
 		ref, err = o.IndexCache.ResolveReference(ref)
+		if err != nil {
+			return err
+		}
+		sig, ok := signatures[ref]
+		if !ok {
+			// try to get the signature from the index
+			o.IndexCache.SignatureForIndexRef(ref)
+		}
+
+		repo, err := utils.RepositoryFromRef(ref)
 		if err != nil {
 			return err
 		}
@@ -247,6 +281,20 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		result, err := puller.Pull(ctx, ref, tmpDir, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return err
+		}
+
+		// In order to prevent TOCTOU issues we'll perform signature verification after we complete a pull
+		// and obtained a digest but before files are written to disk. This way we ensure that we're verifying
+		// the exact digest that we just pulled, even if the tag gets overwritten in the meantime.
+		digestRef := fmt.Sprintf("%s@%s", repo, result.RootDigest)
+
+		if sig != nil && !o.noVerify {
+			o.Printer.Info.Printfln("Verifying signature for %s", digestRef)
+			err = sign.VerifySignature(digestRef, sig)
+			if err != nil {
+				return fmt.Errorf("error while verifying signature for %s: %w", digestRef, err)
+			}
+			o.Printer.Success.Printfln("Signature successfully verified!")
 		}
 
 		var destDir string

@@ -114,9 +114,10 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 	filename := manifest.Layers[0].Annotations[v1.AnnotationTitle]
 
 	return &oci.RegistryResult{
-		Digest:   string(desc.Digest),
-		Type:     artifactType,
-		Filename: filename,
+		RootDigest: string(refDesc.Digest),
+		Digest:     string(desc.Digest),
+		Type:       artifactType,
+		Filename:   filename,
 	}, nil
 }
 
