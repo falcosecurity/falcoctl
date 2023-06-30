@@ -36,7 +36,6 @@ Example
 // RegistryGcpOptions contains the options for the registry gcp command.
 type RegistryGcpOptions struct {
 	*options.CommonOptions
-	registry string
 }
 
 // NewGcpCmd returns the gcp command.
