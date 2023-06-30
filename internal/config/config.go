@@ -106,7 +106,7 @@ const (
 	ArtifactInstallResolveDepsKey = "artifact.install.resolveDeps"
 	// ArtifactAllowedTypesKey is the Viper key for the whitelist of artifacts to be installed in the system.
 	ArtifactAllowedTypesKey = "artifact.allowedTypes"
-	// ArtifactNoVerifyKey is the Viper key for skipping signature verification
+	// ArtifactNoVerifyKey is the Viper key for skipping signature verification.
 	ArtifactNoVerifyKey = "artifact.noVerify"
 )
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2021 The Sigstore Authors.
+// Copyright 2023 The Sigstore Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//nolint:goheader // code from Sigstore
 
 package cosign
 
@@ -42,8 +44,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
-// VerifyCommand verifies a signature on a supplied container image
-// nolint
+// VerifyCommand verifies a signature on a supplied container image.
 type VerifyCommand struct {
 	options.RegistryOptions
 	options.CertVerifyOptions
@@ -75,6 +76,7 @@ type VerifyCommand struct {
 	IgnoreTlog                   bool
 }
 
+//nolint:gocyclo,revive // cosign v2 verification
 func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err error) {
 	if len(images) == 0 {
 		return flag.ErrHelp

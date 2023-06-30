@@ -38,7 +38,7 @@ type Entry struct {
 	Type       string     `yaml:"type"`
 	Registry   string     `yaml:"registry"`
 	Repository string     `yaml:"repository"`
-	Signature  *Signature `yaml:"signature"`
+	Signature  *Signature `yaml:"signature,omitempty"`
 	// Optional fields
 	Description string   `yaml:"description"`
 	Home        string   `yaml:"home"`
@@ -51,10 +51,8 @@ type Entry struct {
 	Sources []string `yaml:"sources"`
 }
 
-func (e *Entry) RegRepo() string {
-	return fmt.Sprintf("%s/%s", e.Registry, e.Repository)
-}
-
+// CosignSignature contains certificate information for cosign keyless signature verification, equivalent to the
+// cosign command line arguments.
 type CosignSignature struct {
 	CertificateOidcIssuer       string `yaml:"certificate-oidc-issuer"`
 	CertificateOidcIssuerRegexp string `yaml:"certificate-oidc-issuer-regexp"`
@@ -63,8 +61,9 @@ type CosignSignature struct {
 	CertificateGithubWorkflow   string `yaml:"certificate-github-workflow"`
 }
 
+// Signature represents all the metadata necessary to perform signature verification.
 type Signature struct {
-	Cosign *CosignSignature `yaml:"cosign"`
+	Cosign *CosignSignature `yaml:"cosign,omitempty"`
 }
 
 // Index represents an index.
@@ -257,7 +256,7 @@ func (m *MergedIndexes) IndexByEntry(entry *Entry) *Index {
 
 // SignatureForIndexRef is a helper function that will identify signature data if available for the specified name
 // corresponding to an entry in the index.
-// Returns nil if not found or if the specified name is a full reference
+// Returns nil if not found or if the specified name is a full reference.
 func (m *MergedIndexes) SignatureForIndexRef(name string) *Signature {
 	_, err := registry.ParseReference(name)
 	// If we have a full reference we cannot determine the signature
@@ -329,8 +328,7 @@ func (m *MergedIndexes) ResolveReference(name string) (string, error) {
 	return ref, nil
 }
 
-func parseIndexRef(name string) (string, string, string, error) {
-	var entryName, tag, digest string
+func parseIndexRef(name string) (entryName, tag, digest string, err error) {
 	switch {
 	case !strings.ContainsAny(name, ":@"):
 		entryName = name
