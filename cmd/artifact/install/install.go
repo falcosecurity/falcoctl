@@ -17,8 +17,6 @@ package install
 import (
 	"context"
 	"fmt"
-	"github.com/falcosecurity/falcoctl/internal/sign"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -27,7 +25,9 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
+	"github.com/falcosecurity/falcoctl/internal/sign"
 	"github.com/falcosecurity/falcoctl/internal/utils"
+	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
