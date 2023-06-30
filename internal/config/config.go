@@ -433,7 +433,6 @@ func gcpAuthListHookFunc() mapstructure.DecodeHookFuncType {
 			tokens := strings.Split(data.(string), ";")
 			auths := make([]GcpAuth, len(tokens))
 			for i, token := range tokens {
-
 				auths[i] = GcpAuth{
 					Registry: token,
 				}
