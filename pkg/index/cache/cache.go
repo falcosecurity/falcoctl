@@ -26,13 +26,14 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/consts"
 	"github.com/falcosecurity/falcoctl/pkg/index"
+	indexConf "github.com/falcosecurity/falcoctl/pkg/index/config"
 )
 
 // Cache manages the index files.
 type Cache struct {
 	*index.MergedIndexes
 	fetcher          *index.Fetcher
-	localIndexes     *index.Config
+	localIndexes     *indexConf.Config
 	localIndexesFile string
 	indexesDir       string
 	// Track the new indexes that need to be saved locally when writing the cache to file.
@@ -48,7 +49,7 @@ func New(ctx context.Context, indexFile, indexesDir string) (*Cache, error) {
 	var err error
 	var idx *index.Index
 
-	indexConfig, err := index.NewConfig(indexFile)
+	indexConfig, err := indexConf.New(indexFile)
 	if err != nil {
 		return nil, fmt.Errorf("an error occurred while loading index file %q from disk: %w", indexFile, err)
 	}
@@ -67,7 +68,7 @@ func New(ctx context.Context, indexFile, indexesDir string) (*Cache, error) {
 		if idx, err = c.loadIndex(cfg.Name); err != nil && errors.Is(err, fs.ErrNotExist) {
 			// If the index is not found in the local persistent cache we fetch it from the url.
 			ts := time.Now().Format(consts.TimeFormat)
-			if idx, err = c.fetcher.Fetch(ctx, cfg.Backend, cfg.URL, cfg.Name); err != nil {
+			if idx, err = c.fetcher.Fetch(ctx, cfg); err != nil {
 				return nil, fmt.Errorf("unable to fetch index %q with URL %q: %w", cfg.Name, cfg.URL, err)
 			}
 			// If correctly fetched, we need to update the metadata of the config entry.
@@ -92,7 +93,7 @@ func New(ctx context.Context, indexFile, indexesDir string) (*Cache, error) {
 func NewFromConfig(ctx context.Context, indexFile, indexesDir string, indexes []config.Index) (*Cache, error) {
 	var err error
 	var idx *index.Index
-	indexConfig := &index.Config{}
+	indexConfig := &indexConf.Config{}
 
 	c := &Cache{
 		localIndexes:     indexConfig,
@@ -101,19 +102,20 @@ func NewFromConfig(ctx context.Context, indexFile, indexesDir string, indexes []
 		MergedIndexes:    index.NewMergedIndexes(),
 	}
 
-	for _, cfg := range indexes {
+	for i := range indexes {
+		cfg := &indexes[i]
 		// If the index is in the local persistent cache we just load it.
 		ts := time.Now().Format(consts.TimeFormat)
 		if idx, err = c.loadIndex(cfg.Name); err != nil && errors.Is(err, fs.ErrNotExist) {
 			// If the index is not found in the local persistent cache we fetch it from the url.
-			if idx, err = c.fetcher.Fetch(ctx, cfg.Backend, cfg.URL, cfg.Name); err != nil {
+			if idx, err = c.fetcher.Fetch(ctx, indexConf.EntryFromIndex(cfg)); err != nil {
 				return nil, fmt.Errorf("unable to fetch index %q with URL %q: %w", cfg.Name, cfg.URL, err)
 			}
 			c.fetchedIndexes = append(c.fetchedIndexes, idx)
 		} else if err != nil {
 			return nil, fmt.Errorf("an error occurred while loading cache from disk: %w", err)
 		}
-		c.localIndexes.Configs = append(c.localIndexes.Configs, index.ConfigEntry{
+		c.localIndexes.Configs = append(c.localIndexes.Configs, &indexConf.Entry{
 			AddedTimestamp:   ts,
 			Name:             cfg.Name,
 			UpdatedTimestamp: ts,
@@ -140,21 +142,27 @@ func (c *Cache) Add(ctx context.Context, name, backend, url string) error {
 		return nil
 	}
 
+	entry = &indexConf.Entry{
+		Name:    name,
+		URL:     url,
+		Backend: backend,
+	}
+
 	// If the index is not locally cached we fetch it using the provided url.
-	if remoteIndex, err = c.fetcher.Fetch(ctx, backend, url, name); err != nil {
+	if remoteIndex, err = c.fetcher.Fetch(ctx, entry); err != nil {
 		return fmt.Errorf("unable to fetch index %q with URL %q: %w", name, url, err)
 	}
 
 	// Keep track of the newly created index file.
 	ts := time.Now().Format(consts.TimeFormat)
-	entry = &index.ConfigEntry{
+	entry = &indexConf.Entry{
 		Name:             remoteIndex.Name,
 		AddedTimestamp:   ts,
 		UpdatedTimestamp: ts,
 		URL:              url,
 		Backend:          backend,
 	}
-	c.localIndexes.Add(*entry)
+	c.localIndexes.Add(entry)
 
 	// Save it for later write operation.
 	c.fetchedIndexes = append(c.fetchedIndexes, remoteIndex)
@@ -228,14 +236,14 @@ func (c *Cache) Update(ctx context.Context, name string) error {
 
 	ts := time.Now().Format(consts.TimeFormat)
 	// Fetch the index from the remote url.
-	updatedIndex, err := c.fetcher.Fetch(ctx, entry.Backend, entry.URL, name)
+	updatedIndex, err := c.fetcher.Fetch(ctx, entry)
 	if err != nil {
 		return fmt.Errorf("unable to fetch index %q with URL %q: %w", name, entry.URL, err)
 	}
 
 	// Update the existing index entry by setting the new timestamp.
 	entry.UpdatedTimestamp = ts
-	c.localIndexes.Upsert(*entry)
+	c.localIndexes.Upsert(entry)
 
 	// Track the new fetched index for writing purposes.
 	c.fetchedIndexes = append(c.fetchedIndexes, updatedIndex)
@@ -266,8 +274,8 @@ func (c *Cache) Update(ctx context.Context, name string) error {
 // Remove: the removed entry is wiped out from the config.IndexesFile and the related index file is deleted.
 // Update: the entry in the config.IndexesFile for the updated index is updated. The related index file is
 // replaced by the new content fetched by the update operation.
-// Returns the index.Config written to the config.IndexesFile.
-func (c *Cache) Write() (*index.Config, error) {
+// Returns the indexConf.Config written to the config.IndexesFile.
+func (c *Cache) Write() (*indexConf.Config, error) {
 	for _, idx := range c.fetchedIndexes {
 		indexFileName := fmt.Sprintf("%s%s", idx.Name, ".yaml")
 		indexPath := filepath.Join(c.indexesDir, indexFileName)

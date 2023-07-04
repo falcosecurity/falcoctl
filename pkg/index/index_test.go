@@ -24,6 +24,8 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/falcosecurity/falcoctl/pkg/index/config"
 )
 
 const expectedIndexNormalized = `- name: baz
@@ -237,14 +239,20 @@ func TestFetch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := fetcher.Fetch(context.Background(), "http", ts.URL, "falcosecurity")
+	indexConf := &config.Entry{
+		Name:    "falcosecurity",
+		Backend: "http",
+		URL:     ts.URL,
+	}
+
+	_, err := fetcher.Fetch(context.Background(), indexConf)
 	if err != nil {
 		t.Errorf("cannot fetch index")
 	}
 }
 
 func TestConfig(t *testing.T) {
-	c, err := NewConfig("testdata/config.yaml")
+	c, err := config.New("testdata/config.yaml")
 	if err != nil {
 		t.Error(err)
 	}
@@ -256,7 +264,7 @@ func TestConfig(t *testing.T) {
 		}
 	}
 
-	c.Add(ConfigEntry{
+	c.Add(&config.Entry{
 		Name: "test",
 		URL:  "https://test.com/index.yaml",
 	})

@@ -27,6 +27,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"oras.land/oras-go/v2/registry"
 
+	"github.com/falcosecurity/falcoctl/pkg/index/config"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
@@ -140,7 +141,7 @@ func (i *Index) Write(path string) error {
 	dir, _ := filepath.Split(path)
 	// Create directory if it does not exist.
 	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
-		err = os.MkdirAll(dir, defaultDirPermissions) // #nosec G301 //we want 755 permissions
+		err = os.MkdirAll(dir, config.DefaultDirPermissions) // #nosec G301 //we want 755 permissions
 		if err != nil {
 			return err
 		}
@@ -154,7 +155,7 @@ func (i *Index) Write(path string) error {
 		return fmt.Errorf("cannot marshal index: %w", err)
 	}
 
-	if err = os.WriteFile(path, indexBytes, defaultFilePermissions); err != nil {
+	if err = os.WriteFile(path, indexBytes, config.DefaultFilePermissions); err != nil {
 		return fmt.Errorf("cannot write index to file: %w", err)
 	}
 
