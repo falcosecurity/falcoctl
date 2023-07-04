@@ -202,7 +202,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag %s", install.FlagNoVerify)
 			} else if !f.Changed && viper.IsSet(config.ArtifactNoVerifyKey) {
-				val := viper.Get(config.ArtifactFollowPluginsDirKey)
+				val := viper.Get(config.ArtifactNoVerifyKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagNoVerify, err)
 				}
