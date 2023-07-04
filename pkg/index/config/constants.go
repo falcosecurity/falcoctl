@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package index
+package config
 
 const (
-	defaultFilePermissions = 0o644
-	defaultDirPermissions  = 0o755
+	// DefaultFilePermissions are the default permissions used for files.
+	DefaultFilePermissions = 0o644
+	// DefaultDirPermissions are the default permissions used for directories.
+	DefaultDirPermissions = 0o755
 )

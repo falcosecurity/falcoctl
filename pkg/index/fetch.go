@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/falcosecurity/falcoctl/pkg/index/fetch/http"
 	"gopkg.in/yaml.v3"
+
+	"github.com/falcosecurity/falcoctl/pkg/index/config"
+	"github.com/falcosecurity/falcoctl/pkg/index/fetch/http"
 )
 
 // FetchFunc is a prototype for fetching indices for a specific index backend.
-type FetchFunc func(context.Context, string) ([]byte, error)
+type FetchFunc func(context.Context, *config.Entry) ([]byte, error)
 
 // Fetcher can fetch indices from various storage backends.
 type Fetcher struct {
@@ -50,19 +52,19 @@ func (f *Fetcher) get(backend string) (FetchFunc, error) {
 	return fetchFunc, nil
 }
 
-// Fetch retrieves a remote index using its URL.
-func (f *Fetcher) Fetch(ctx context.Context, backend, url, name string) (*Index, error) {
-	fetcher, err := f.get(backend)
+// Fetch retrieves a remote index.
+func (f *Fetcher) Fetch(ctx context.Context, conf *config.Entry) (*Index, error) {
+	fetcher, err := f.get(conf.Backend)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := fetcher(ctx, url)
+	bytes, err := fetcher(ctx, conf)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch index: %w", err)
 	}
 
-	i := New(name)
+	i := New(conf.Name)
 	if err := yaml.Unmarshal(bytes, &i.Entries); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal index: %w", err)
 	}

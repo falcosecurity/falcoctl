@@ -19,10 +19,11 @@ import (
 	"path/filepath"
 
 	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/index/config"
 )
 
 // Indexes returns the merge of all configured indexes.
-func Indexes(indexConfig *index.Config, path string) (*index.MergedIndexes, error) {
+func Indexes(indexConfig *config.Config, path string) (*index.MergedIndexes, error) {
 	var allIndexes []*index.Index
 
 	for _, indexConfigEntry := range indexConfig.Configs {

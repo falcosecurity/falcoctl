@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package index
+package config
 
 import (
 	"errors"
@@ -21,11 +21,13 @@ import (
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/falcosecurity/falcoctl/internal/config"
 )
 
-// ConfigEntry contains information about one of the index that were cached locally.
+// Entry contains information about one of the index that were cached locally.
 // TODO: add support for all the other fields.
-type ConfigEntry struct {
+type Entry struct {
 	AddedTimestamp string `yaml:"added_timestamp"`
 	// CaFile                string `yaml:"caFile"`
 	// CertFile              string `yaml:"certFile"`
@@ -42,34 +44,43 @@ type ConfigEntry struct {
 
 // Config aggregates the info about ConfigEntries.
 type Config struct {
-	Configs []ConfigEntry `yaml:"configs"`
+	Configs []*Entry `yaml:"configs"`
 }
 
-// NewConfig loads an index config from a file.
-func NewConfig(path string) (*Config, error) {
-	var config Config
+// New loads an index config from a file.
+func New(path string) (*Config, error) {
+	var conf Config
 	file, err := os.ReadFile(filepath.Clean(path))
 	if os.IsNotExist(err) {
-		return &config, nil
+		return &conf, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(file, &config)
+	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &config, nil
+	return &conf, nil
+}
+
+// EntryFromIndex creates a Entry from a config.Index.
+func EntryFromIndex(idx *config.Index) *Entry {
+	return &Entry{
+		Name:    idx.Name,
+		URL:     idx.URL,
+		Backend: idx.Backend,
+	}
 }
 
 // Add adds a new config to Config.
-func (c *Config) Add(entry ConfigEntry) {
+func (c *Config) Add(entry *Entry) {
 	c.Configs = append(c.Configs, entry)
 }
 
 // Upsert replaces the entry if already exists otherwise just appends it.
-func (c *Config) Upsert(entry ConfigEntry) {
+func (c *Config) Upsert(entry *Entry) {
 	for i, e := range c.Configs {
 		if entry.Name == e.Name {
 			c.Configs[i] = entry
@@ -90,10 +101,10 @@ func (c *Config) Remove(name string) {
 }
 
 // Get returns a pointer to an entry in a Config.
-func (c *Config) Get(name string) *ConfigEntry {
+func (c *Config) Get(name string) *Entry {
 	for k, conf := range c.Configs {
 		if conf.Name == name {
-			return &c.Configs[k]
+			return c.Configs[k]
 		}
 	}
 
@@ -106,7 +117,7 @@ func (c *Config) Write(path string) error {
 	dir, _ := filepath.Split(path)
 	// Create directory if it does not exist.
 	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
-		err = os.MkdirAll(dir, defaultDirPermissions) // #nosec G301 //we want 755 permissions
+		err = os.MkdirAll(dir, DefaultDirPermissions) // #nosec G301 //we want 755 permissions
 		if err != nil {
 			return err
 		}
@@ -117,7 +128,7 @@ func (c *Config) Write(path string) error {
 		return err
 	}
 
-	err = os.WriteFile(path, data, defaultFilePermissions)
+	err = os.WriteFile(path, data, DefaultFilePermissions)
 	if err != nil {
 		return err
 	}

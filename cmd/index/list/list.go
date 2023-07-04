@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/pkg/index"
+	indexConf "github.com/falcosecurity/falcoctl/pkg/index/config"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -53,7 +53,7 @@ func NewIndexListCmd(_ context.Context, opt *options.CommonOptions) *cobra.Comma
 }
 
 func (o *indexListOptions) RunIndexList() error {
-	indexConfig, err := index.NewConfig(config.IndexesFile)
+	indexConfig, err := indexConf.New(config.IndexesFile)
 	if err != nil {
 		return err
 	}

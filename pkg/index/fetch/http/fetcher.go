@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/falcosecurity/falcoctl/pkg/index/config"
 )
 
 // Fetch fetches the raw index file from the given HTTP/S url.
-func Fetch(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+func Fetch(ctx context.Context, conf *config.Entry) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", conf.URL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("cannot fetch index: %w", err)
 	}
@@ -33,7 +35,7 @@ func Fetch(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot fetch index: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // #nosec G307 closing errors should not happen
 
 	if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode <= http.StatusNetworkAuthenticationRequired {
 		return nil, fmt.Errorf("cannot fetch index: %s", resp.Status)
