@@ -255,18 +255,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	o.Printer.Info.Printfln("Installing the following artifacts: %v", refs)
 
 	for _, ref := range refs {
-		var sig *index.Signature
 		ref, err = o.IndexCache.ResolveReference(ref)
-		if err != nil {
-			return err
-		}
-		sig, ok := signatures[ref]
-		if !ok {
-			// try to get the signature from the index
-			o.IndexCache.SignatureForIndexRef(ref)
-		}
-
-		repo, err := utils.RepositoryFromRef(ref)
 		if err != nil {
 			return err
 		}
@@ -283,12 +272,23 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		// In order to prevent TOCTOU issues we'll perform signature verification after we complete a pull
-		// and obtained a digest but before files are written to disk. This way we ensure that we're verifying
-		// the exact digest that we just pulled, even if the tag gets overwritten in the meantime.
-		digestRef := fmt.Sprintf("%s@%s", repo, result.RootDigest)
+		sig, ok := signatures[ref]
+		if !ok {
+			// try to get the signature from the index
+			sig = o.IndexCache.SignatureForIndexRef(ref)
+		}
 
 		if sig != nil && !o.noVerify {
+			repo, err := utils.RepositoryFromRef(ref)
+			if err != nil {
+				return err
+			}
+
+			// In order to prevent TOCTOU issues we'll perform signature verification after we complete a pull
+			// and obtained a digest but before files are written to disk. This way we ensure that we're verifying
+			// the exact digest that we just pulled, even if the tag gets overwritten in the meantime.
+			digestRef := fmt.Sprintf("%s@%s", repo, result.RootDigest)
+
 			o.Printer.Info.Printfln("Verifying signature for %s", digestRef)
 			err = sign.VerifySignature(digestRef, sig)
 			if err != nil {
