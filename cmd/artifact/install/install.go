@@ -294,7 +294,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			if err != nil {
 				return fmt.Errorf("error while verifying signature for %s: %w", digestRef, err)
 			}
-			o.Printer.Success.Printfln("Signature successfully verified!")
+			o.Printer.Info.Printfln("Signature successfully verified!")
 		}
 
 		var destDir string
