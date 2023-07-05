@@ -17,6 +17,7 @@ package index
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -30,16 +31,23 @@ type FetchFunc func(context.Context, *config.Entry) ([]byte, error)
 
 // Fetcher can fetch indices from various storage backends.
 type Fetcher struct {
-	fetchFuncs map[string]FetchFunc
+	fetchFuncs            map[string]FetchFunc
+	schemeDefaultBackends map[string]string
 }
 
 // NewFetcher creates a new index fetcher.
 func NewFetcher() *Fetcher {
 	return &Fetcher{
 		fetchFuncs: map[string]FetchFunc{
-			"":      http.Fetch,
+			// default to HTTP
+			"": http.Fetch,
+			// for convenient UX we map the HTTP backend to both HTTP and HTTPS
 			"http":  http.Fetch,
 			"https": http.Fetch,
+		},
+		schemeDefaultBackends: map[string]string{
+			"http":  "http",
+			"https": "https",
 		},
 	}
 }
@@ -54,6 +62,18 @@ func (f *Fetcher) get(backend string) (FetchFunc, error) {
 
 // Fetch retrieves a remote index.
 func (f *Fetcher) Fetch(ctx context.Context, conf *config.Entry) (*Index, error) {
+	// if we don't have an explicit backend
+	// we try to guess based on the URI scheme
+	if conf.Backend == "" {
+		indexURL, err := url.Parse(conf.URL)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse index url: %w", err)
+		}
+		if mappedBackend, ok := f.schemeDefaultBackends[strings.ToLower(indexURL.Scheme)]; ok {
+			conf.Backend = mappedBackend
+		}
+	}
+
 	fetcher, err := f.get(conf.Backend)
 	if err != nil {
 		return nil, err

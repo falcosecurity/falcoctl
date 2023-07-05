@@ -90,9 +90,7 @@ var indexAddTests = Describe("add", func() {
 		})
 	})
 
-	// Here we are testing all the failure cases using both the rulesfile and plugin artifact types.
-	// The common logic for the artifacts is tested once using a rulesfile artifact, no need to repeat
-	// the same test using a plugin artifact.
+	// Here we are testing failure cases for adding a new index.
 	Context("failure", func() {
 		When("without URL", func() {
 			BeforeEach(func() {
