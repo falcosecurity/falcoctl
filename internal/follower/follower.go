@@ -265,7 +265,7 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	// Verify the signature if needed
 	if f.Config.Signature != nil {
 		f.Verbosef("verifying signature")
-		err = sign.VerifySignature(res.RootDigest, f.Config.Signature)
+		err = sign.VerifySignature(ctx, res.RootDigest, f.Config.Signature)
 		if err != nil {
 			return filePaths, res, fmt.Errorf("could not verify signature for %s: %w", res.RootDigest, err)
 		}
