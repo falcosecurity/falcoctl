@@ -24,7 +24,7 @@ import (
 )
 
 // VerifySignature checks that a fully qualified reference is signed according to the parameters.
-func VerifySignature(ref string, signature *index.Signature) error {
+func VerifySignature(ctx context.Context, ref string, signature *index.Signature) error {
 	if signature == nil {
 		// nothing to do
 		return nil
@@ -43,5 +43,5 @@ func VerifySignature(ref string, signature *index.Signature) error {
 			CertOidcIssuerRegexp: signature.Cosign.CertificateOidcIssuerRegexp,
 		},
 	}
-	return v.DoVerify(context.Background(), []string{ref})
+	return v.DoVerify(ctx, []string{ref})
 }
