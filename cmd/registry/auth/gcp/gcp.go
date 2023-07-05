@@ -26,7 +26,9 @@ import (
 )
 
 const (
-	longGcp = `Register a registry to use GCE Metadata server or gcloud Application Default credentials to connect to it.
+	longGcp = `Register an Artifact Registry to use GCP Application Default credentials to connect to it.
+
+In particular, it can use Workload Identity or GCE metadata server to authenticate.
 
 Example 
 	falcoctl registry auth gcp europe-docker.pkg.dev
@@ -47,7 +49,7 @@ func NewGcpCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "gcp [REGISTRY]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Register an OCI registry to log in using GCP common credentials",
+		Short:                 "Register an Artifact Registry to log in using GCP Application Default credentials",
 		Long:                  longGcp,
 		Args:                  cobra.ExactArgs(1),
 		SilenceErrors:         true,

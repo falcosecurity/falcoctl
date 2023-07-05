@@ -140,6 +140,8 @@ registry:
       clientsecret: "999999"
       clientid: "000000"
       tokenurl: http://myregistry.example.com:9096/token
+    gcp:
+    - registry: europe-docker.pkg.dev
 ```
 
 ## `~/.config/falcoctl/`
@@ -296,6 +298,19 @@ The `registry auth basic` command authenticates a user to a given OCI registry u
 #### Falcoctl registry auth oauth
 The `registry auth oauth` command retrieves access and refresh tokens for OAuth2.0 client credentials flow authentication. Run the command in advance for any private registries.
 
+#### Falcoctl registry auth gcp
+The `registry auth gcp` command retrieves access tokens using [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials). In particular, it supports access token retrieval using Google Compute Engine metadata server and Workload Identity, useful to authenticate your deployed Falco workloads. Run the command in advance for Artifact Registry authentication.
+
+Two typical use cases:
+
+1. You are manipulating some rules or plugins and use `falcoctl` to pull or push to an Artifact Registry:
+   1. run `gcloud auth application-default login` to generate a JSON credential file that will be used by applications.
+   2. run `falcoctl registry auth gcp europe-docker.pkg.dev` for instance to use Application Default Credentials to connect to any repository hosted at `europe-docker.pkg.dev`.
+2. You have a Falco instance with Falcoctl as a side car, running in a GKE cluster with Workload Identity enabled:
+   1. Workload Identity is correctly set up for the Falco instance (see the [documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity)).
+   2. Add an environment variable like `FALCOCTL_REGISTRY_AUTH_GCP=europe-docker.pkg.dev` to enable GCP authentication for the `europe-docker.pkg.dev` registry.
+   3. The Falcoctl instance will get access tokens from the metadata server and use them to authenticate to the registry and download your rules.
+
 ### Falcoctl registry push
 It pushes local files and references the artifact uniquely. The following command shows how to push a local file to a remote registry:
 ```bash
@@ -329,6 +344,7 @@ This is the list of the environment variable that `falcoctl` will use:
 | ------ | ---------- |
 | `FALCOCTL_REGISTRY_AUTH_BASIC` | `registry,username,password;registry1,username1,password1` |
 | `FALCOCTL_REGISTRY_AUTH_OAUTH` | `registry,client-id,client-secret,token-url;registry1` |
+| `FALCOCTL_REGISTRY_AUTH_GCP` | `registry;registry1` |
 | `FALCOCTL_INDEXES` | `index-name,https://falcosecurity.github.io/falcoctl/index.yaml` |
 | `FALCOCTL_ARTIFACT_FOLLOW_EVERY` | `6h0m0s` |
 | `FALCOCTL_ARTIFACT_FOLLOW_CRON` | `cron-formatted-string` |
