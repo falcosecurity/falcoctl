@@ -29,7 +29,7 @@ const (
 	longGcp = `Register a registry to use GCE Metadata server or gcloud Application Default credentials to connect to it.
 
 Example 
-	falcoctl registry gcp europe-docker.pkg.dev
+	falcoctl registry auth gcp europe-docker.pkg.dev
 `
 )
 
