@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/sign"
+	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
@@ -290,7 +290,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			digestRef := fmt.Sprintf("%s@%s", repo, result.RootDigest)
 
 			o.Printer.Info.Printfln("Verifying signature for %s", digestRef)
-			err = sign.VerifySignature(ctx, digestRef, sig)
+			err = signature.Verify(ctx, digestRef, sig)
 			if err != nil {
 				return fmt.Errorf("error while verifying signature for %s: %w", digestRef, err)
 			}

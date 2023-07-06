@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sign
+package signature
 
 import (
 	"context"
@@ -23,8 +23,8 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/index"
 )
 
-// VerifySignature checks that a fully qualified reference is signed according to the parameters.
-func VerifySignature(ctx context.Context, ref string, signature *index.Signature) error {
+// Verify checks that a fully qualified reference is signed according to the parameters.
+func Verify(ctx context.Context, ref string, signature *index.Signature) error {
 	if signature == nil {
 		// nothing to do
 		return nil

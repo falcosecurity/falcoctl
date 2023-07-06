@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sign allows falcoctl to interpret signature data and verify it
-package sign
+// Package signature allows falcoctl to interpret signature data and verify it
+package signature
