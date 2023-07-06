@@ -32,7 +32,7 @@ import (
 	"oras.land/oras-go/v2/registry"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
-	"github.com/falcosecurity/falcoctl/internal/sign"
+	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
@@ -265,7 +265,7 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	// Verify the signature if needed
 	if f.Config.Signature != nil {
 		f.Verbosef("verifying signature")
-		err = sign.VerifySignature(ctx, res.RootDigest, f.Config.Signature)
+		err = signature.Verify(ctx, res.RootDigest, f.Config.Signature)
 		if err != nil {
 			return filePaths, res, fmt.Errorf("could not verify signature for %s: %w", res.RootDigest, err)
 		}

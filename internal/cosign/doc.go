@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cosign contains all cosign specific functions. It should not be called directly but only through the sign package
+// Package cosign contains all cosign specific functions. It should not be called directly but only through the signature package
 package cosign
