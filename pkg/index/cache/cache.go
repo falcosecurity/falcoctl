@@ -96,6 +96,7 @@ func NewFromConfig(ctx context.Context, indexFile, indexesDir string, indexes []
 	indexConfig := &indexConf.Config{}
 
 	c := &Cache{
+		fetcher:          index.NewFetcher(),
 		localIndexes:     indexConfig,
 		localIndexesFile: indexFile,
 		indexesDir:       indexesDir,
