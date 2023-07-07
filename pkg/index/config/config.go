@@ -26,21 +26,26 @@ import (
 )
 
 // Entry contains information about one of the index that were cached locally.
-// TODO: add support for all the other fields.
 type Entry struct {
-	AddedTimestamp string `yaml:"added_timestamp"`
-	// CaFile                string `yaml:"caFile"`
-	// CertFile              string `yaml:"certFile"`
-	// InsecureSkipTLSVerify string `yaml:"insecure_skip_tls_verify"`
-	// KeyFile               string `yaml:"keyFile"`
-	Name string `yaml:"name"`
-	// PassCredentialsAll    string `yaml:"pass_credentials_all"`
-	// Password              string `yaml:"password"`
+	AddedTimestamp   string `yaml:"added_timestamp"`
+	Name             string `yaml:"name"`
 	UpdatedTimestamp string `yaml:"updated_timestamp"`
 	URL              string `yaml:"url"`
 	Backend          string `yaml:"backend"`
-	// Username              string `yaml:"username"`
+	// TODO: add support for HTTP and other backend configs.
+	// HTTP             http.BackendConfig `yaml:"http"`
 }
+
+// TODO: add support for HTTP backend config fields.
+// type BackendConfig struct {
+//    CaFile                string `yaml:"caFile"`
+//    CertFile              string `yaml:"certFile"`
+//    InsecureSkipTLSVerify string `yaml:"insecure_skip_tls_verify"`
+//    KeyFile               string `yaml:"keyFile"`
+//    PassCredentialsAll    string `yaml:"pass_credentials_all"`
+//    Password              string `yaml:"password"`
+//    Username              string `yaml:"username"`
+// }
 
 // Config aggregates the info about ConfigEntries.
 type Config struct {
