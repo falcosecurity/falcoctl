@@ -34,7 +34,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
-	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/index/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"

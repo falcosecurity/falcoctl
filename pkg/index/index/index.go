@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,15 +40,18 @@ type Entry struct {
 	Repository string     `yaml:"repository"`
 	Signature  *Signature `yaml:"signature,omitempty"`
 	// Optional fields
-	Description string   `yaml:"description"`
-	Home        string   `yaml:"home"`
-	Keywords    []string `yaml:"keywords"`
-	License     string   `yaml:"license"`
-	Maintainers []struct {
-		Email string `yaml:"email"`
-		Name  string `yaml:"name"`
-	} `yaml:"maintainers"`
-	Sources []string `yaml:"sources"`
+	Description string     `yaml:"description"`
+	Home        string     `yaml:"home"`
+	Keywords    []string   `yaml:"keywords"`
+	License     string     `yaml:"license"`
+	Maintainers Maintainer `yaml:"maintainers"`
+	Sources     []string   `yaml:"sources"`
+}
+
+// Maintainer represents an index maintainer.
+type Maintainer []struct {
+	Email string `yaml:"email"`
+	Name  string `yaml:"name"`
 }
 
 // CosignSignature contains certificate information for cosign keyless signature verification, equivalent to the
@@ -185,6 +188,11 @@ func (i *Index) Read(path string) error {
 		return fmt.Errorf("cannot read index from file: %w", err)
 	}
 
+	return i.ReadBytes(bytes)
+}
+
+// ReadBytes reads entries from a byte slice.
+func (i *Index) ReadBytes(bytes []byte) error {
 	if err := yaml.Unmarshal(bytes, &i.Entries); err != nil {
 		return fmt.Errorf("cannot unmarshal index: %w", err)
 	}

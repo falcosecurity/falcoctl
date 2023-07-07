@@ -25,14 +25,15 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/consts"
-	"github.com/falcosecurity/falcoctl/pkg/index"
 	indexConf "github.com/falcosecurity/falcoctl/pkg/index/config"
+	"github.com/falcosecurity/falcoctl/pkg/index/fetch"
+	"github.com/falcosecurity/falcoctl/pkg/index/index"
 )
 
 // Cache manages the index files.
 type Cache struct {
 	*index.MergedIndexes
-	fetcher          *index.Fetcher
+	fetcher          *fetch.Fetcher
 	localIndexes     *indexConf.Config
 	localIndexesFile string
 	indexesDir       string
@@ -55,7 +56,7 @@ func New(ctx context.Context, indexFile, indexesDir string) (*Cache, error) {
 	}
 
 	c := &Cache{
-		fetcher:          index.NewFetcher(),
+		fetcher:          fetch.NewFetcher(),
 		localIndexes:     indexConfig,
 		localIndexesFile: indexFile,
 		indexesDir:       indexesDir,
@@ -96,7 +97,7 @@ func NewFromConfig(ctx context.Context, indexFile, indexesDir string, indexes []
 	indexConfig := &indexConf.Config{}
 
 	c := &Cache{
-		fetcher:          index.NewFetcher(),
+		fetcher:          fetch.NewFetcher(),
 		localIndexes:     indexConfig,
 		localIndexesFile: indexFile,
 		indexesDir:       indexesDir,
