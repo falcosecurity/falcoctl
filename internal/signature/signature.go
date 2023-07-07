@@ -20,7 +20,7 @@ import (
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/options"
 
 	"github.com/falcosecurity/falcoctl/internal/cosign"
-	"github.com/falcosecurity/falcoctl/pkg/index"
+	"github.com/falcosecurity/falcoctl/pkg/index/index"
 )
 
 // Verify checks that a fully qualified reference is signed according to the parameters.

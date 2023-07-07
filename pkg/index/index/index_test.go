@@ -1,4 +1,4 @@
-// Copyright 2022 The Falco Authors
+// Copyright 2023 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,8 @@
 package index
 
 import (
-	"context"
 	"crypto/sha256"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"os"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -221,38 +217,8 @@ func TestNormalize(t *testing.T) {
 	}
 }
 
-func TestFetch(t *testing.T) {
-	fetcher := NewFetcher()
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			t.Errorf("invalid request")
-		}
-
-		bytes, err := os.ReadFile("testdata/index.yaml")
-		if err != nil {
-			t.Error(err)
-		}
-
-		if _, err := w.Write(bytes); err != nil {
-			t.Error(err)
-		}
-	}))
-	defer ts.Close()
-
-	indexConf := &config.Entry{
-		Name:    "falcosecurity",
-		Backend: "http",
-		URL:     ts.URL,
-	}
-
-	_, err := fetcher.Fetch(context.Background(), indexConf)
-	if err != nil {
-		t.Errorf("cannot fetch index")
-	}
-}
-
 func TestConfig(t *testing.T) {
-	c, err := config.New("testdata/config.yaml")
+	c, err := config.New("../testdata/config.yaml")
 	if err != nil {
 		t.Error(err)
 	}
