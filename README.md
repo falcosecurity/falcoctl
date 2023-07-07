@@ -199,11 +199,28 @@ This is an example of an index file:
   sources:
     - https://github.com/falcosecurity/plugins/tree/master/plugins/okta/rules
 ```
+
+### Index Storage Backends
+
+Indices for *falcoctl* can be retrieved from various storage backends. The supported index storage backends are listed in the table below. Note if you do not specify a backend type when adding a new index *falcoctl* will try to guess based on the `URI Scheme`:
+
+| Name  | URI Scheme | Description                                                                                   |
+| ----- | ---------- | --------------------------------------------------------------------------------------------- |
+| http  | http://    | Can be used to retrieve indices via simple HTTP GET requests.                                 |
+| https | https://   | Convenience alias for the HTTP backend.                                                       |
+| gcs   | gs://      | For indices stored as Google Cloud Storage objects. Supports application default credentials. |
+
+
 #### falcoctl index add
-New indexes are configured to be used by the *falcoctl* tool by adding them through the `index add` command. The current implementation requires a valid HTTP URL from where to download the `index` file. There are no limits to the number of indexes that can be added to the *falcoctl* tool. When adding a new index the tool adds a new entry in a file called **indexes.yaml** and downloads the *index* file in `~/.config/falcoctl`. The same folder is used to store the **indexes.yaml** file, too.
+New indexes are configured to be used by the *falcoctl* tool by adding them through the `index add` command. There are no limits to the number of indexes that can be added to the *falcoctl* tool. When adding a new index the tool adds a new entry in a file called **indexes.yaml** and downloads the *index* file in `~/.config/falcoctl`. The same folder is used to store the **indexes.yaml** file, too.
 The following command adds a new index named *falcosecurity*:
 ```bash
 $ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+```
+
+The following command adds the same index *falcosecurity*, but explicitly sets the storage backend to `https`:
+```bash
+$ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml https
 ```
 #### falcoctl index list
 Using the `index list` command you can check the configured `indexes` in your local system:
@@ -340,22 +357,22 @@ The `falcoctl` arguments can be passed through these different modalities are pr
 
 This is the list of the environment variable that `falcoctl` will use:
 
-| Name | Content |
-| ------ | ---------- |
-| `FALCOCTL_REGISTRY_AUTH_BASIC` | `registry,username,password;registry1,username1,password1` |
-| `FALCOCTL_REGISTRY_AUTH_OAUTH` | `registry,client-id,client-secret,token-url;registry1` |
-| `FALCOCTL_REGISTRY_AUTH_GCP` | `registry;registry1` |
-| `FALCOCTL_INDEXES` | `index-name,https://falcosecurity.github.io/falcoctl/index.yaml` |
-| `FALCOCTL_ARTIFACT_FOLLOW_EVERY` | `6h0m0s` |
-| `FALCOCTL_ARTIFACT_FOLLOW_CRON` | `cron-formatted-string` |
-| `FALCOCTL_ARTIFACT_FOLLOW_REFS` | `ref1;ref2` |
-| `FALCOCTL_ARTIFACT_FOLLOW_FALCOVERSIONS` | `falco-version-url` |
-| `FALCOCTL_ARTIFACT_FOLLOW_RULESFILEDIR` | `rules-directory-path` |
-| `FALCOCTL_ARTIFACT_FOLLOW_PLUGINSDIR` | `plugins-directory-path` |
-| `FALCOCTL_ARTIFACT_FOLLOW_TMPDIR` | `tmp-directory-path` |
-| `FALCOCTL_ARTIFACT_INSTALL_REFS` | `ref1;ref2` |
-| `FALCOCTL_ARTIFACT_INSTALL_RULESFILESDIR` | `rules-directory-path` |
-| `FALCOCTL_ARTIFACT_INSTALL_PLUGINSDIR` | `plugins-directory-path` |
+| Name                                      | Content                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| `FALCOCTL_REGISTRY_AUTH_BASIC`            | `registry,username,password;registry1,username1,password1`       |
+| `FALCOCTL_REGISTRY_AUTH_OAUTH`            | `registry,client-id,client-secret,token-url;registry1`           |
+| `FALCOCTL_REGISTRY_AUTH_GCP`              | `registry;registry1`                                             |
+| `FALCOCTL_INDEXES`                        | `index-name,https://falcosecurity.github.io/falcoctl/index.yaml` |
+| `FALCOCTL_ARTIFACT_FOLLOW_EVERY`          | `6h0m0s`                                                         |
+| `FALCOCTL_ARTIFACT_FOLLOW_CRON`           | `cron-formatted-string`                                          |
+| `FALCOCTL_ARTIFACT_FOLLOW_REFS`           | `ref1;ref2`                                                      |
+| `FALCOCTL_ARTIFACT_FOLLOW_FALCOVERSIONS`  | `falco-version-url`                                              |
+| `FALCOCTL_ARTIFACT_FOLLOW_RULESFILEDIR`   | `rules-directory-path`                                           |
+| `FALCOCTL_ARTIFACT_FOLLOW_PLUGINSDIR`     | `plugins-directory-path`                                         |
+| `FALCOCTL_ARTIFACT_FOLLOW_TMPDIR`         | `tmp-directory-path`                                             |
+| `FALCOCTL_ARTIFACT_INSTALL_REFS`          | `ref1;ref2`                                                      |
+| `FALCOCTL_ARTIFACT_INSTALL_RULESFILESDIR` | `rules-directory-path`                                           |
+| `FALCOCTL_ARTIFACT_INSTALL_PLUGINSDIR`    | `plugins-directory-path`                                         |
 
 Please note that when passing multiple arguments via an environment variable, they must be separated by a semicolon. Moreover, multiple fields of the same argument must be separated by a comma.
 
