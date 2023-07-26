@@ -2,7 +2,7 @@
 
 [![Falco Core Repository](https://github.com/falcosecurity/evolution/blob/main/repos/badges/falco-core-blue.svg)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#core-scope) [![Stable](https://img.shields.io/badge/status-stable-brightgreen?style=for-the-badge)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#stable) [![License](https://img.shields.io/github/license/falcosecurity/falcoctl?style=for-the-badge)](./LICENSE)
 
-The official CLI tool for working with Falco and its ecosystem components.
+The official CLI tool for working with [Falco](https://github.com/falcosecurity/falco) and its [ecosystem components](https://falco.org/docs/#what-are-the-ecosystem-projects-that-can-interact-with-falco).
 
 ## Installation
 ### Install falcoctl manually
