@@ -45,7 +45,7 @@ Flags:
       --platform stringArray       os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
   -r, --requires stringArray       set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
   -t, --tag stringArray            additional artifact tag. Can be repeated multiple times
-      --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin" (default )
+      --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset" (default )
       --version string             set the version of the artifact
 
 Global Flags:
@@ -99,7 +99,7 @@ Flags:
       --platform stringArray       os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
   -r, --requires stringArray       set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
   -t, --tag stringArray            additional artifact tag. Can be repeated multiple times
-      --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin"
+      --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"
       --version string             set the version of the artifact
 
 Global Flags:
@@ -192,10 +192,10 @@ var registryPushTests = Describe("push", func() {
 
 		When("multiple rulesfiles", func() {
 			BeforeEach(func() {
-				args = []string{registryCmd, pushCmd, rulesRepo, "--config", configFile, rulesfiletgz, rulesfiletgz,
-					"--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
+				args = []string{registryCmd, pushCmd, "--config", configFile,
+					"--type", "rulesfile", "--version", "1.1.1", "--plain-http", rulesRepo, rulesfiletgz, rulesfiletgz}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERROR expecting 1 rulesfile object received 2: invalid number of rulesfiles")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR expecting 1 rulesfile object, received 2: invalid number of rulesfiles")
 		})
 
 		When("unreachable registry", func() {
@@ -253,7 +253,8 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, pluginsRepo, pluginsRepo, "--config", configFile,
 					"--type", "wrongType", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERROR invalid argument \"wrongType\" for \"--type\" flag: must be one of \"rulesfile\", \"plugin\"")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR invalid argument \"wrongType\" for \"--type\" "+
+				"flag: must be one of \"rulesfile\", \"plugin\", \"asset")
 		})
 	})
 

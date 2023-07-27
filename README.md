@@ -338,7 +338,7 @@ Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rul
 * `--annotation-source`: set annotation source for the artifact;
 * `--depends-on`: set an artifact dependency (can be specified multiple times). Example: `--depends-on my-plugin:1.2.3`
 * `--tag`: additional artifact tag. Can be repeated multiple time 
-* `--type`: type of artifact to be pushed. Allowed values: `rulesfile`, `plugin`
+* `--type`: type of artifact to be pushed. Allowed values: `rulesfile`, `plugin`, `asset`
 
 ### Falcoctl registry pull
 Pulling **artifacts** involves specifying the reference. The type of **artifact** is not required since the tool will implicitly extract it from the OCI **artifact**:
