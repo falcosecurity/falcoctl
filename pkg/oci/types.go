@@ -33,6 +33,8 @@ const (
 	Rulesfile ArtifactType = "rulesfile"
 	// Plugin represents a plugin artifact.
 	Plugin ArtifactType = "plugin"
+	// Asset represents an artifact consumed by another plugin.
+	Asset ArtifactType = "asset"
 )
 
 // The following functions are necessary to use ArtifactType with Cobra.
@@ -45,11 +47,11 @@ func (e ArtifactType) String() string {
 // Set an ArtifactType.
 func (e *ArtifactType) Set(v string) error {
 	switch v {
-	case "rulesfile", "plugin":
+	case "rulesfile", "plugin", "asset":
 		*e = ArtifactType(v)
 		return nil
 	default:
-		return errors.New(`must be one of "rulesfile", "plugin"`)
+		return errors.New(`must be one of "rulesfile", "plugin", "asset"`)
 	}
 }
 
@@ -66,6 +68,8 @@ func (e *ArtifactType) ToMediaType() string {
 		return FalcoRulesfileLayerMediaType
 	case Plugin:
 		return FalcoPluginLayerMediaType
+	case Asset:
+		return FalcoAssetLayerMediaType
 	}
 
 	// should never happen
@@ -80,6 +84,8 @@ func HumanReadableMediaType(s string) string {
 		return string(Rulesfile)
 	case FalcoPluginLayerMediaType:
 		return string(Plugin)
+	case FalcoAssetLayerMediaType:
+		return string(Asset)
 	}
 
 	// should never happen

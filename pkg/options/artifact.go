@@ -65,7 +65,7 @@ func (art *Artifact) AddFlags(cmd *cobra.Command) error {
 			"additional artifact tag. Can be repeated multiple times")
 
 		cmd.Flags().Var(&art.ArtifactType, "type",
-			`type of artifact to be pushed. Allowed values: "rulesfile", "plugin"`)
+			`type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"`)
 		if err := cmd.MarkFlagRequired("type"); err != nil {
 			// this should never happen.
 			return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
