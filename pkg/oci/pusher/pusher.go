@@ -49,6 +49,8 @@ var (
 	ErrMismatchFilepathAndPlatform = errors.New("number of filepaths and platform should be the same")
 	// ErrInvalidNumberRulesfiles error when the number of rulesfiles is not the one expected.
 	ErrInvalidNumberRulesfiles = errors.New("invalid number of rulesfiles")
+	// ErrInvalidNumberAssets error when the number of assets is not the one expected.
+	ErrInvalidNumberAssets = errors.New("invalid number of assets")
 	// ErrInvalidDependenciesFormat error when the dependencies are invalid.
 	ErrInvalidDependenciesFormat = errors.New("invalid dependency format")
 )
@@ -87,9 +89,11 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		return nil, err
 	}
 
-	// First thing check that we do not have multiple rulesfiles.
+	// First thing check that we do not have multiple rulesfiles or multiple assets.
 	if artifactType == oci.Rulesfile && len(o.Filepaths) != 1 {
-		return nil, fmt.Errorf("expecting 1 rulesfile object received %d: %w", len(o.Filepaths), ErrInvalidNumberRulesfiles)
+		return nil, fmt.Errorf("expecting 1 rulesfile object, received %d: %w", len(o.Filepaths), ErrInvalidNumberRulesfiles)
+	} else if artifactType == oci.Asset && len(o.Filepaths) != 1 {
+		return nil, fmt.Errorf("expecting 1 asset object, received %d: %w", len(o.Filepaths), ErrInvalidNumberAssets)
 	}
 
 	repo, err := repository.NewRepository(ref,
@@ -164,8 +168,8 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 	}
 
-	if artifactType == oci.Rulesfile {
-		// We should have only one manifestDesc.
+	if artifactType != oci.Plugin {
+		// We should have only one manifestDesc for any not arch dependent artifact.
 		rootDesc = manifestDescs[0]
 	} else {
 		// Here we are in the case when we are dealing with a plugin.
@@ -212,6 +216,10 @@ func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store,
 		layerMediaType = oci.FalcoRulesfileLayerMediaType
 	case oci.Plugin:
 		layerMediaType = oci.FalcoPluginLayerMediaType
+	case oci.Asset:
+		layerMediaType = oci.FalcoAssetLayerMediaType
+	default:
+		return nil, fmt.Errorf("unknown media type for main layer: %s", artifactType)
 	}
 
 	// Add the content of the principal layer to the file store.
@@ -231,6 +239,10 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
 		layerMediaType = oci.FalcoRulesfileConfigMediaType
 	case oci.Plugin:
 		layerMediaType = oci.FalcoPluginConfigMediaType
+	case oci.Asset:
+		layerMediaType = oci.FalcoAssetConfigMediaType
+	default:
+		return nil, fmt.Errorf("unknown media type for config layer: %s", artifactType)
 	}
 
 	// todo: this is likely unnecessary, since the json marshaller should do that. double-check

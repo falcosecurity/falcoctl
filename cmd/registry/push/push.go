@@ -194,6 +194,8 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 		opts = append(opts, ocipusher.WithFilepathsAndPlatforms(paths, o.Platforms))
 	case oci.Rulesfile:
 		opts = append(opts, ocipusher.WithFilepaths(paths))
+	case oci.Asset:
+		opts = append(opts, ocipusher.WithFilepaths(paths))
 	}
 
 	res, err := pusher.Push(ctx, o.ArtifactType, ref, opts...)
