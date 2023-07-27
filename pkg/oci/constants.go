@@ -29,6 +29,12 @@ const (
 	// FalcoPluginLayerMediaType is the MediaType for plugins.
 	FalcoPluginLayerMediaType = "application/vnd.cncf.falco.plugin.layer.v1+tar.gz"
 
+	// FalcoAssetConfigMediaType is the MediaType for asset's config layer.
+	FalcoAssetConfigMediaType = "application/vnd.cncf.falco.asset.config.v1+json"
+
+	// FalcoAssetLayerMediaType is the MediaType for assets.
+	FalcoAssetLayerMediaType = "application/vnd.cncf.falco.asset.layer.v1+tar.gz"
+
 	// DefaultTag is the default tag reference to be used when none is provided.
 	DefaultTag = "latest"
 )
