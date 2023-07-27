@@ -52,7 +52,7 @@ func NewArtifactListCmd(ctx context.Context, opt *options.Common) *cobra.Command
 		},
 	}
 
-	cmd.Flags().Var(&o.artifactType, "type", `Only list artifacts with a specific type. Allowed values: "rulesfile", "plugin""`)
+	cmd.Flags().Var(&o.artifactType, "type", `Only list artifacts with a specific type. Allowed values: "rulesfile", "plugin", "asset"`)
 	cmd.Flags().StringVar(&o.index, "index", "", "Only display artifacts from a configured index")
 
 	return cmd

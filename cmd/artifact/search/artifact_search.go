@@ -69,7 +69,7 @@ func NewArtifactSearchCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 	cmd.Flags().Float64VarP(&o.minScore, "min-score", "", defaultMinScore,
 		"the minimum score used to match artifact names with search keywords")
 
-	cmd.Flags().Var(&o.artifactType, "type", `Only search artifacts with a specific type. Allowed values: "rulesfile", "plugin""`)
+	cmd.Flags().Var(&o.artifactType, "type", `Only search artifacts with a specific type. Allowed values: "rulesfile", "plugin", "asset"`)
 
 	return cmd
 }
