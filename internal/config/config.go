@@ -75,7 +75,9 @@ const (
 	// Default values is set every 24 hours.
 	FollowResync = time.Hour * 24
 
+	//
 	// Viper configuration keys.
+	//
 
 	// RegistryCredentialConfigKey is the Viper key for the credentials store path configuration.
 	//#nosec G101 -- false positive
@@ -86,8 +88,10 @@ const (
 	RegistryAuthBasicKey = "registry.auth.basic"
 	// RegistryAuthGcpKey is the Viper key for gcp authentication configuration.
 	RegistryAuthGcpKey = "registry.auth.gcp"
+
 	// IndexesKey is the Viper key for indexes configuration.
 	IndexesKey = "indexes"
+
 	// ArtifactFollowEveryKey is the Viper key for follower "every" configuration.
 	ArtifactFollowEveryKey = "artifact.follow.every"
 	// ArtifactFollowCronKey is the Viper key for follower "cron" configuration.
@@ -104,16 +108,18 @@ const (
 	ArtifactFollowAssetsDirKey = "artifact.follow.assetsdir"
 	// ArtifactFollowTmpDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowTmpDirKey = "artifact.follow.tmpdir"
+
 	// ArtifactInstallArtifactsKey is the Viper key for installer "artifacts" configuration.
 	ArtifactInstallArtifactsKey = "artifact.install.refs"
-	// ArtifactInstallRulesfilesDirKey is the Viper key for follower "rulesFilesDir" configuration.
+	// ArtifactInstallRulesfilesDirKey is the Viper key for installer "rulesFilesDir" configuration.
 	ArtifactInstallRulesfilesDirKey = "artifact.install.rulesfilesdir"
-	// ArtifactInstallPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
+	// ArtifactInstallPluginsDirKey is the Viper key for installer "pluginsDir" configuration.
 	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
-	// ArtifactInstallAssetsDirKey is the Viper key for follower "pluginsDir" configuration.
+	// ArtifactInstallAssetsDirKey is the Viper key for installer "pluginsDir" configuration.
 	ArtifactInstallAssetsDirKey = "artifact.install.assetsdir"
 	// ArtifactInstallResolveDepsKey is the Viper key for installer "resolveDeps" configuration.
 	ArtifactInstallResolveDepsKey = "artifact.install.resolveDeps"
+
 	// ArtifactAllowedTypesKey is the Viper key for the whitelist of artifacts to be installed in the system.
 	ArtifactAllowedTypesKey = "artifact.allowedTypes"
 	// ArtifactNoVerifyKey is the Viper key for skipping signature verification.
