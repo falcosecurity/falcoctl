@@ -168,7 +168,7 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 		}
 	}
 
-	if artifactType != oci.Plugin {
+	if artifactType == oci.Rulesfile || artifactType == oci.Asset {
 		// We should have only one manifestDesc for any not arch dependent artifact.
 		rootDesc = manifestDescs[0]
 	} else {

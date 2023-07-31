@@ -15,8 +15,9 @@
 package options
 
 import (
-	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/spf13/cobra"
+
+	"github.com/falcosecurity/falcoctl/internal/config"
 )
 
 const (
