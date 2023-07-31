@@ -72,18 +72,18 @@ Example - Install "cloudtrail" plugins using a fully qualified reference:
 type artifactInstallOptions struct {
 	*options.Common
 	*options.Registry
-	rulesfilesDir string
-	pluginsDir    string
-	allowedTypes  oci.ArtifactTypeSlice
-	resolveDeps   bool
-	noVerify      bool
+	*options.Directory
+	allowedTypes oci.ArtifactTypeSlice
+	resolveDeps  bool
+	noVerify     bool
 }
 
 // NewArtifactInstallCmd returns the artifact install command.
 func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := artifactInstallOptions{
-		Common:   opt,
-		Registry: &options.Registry{},
+		Common:    opt,
+		Registry:  &options.Registry{},
+		Directory: &options.Directory{},
 	}
 
 	cmd := &cobra.Command{
@@ -93,26 +93,38 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comm
 		Long:                  longInstall,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
-			f := cmd.Flags().Lookup(FlagRulesFilesDir)
+			f := cmd.Flags().Lookup(options.FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				return fmt.Errorf("unable to retrieve flag %q", FlagRulesFilesDir)
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagRulesFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallRulesfilesDirKey) {
 				val := viper.Get(config.ArtifactInstallRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					return fmt.Errorf("unable to overwrite %q flag: %w", FlagRulesFilesDir, err)
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagRulesFilesDir, err)
 				}
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(FlagPluginsFilesDir)
+			f = cmd.Flags().Lookup(options.FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				return fmt.Errorf("unable to retrieve flag %q", FlagPluginsFilesDir)
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagPluginsFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactInstallPluginsDirKey) {
 				val := viper.Get(config.ArtifactInstallPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					return fmt.Errorf("unable to overwrite %q flag: %w", FlagPluginsFilesDir, err)
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagPluginsFilesDir, err)
+				}
+			}
+
+			// Override "assets-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup(options.FlagAssetsFilesDir)
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagAssetsFilesDir)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowAssetsDirKey) {
+				val := viper.Get(config.ArtifactFollowAssetsDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagAssetsFilesDir, err)
 				}
 			}
 
@@ -161,10 +173,7 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comm
 	}
 
 	o.Registry.AddFlags(cmd)
-	cmd.Flags().StringVarP(&o.rulesfilesDir, FlagRulesFilesDir, "", config.RulesfilesDir,
-		"directory where to install rules.")
-	cmd.Flags().StringVarP(&o.pluginsDir, FlagPluginsFilesDir, "", config.PluginsDir,
-		"directory where to install plugins.")
+	o.Directory.AddFlags(cmd)
 	cmd.Flags().Var(&o.allowedTypes, FlagAllowedTypes,
 		fmt.Sprintf(`list of artifact types that can be installed. If not specified or configured, all types are allowed.
 It accepts comma separated values or it can be repeated multiple times.
@@ -300,9 +309,13 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		var destDir string
 		switch result.Type {
 		case oci.Plugin:
-			destDir = o.pluginsDir
+			destDir = o.PluginsDir
 		case oci.Rulesfile:
-			destDir = o.rulesfilesDir
+			destDir = o.RulesfilesDir
+		case oci.Asset:
+			destDir = o.AssetsDir
+		default:
+			return fmt.Errorf("unrecognized result type %q while pulling artifact", result.Type)
 		}
 
 		// Check if directory exists and is writable.
