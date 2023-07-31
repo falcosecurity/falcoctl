@@ -81,8 +81,7 @@ Example - Install and follow "cloudtrail" plugins using a fully qualified refere
 type artifactFollowOptions struct {
 	*options.Common
 	*options.Registry
-	rulesfilesDir string
-	pluginsDir    string
+	*options.Directory
 	tmpDir        string
 	every         time.Duration
 	cron          string
@@ -101,6 +100,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 	o := artifactFollowOptions{
 		Common:    opt,
 		Registry:  &options.Registry{},
+		Directory: &options.Directory{},
 		closeChan: make(chan bool),
 		versions:  config.FalcoVersions{},
 	}
@@ -147,26 +147,38 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(install.FlagRulesFilesDir)
+			f = cmd.Flags().Lookup(options.FlagRulesFilesDir)
 			if f == nil {
 				// should never happen
-				return fmt.Errorf("unable to retrieve flag %q", install.FlagRulesFilesDir)
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagRulesFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowRulesfilesDirKey) {
 				val := viper.Get(config.ArtifactFollowRulesfilesDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagRulesFilesDir, err)
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagRulesFilesDir, err)
 				}
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(install.FlagPluginsFilesDir)
+			f = cmd.Flags().Lookup(options.FlagPluginsFilesDir)
 			if f == nil {
 				// should never happen
-				return fmt.Errorf("unable to retrieve flag %q", install.FlagPluginsFilesDir)
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagPluginsFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowPluginsDirKey) {
 				val := viper.Get(config.ArtifactFollowPluginsDirKey)
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
-					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagPluginsFilesDir, err)
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagPluginsFilesDir, err)
+				}
+			}
+
+			// Override "assets-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup(options.FlagAssetsFilesDir)
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagAssetsFilesDir)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowAssetsDirKey) {
+				val := viper.Get(config.ArtifactFollowAssetsDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagAssetsFilesDir, err)
 				}
 			}
 
@@ -222,15 +234,11 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 	}
 
 	o.Registry.AddFlags(cmd)
+	o.Directory.AddFlags(cmd)
 	cmd.Flags().DurationVarP(&o.every, "every", "e", config.FollowResync, "Time interval how often it checks for a new version of the "+
 		"artifact. Cannot be used together with 'cron' option.")
 	cmd.Flags().StringVar(&o.cron, "cron", "", "Cron-like string to specify interval how often it checks for a new version of the artifact."+
 		" Cannot be used together with 'every' option.")
-	// TODO (alacuku): move it in a dedicate data structure since they are in common with artifactInstall command.
-	cmd.Flags().StringVarP(&o.rulesfilesDir, install.FlagRulesFilesDir, "", config.RulesfilesDir,
-		"Directory where to install rules")
-	cmd.Flags().StringVarP(&o.pluginsDir, install.FlagPluginsFilesDir, "", config.PluginsDir,
-		"Directory where to install plugins")
 	cmd.Flags().StringVar(&o.tmpDir, "tmp-dir", "", "Directory where to save temporary files")
 	cmd.Flags().StringVar(&o.falcoVersions, "falco-versions", "http://localhost:8765/versions",
 		"Where to retrieve versions, it can be either an URL or a path to a file")
@@ -298,8 +306,9 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		cfg := &follower.Config{
 			WaitGroup:         &wg,
 			Resync:            sched,
-			RulesfilesDir:     o.rulesfilesDir,
-			PluginsDir:        o.pluginsDir,
+			RulesfilesDir:     o.RulesfilesDir,
+			PluginsDir:        o.PluginsDir,
+			AssetsDir:         o.AssetsDir,
 			ArtifactReference: ref,
 			PlainHTTP:         o.PlainHTTP,
 			CloseChan:         o.closeChan,

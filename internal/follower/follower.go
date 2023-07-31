@@ -65,10 +65,12 @@ type Config struct {
 	CloseChan <-chan bool
 	// Resync time after which periodically it checks for new a new version.
 	Resync cron.Schedule
-	// RulesfileDir directory where the rulesfile are stored.
+	// RulesfilesDir directory where the rulesfile are stored.
 	RulesfilesDir string
-	// PluginsDir directory where the plugins are stored.
+	// PluginsDir directory where  plugins are stored.
 	PluginsDir string
+	// AssetsDir directory where assets are stored.
+	AssetsDir string
 	// ArtifactReference reference to the artifact in a remote repository.
 	ArtifactReference string
 	// PlainHTTP is set to true if all registry interaction must be in plain http.
@@ -311,6 +313,8 @@ func (f *Follower) destinationDir(res *oci.RegistryResult) string {
 		dir = f.PluginsDir
 	case oci.Rulesfile:
 		dir = f.RulesfilesDir
+	case oci.Asset:
+		dir = f.AssetsDir
 	}
 	return dir
 }

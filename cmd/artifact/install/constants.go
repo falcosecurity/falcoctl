@@ -16,13 +16,6 @@
 package install
 
 const (
-
-	// FlagRulesFilesDir is the name of the flag to specify the directory path of the rules files.
-	FlagRulesFilesDir = "rulesfiles-dir"
-
-	// FlagPluginsFilesDir is the name of the flag to specify the directory path of the plugins.
-	FlagPluginsFilesDir = "plugins-dir"
-
 	// FlagAllowedTypes is the name of the flag to specify allowed artifact types.
 	FlagAllowedTypes = "allowed-types"
 

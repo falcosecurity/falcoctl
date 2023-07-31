@@ -69,6 +69,8 @@ const (
 	PluginsDir = "/usr/share/falco/plugins"
 	// RulesfilesDir default path where rulesfiles are installed.
 	RulesfilesDir = "/etc/falco"
+	// AssetsDir default path where assets are installed.
+	AssetsDir = "/etc/falco/assets"
 	// FollowResync time interval how often it checks for newer version of the artifact.
 	// Default values is set every 24 hours.
 	FollowResync = time.Hour * 24
@@ -98,6 +100,8 @@ const (
 	ArtifactFollowRulesfilesDirKey = "artifact.follow.rulesfilesdir"
 	// ArtifactFollowPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowPluginsDirKey = "artifact.follow.pluginsdir"
+	// ArtifactFollowAssetsDirKey is the Viper key for follower "pluginsDir" configuration.
+	ArtifactFollowAssetsDirKey = "artifact.follow.assetsdir"
 	// ArtifactFollowTmpDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowTmpDirKey = "artifact.follow.tmpdir"
 	// ArtifactInstallArtifactsKey is the Viper key for installer "artifacts" configuration.
@@ -106,6 +110,8 @@ const (
 	ArtifactInstallRulesfilesDirKey = "artifact.install.rulesfilesdir"
 	// ArtifactInstallPluginsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
+	// ArtifactInstallAssetsDirKey is the Viper key for follower "pluginsDir" configuration.
+	ArtifactInstallAssetsDirKey = "artifact.install.assetsdir"
 	// ArtifactInstallResolveDepsKey is the Viper key for installer "resolveDeps" configuration.
 	ArtifactInstallResolveDepsKey = "artifact.install.resolveDeps"
 	// ArtifactAllowedTypesKey is the Viper key for the whitelist of artifacts to be installed in the system.
