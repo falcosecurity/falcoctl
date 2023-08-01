@@ -24,11 +24,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
 // ExtractTarGz extracts a *.tar.gz compressed archive and moves its content to destDir.
 // Returns a slice containing the full path of the extracted files.
-func ExtractTarGz(gzipStream io.Reader, destDir string, stripPathComponents int) ([]string, error) {
+func ExtractTarGz(gzipStream io.Reader, destDir string, artifactType oci.ArtifactType, stripPathComponents int) ([]string, error) {
 	var files []string
 
 	uncompressedStream, err := gzip.NewReader(gzipStream)
@@ -57,11 +59,16 @@ func ExtractTarGz(gzipStream io.Reader, destDir string, stripPathComponents int)
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			d := filepath.Join(destDir, strippedName)
-			if err = os.Mkdir(filepath.Clean(d), 0o750); err != nil {
-				return nil, err
+			if artifactType == oci.Plugin || artifactType == oci.Rulesfile {
+				return nil, fmt.Errorf("unexepected dir inside the archive, "+
+					"expected to find only files without any tree structure for %q artifacts", artifactType.String())
+			} else if artifactType == oci.Asset {
+				d := filepath.Join(destDir, strippedName)
+				if err = os.Mkdir(filepath.Clean(d), 0o750); err != nil {
+					return nil, err
+				}
+				files = append(files, d)
 			}
-			files = append(files, d)
 		case tar.TypeReg:
 			f := filepath.Join(destDir, strippedName)
 			outFile, err := os.Create(filepath.Clean(f))
