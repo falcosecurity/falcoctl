@@ -20,6 +20,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,11 +49,6 @@ func CreateTarGzArchive(path string) (file string, err error) {
 		return "", err
 	}
 
-	header, err := tar.FileInfoHeader(fInfo, fInfo.Name())
-	if err != nil {
-		return "", err
-	}
-
 	// Create new writer for gzip.
 	gzw := gzip.NewWriter(outFile)
 	defer func() {
@@ -76,20 +72,61 @@ func CreateTarGzArchive(path string) (file string, err error) {
 		}
 	}()
 
+	if fInfo.IsDir() {
+		// write header of the directory
+		header, err := tar.FileInfoHeader(fInfo, fInfo.Name())
+		if err != nil {
+			return "", err
+		}
+
+		if err = tw.WriteHeader(header); err != nil {
+			return "", err
+		}
+
+		// walk files in the directory and copy to .tar.gz
+		err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			return copyToTarGz(path, tw, info)
+		})
+		if err != nil {
+			return "", err
+		}
+	} else {
+		if err = copyToTarGz(path, tw, fInfo); err != nil {
+			return "", err
+		}
+	}
+
+	return outFile.Name(), err
+}
+
+func copyToTarGz(path string, tw *tar.Writer, info fs.FileInfo) error {
+	header, err := tar.FileInfoHeader(info, info.Name())
+	if err != nil {
+		return err
+	}
+
 	// write the header
 	if err = tw.WriteHeader(header); err != nil {
-		return "", err
+		return err
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// copy file data into tar writer
-	if _, err = io.Copy(tw, f); err != nil {
-		return "", err
+	if _, err = io.CopyN(tw, f, info.Size()); err != nil {
+		return err
 	}
 
-	return outFile.Name(), err
+	return nil
 }
