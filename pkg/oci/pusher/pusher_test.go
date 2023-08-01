@@ -324,6 +324,57 @@ var _ = Describe("Pusher", func() {
 		})
 	})
 
+	Context("handling asset artifacts", func() {
+		BeforeEach(func() {
+			artifactType = oci.Asset
+		})
+
+		When("only one asset tarball is given", func() {
+			BeforeEach(func() {
+				filePaths = ocipusher.WithFilepaths([]string{testRuleTarball}) // not interested in the content
+				options = []ocipusher.Option{filePaths}
+				// Repo and default tag for the artifact
+				repoAndTag = "/one-asset-test:1.2.3"
+				repo, err = localRegistry.Repository(ctx, "one-asset-test")
+				Expect(err).To(BeNil())
+			})
+			It("should succeed", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				d, reader, err := repo.FetchReference(ctx, ref)
+				Expect(err).ToNot(HaveOccurred())
+				manifest, err := test.ManifestFromReader(reader)
+				Expect(err).ToNot(HaveOccurred())
+				// Being the artifact of type asset we expect that the retrieved descriptor is of type manifest.
+				Expect(d.MediaType).To(Equal(v1.MediaTypeImageManifest))
+				// Checking the digest is correct.
+				Expect(d.Digest.String()).To(Equal(result.Digest))
+				// It must have only one layer since no config layer is configured.
+				Expect(manifest.Layers).To(HaveLen(1))
+				// The layer has to be of type asset.
+				Expect(manifest.Layers[0].MediaType).To(Equal(oci.FalcoAssetLayerMediaType))
+				// It must have the asset config layer media type.
+				Expect(manifest.Config.MediaType).To(Equal(oci.FalcoAssetConfigMediaType))
+			})
+		})
+
+		When("multiple assets tarballs are given", func() {
+			BeforeEach(func() {
+				filePaths = ocipusher.WithFilepaths([]string{testRuleTarball, testRuleTarball}) // not interested in the content
+				options = []ocipusher.Option{filePaths}
+				// Repo and default tag for the artifact
+				repoAndTag = "/multiple-assets-test:1.2.3"
+				repo, err = localRegistry.Repository(ctx, "multiple-assets-test")
+				Expect(err).To(BeNil())
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(errors.Is(err, ocipusher.ErrInvalidNumberAssets)).To(BeTrue())
+				Expect(result).To(BeNil())
+			})
+		})
+	})
+
 	Context("generic error handling", func() {
 		When("file does not exist", func() {
 			BeforeEach(func() {
