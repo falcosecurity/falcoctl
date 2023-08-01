@@ -237,7 +237,17 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
 		artifactConfig = &oci.ArtifactConfig{}
 	}
 
-	return p.toFileStore(ctx, fileStore, layerMediaType, ConfigLayerName, artifactConfig)
+	cfgDesc, err := p.toFileStore(ctx, fileStore, layerMediaType, ConfigLayerName, artifactConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove annotations added to descriptor by the filestore.Add operation.
+	// AWS ECR errors when annotations are set in the config descriptor.
+	// See: https://github.com/falcosecurity/falcoctl/issues/302
+	cfgDesc.Annotations = nil
+
+	return cfgDesc, nil
 }
 
 func (p *Pusher) storeArtifactsIndex(ctx context.Context, fileStore *file.Store,
