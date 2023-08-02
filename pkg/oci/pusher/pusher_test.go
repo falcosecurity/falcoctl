@@ -140,6 +140,14 @@ var _ = Describe("Pusher", func() {
 						Expect(d.Digest.String()).To(Equal(result.Digest))
 						Expect(index.Manifests).To(HaveLen(1))
 						Expect(fmt.Sprintf("%s/%s", index.Manifests[0].Platform.OS, index.Manifests[0].Platform.Architecture)).To(Equal(testPluginPlatform1))
+						// Check layer and config media types.
+						reader, err = repo.Fetch(ctx, index.Manifests[0])
+						Expect(err).ToNot(HaveOccurred())
+						manifest, err := test.ManifestFromReader(reader)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(manifest.Config.MediaType).To(Equal(oci.FalcoPluginConfigMediaType))
+						Expect(manifest.Layers).To(HaveLen(1))
+						Expect(manifest.Layers[0].MediaType).To(Equal(oci.FalcoPluginLayerMediaType))
 
 						// Check that annotation source is present and contains right value.
 						Expect(index.Annotations).To(HaveKeyWithValue(sourceKey, sourceValue))
@@ -219,7 +227,9 @@ var _ = Describe("Pusher", func() {
 					Expect(d.Digest.String()).To(Equal(result.Digest))
 					// It must have only one layer since no config layer is configured.
 					Expect(manifest.Layers).To(HaveLen(1))
-					// It must have the config type for the rulesfile.
+					// It must have the rulesfile's layer mediatype.
+					Expect(manifest.Layers[0].MediaType).To(Equal(oci.FalcoRulesfileLayerMediaType))
+					// It must have the rulesfile's config mediatype.
 					Expect(manifest.Config.MediaType).To(Equal(oci.FalcoRulesfileConfigMediaType))
 				})
 			})
@@ -268,7 +278,9 @@ var _ = Describe("Pusher", func() {
 					Expect(d.Digest.String()).To(Equal(result.Digest))
 					// It must have only one layer since no config layer is configured.
 					Expect(manifest.Layers).To(HaveLen(1))
-					// It must have the config type for the rulesfile.
+					// It must have the rulesfile's layer mediatype.
+					Expect(manifest.Layers[0].MediaType).To(Equal(oci.FalcoRulesfileLayerMediaType))
+					// It must have the rulesfile's config mediatype.
 					Expect(manifest.Config.MediaType).To(Equal(oci.FalcoRulesfileConfigMediaType))
 					// Fetch the config layer
 					reader, err = repo.Fetch(ctx, manifest.Config)
