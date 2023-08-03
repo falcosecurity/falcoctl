@@ -78,8 +78,8 @@ Example - Install and follow "cloudtrail" plugins using a fully qualified refere
 )
 
 type artifactFollowOptions struct {
-	*options.CommonOptions
-	*options.RegistryOptions
+	*options.Common
+	*options.Registry
 	rulesfilesDir string
 	pluginsDir    string
 	tmpDir        string
@@ -94,12 +94,14 @@ type artifactFollowOptions struct {
 }
 
 // NewArtifactFollowCmd returns the artifact follow command.
-func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+//
+//nolint:gocyclo // unknown reason for cyclomatic complexity
+func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := artifactFollowOptions{
-		CommonOptions:   opt,
-		RegistryOptions: &options.RegistryOptions{},
-		closeChan:       make(chan bool),
-		versions:        config.FalcoVersions{},
+		Common:    opt,
+		Registry:  &options.Registry{},
+		closeChan: make(chan bool),
+		versions:  config.FalcoVersions{},
 	}
 
 	cmd := &cobra.Command{
@@ -220,7 +222,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.CommonOptions) *cobr
 		},
 	}
 
-	o.RegistryOptions.AddFlags(cmd)
+	o.Registry.AddFlags(cmd)
 	cmd.Flags().DurationVarP(&o.every, "every", "e", config.FollowResync, "Time interval how often it checks for a new version of the "+
 		"artifact. Cannot be used together with 'cron' option.")
 	cmd.Flags().StringVar(&o.cron, "cron", "", "Cron-like string to specify interval how often it checks for a new version of the artifact."+

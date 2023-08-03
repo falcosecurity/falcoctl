@@ -45,7 +45,7 @@ var (
 	ctx          = context.Background()
 	output       = gbytes.NewBuffer()
 	rootCmd      *cobra.Command
-	opt          *commonoptions.CommonOptions
+	opt          *commonoptions.Common
 	port         int
 	orasRegistry *remote.Registry
 	configFile   string

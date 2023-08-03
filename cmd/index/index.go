@@ -28,7 +28,7 @@ import (
 )
 
 // NewIndexCmd returns the index command.
-func NewIndexCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
+func NewIndexCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "index",
 		DisableFlagsInUseLine: true,

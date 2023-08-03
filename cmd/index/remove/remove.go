@@ -26,13 +26,13 @@ import (
 )
 
 type indexRemoveOptions struct {
-	*options.CommonOptions
+	*options.Common
 }
 
 // NewIndexRemoveCmd returns the index remove command.
-func NewIndexRemoveCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewIndexRemoveCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := indexRemoveOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

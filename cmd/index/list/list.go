@@ -26,13 +26,13 @@ import (
 )
 
 type indexListOptions struct {
-	*options.CommonOptions
+	*options.Common
 }
 
 // NewIndexListCmd returns the index list command.
-func NewIndexListCmd(_ context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewIndexListCmd(_ context.Context, opt *options.Common) *cobra.Command {
 	o := indexListOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

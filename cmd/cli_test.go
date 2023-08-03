@@ -74,7 +74,7 @@ var tests = []testCase{
 
 func run(t *testing.T, test *testCase) {
 	// Setup
-	c := New(context.Background(), &options.CommonOptions{})
+	c := New(context.Background(), &options.Common{})
 	o := bytes.NewBufferString("")
 	c.SetOut(o)
 	c.SetErr(o)

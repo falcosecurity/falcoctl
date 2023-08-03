@@ -32,7 +32,7 @@ const (
 )
 
 type artifactSearchOptions struct {
-	*options.CommonOptions
+	*options.Common
 	minScore     float64
 	artifactType oci.ArtifactType
 }
@@ -46,9 +46,9 @@ func (o *artifactSearchOptions) Validate() error {
 }
 
 // NewArtifactSearchCmd returns the artifact search command.
-func NewArtifactSearchCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewArtifactSearchCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := artifactSearchOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

@@ -27,7 +27,7 @@ import (
 )
 
 // NewRegistryCmd returns the registry command.
-func NewRegistryCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
+func NewRegistryCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "registry",
 		DisableFlagsInUseLine: true,

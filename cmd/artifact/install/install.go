@@ -69,8 +69,8 @@ Example - Install "cloudtrail" plugins using a fully qualified reference:
 )
 
 type artifactInstallOptions struct {
-	*options.CommonOptions
-	*options.RegistryOptions
+	*options.Common
+	*options.Registry
 	rulesfilesDir string
 	pluginsDir    string
 	allowedTypes  oci.ArtifactTypeSlice
@@ -79,10 +79,10 @@ type artifactInstallOptions struct {
 }
 
 // NewArtifactInstallCmd returns the artifact install command.
-func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := artifactInstallOptions{
-		CommonOptions:   opt,
-		RegistryOptions: &options.RegistryOptions{},
+		Common:   opt,
+		Registry: &options.Registry{},
 	}
 
 	cmd := &cobra.Command{
@@ -161,7 +161,7 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.CommonOptions) *cob
 		},
 	}
 
-	o.RegistryOptions.AddFlags(cmd)
+	o.Registry.AddFlags(cmd)
 	cmd.Flags().StringVarP(&o.rulesfilesDir, FlagRulesFilesDir, "", config.RulesfilesDir,
 		"directory where to install rules.")
 	cmd.Flags().StringVarP(&o.pluginsDir, FlagPluginsFilesDir, "", config.PluginsDir,

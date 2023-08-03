@@ -30,7 +30,7 @@ import (
 )
 
 // NewArtifactCmd return the artifact command.
-func NewArtifactCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
+func NewArtifactCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "artifact",
 		DisableFlagsInUseLine: true,
