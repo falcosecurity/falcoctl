@@ -27,13 +27,13 @@ import (
 
 // IndexAddOptions contains the options for the index add command.
 type IndexAddOptions struct {
-	*options.CommonOptions
+	*options.Common
 }
 
 // NewIndexAddCmd returns the index add command.
-func NewIndexAddCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewIndexAddCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := IndexAddOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

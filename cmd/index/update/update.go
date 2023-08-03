@@ -26,13 +26,13 @@ import (
 )
 
 type indexUpdateOptions struct {
-	*options.CommonOptions
+	*options.Common
 }
 
 // NewIndexUpdateCmd returns the index update command.
-func NewIndexUpdateCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewIndexUpdateCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := indexUpdateOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

@@ -47,8 +47,8 @@ var _ = Describe("Version", func() {
 		cfg := commonoptions.NewOptions()
 		cfg.Initialize(commonoptions.WithWriter(writer))
 		opt = &options{
-			CommonOptions: cfg,
-			Output:        outputFmt,
+			Common: cfg,
+			Output: outputFmt,
 		}
 	})
 

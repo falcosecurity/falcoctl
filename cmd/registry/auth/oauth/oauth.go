@@ -41,14 +41,14 @@ Example
 
 // RegistryOauthOptions contains the options for the registry oauth command.
 type RegistryOauthOptions struct {
-	*options.CommonOptions
+	*options.Common
 	Conf clientcredentials.Config
 }
 
 // NewOauthCmd returns the oauth command.
-func NewOauthCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewOauthCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := RegistryOauthOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

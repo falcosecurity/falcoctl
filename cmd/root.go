@@ -45,7 +45,7 @@ The official CLI tool for working with Falco and its ecosystem components
 )
 
 // New instantiates the root command and initializes the tree of commands.
-func New(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func New(ctx context.Context, opt *options.Common) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "falcoctl",
 		Short:             "The official CLI tool for working with Falco and its ecosystem components",

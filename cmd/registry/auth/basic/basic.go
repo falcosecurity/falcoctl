@@ -29,13 +29,13 @@ import (
 )
 
 type loginOptions struct {
-	*options.CommonOptions
+	*options.Common
 }
 
 // NewBasicCmd returns the basic command.
-func NewBasicCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewBasicCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := loginOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

@@ -24,10 +24,10 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-// CommonOptions provides the common flags, options, and printers for all the
-// commands. All the fields provided by the CommonOptions will be initialized before
+// Common provides the common flags, options, and printers for all the
+// commands. All the fields provided by the Common will be initialized before
 // the commands are executed through the Initialize func.
-type CommonOptions struct {
+type Common struct {
 	// Printer used by all commands to output messages.
 	Printer *output.Printer
 	// printerScope contains the data of the optional scope of a prefix.
@@ -46,38 +46,38 @@ type CommonOptions struct {
 	IndexCache *cache.Cache
 }
 
-// NewOptions returns a new CommonOptions struct.
-func NewOptions() *CommonOptions {
-	return &CommonOptions{}
+// NewOptions returns a new Common struct.
+func NewOptions() *Common {
+	return &Common{}
 }
 
 // Configs type of the configs accepted by the Initialize function.
-type Configs func(options *CommonOptions)
+type Configs func(options *Common)
 
 // WithPrinterScope sets the scope for the printer.
 func WithPrinterScope(scope string) Configs {
-	return func(options *CommonOptions) {
+	return func(options *Common) {
 		options.printerScope = scope
 	}
 }
 
 // WithWriter sets the writer for the printer.
 func WithWriter(writer io.Writer) Configs {
-	return func(options *CommonOptions) {
+	return func(options *Common) {
 		options.writer = writer
 	}
 }
 
 // WithIndexCache sets the index cache.
 func WithIndexCache(c *cache.Cache) Configs {
-	return func(options *CommonOptions) {
+	return func(options *Common) {
 		options.IndexCache = c
 	}
 }
 
 // Initialize initializes the options based on the configs. Subsequent calls will overwrite the
 // previous configurations based on the new configs passed to the functions.
-func (o *CommonOptions) Initialize(cfgs ...Configs) {
+func (o *Common) Initialize(cfgs ...Configs) {
 	for _, cfg := range cfgs {
 		cfg(o)
 	}
@@ -87,12 +87,12 @@ func (o *CommonOptions) Initialize(cfgs ...Configs) {
 }
 
 // IsVerbose used to check if the verbose flag is set or not.
-func (o *CommonOptions) IsVerbose() bool {
+func (o *Common) IsVerbose() bool {
 	return o.verbose
 }
 
 // AddFlags registers the common flags.
-func (o *CommonOptions) AddFlags(flags *pflag.FlagSet) {
+func (o *Common) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&o.verbose, "verbose", "v", false, "Enable verbose logs (default false)")
 	flags.BoolVar(&o.disableStyling, "disable-styling", false, "Disable output styling such as spinners, progress bars and colors. "+
 		"Styling is automatically disabled if not attacched to a tty (default false)")

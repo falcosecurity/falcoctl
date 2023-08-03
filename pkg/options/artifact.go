@@ -24,9 +24,9 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
-// ArtifactOptions artifact specific options. Commands that need these options
+// Artifact specific options. Commands that need these options
 // may embed this struct in their options.
-type ArtifactOptions struct {
+type Artifact struct {
 	ArtifactType     oci.ArtifactType
 	Name             string
 	Version          string
@@ -40,7 +40,7 @@ type ArtifactOptions struct {
 var platformRgx = regexp.MustCompile(`^[a-z]+/[a-z0-9_]+$`)
 
 // Validate validates the options passed by the user.
-func (art *ArtifactOptions) Validate() error {
+func (art *Artifact) Validate() error {
 	for _, platform := range art.Platforms {
 		if ok := platformRgx.MatchString(platform); !ok {
 			return fmt.Errorf("platform %q seems to be in the wrong format: needs to be in OS/ARCH "+
@@ -53,7 +53,7 @@ func (art *ArtifactOptions) Validate() error {
 }
 
 // AddFlags registers the artifacts flags.
-func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
+func (art *Artifact) AddFlags(cmd *cobra.Command) error {
 	cmd.Flags().StringArrayVar(&art.Platforms, "platform", nil,
 		"os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)")
 
@@ -100,7 +100,7 @@ func (art *ArtifactOptions) AddFlags(cmd *cobra.Command) error {
 }
 
 // OSArch returns the OS and the ARCH of the platform at index-th position.
-func (art *ArtifactOptions) OSArch(index int) (os, arch string) {
+func (art *Artifact) OSArch(index int) (os, arch string) {
 	if index >= len(art.Platforms) || index < 0 {
 		return "", ""
 	}

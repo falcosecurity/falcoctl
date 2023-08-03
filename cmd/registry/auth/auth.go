@@ -26,7 +26,7 @@ import (
 )
 
 // NewAuthCmd returns the registry command.
-func NewAuthCmd(ctx context.Context, opt *commonoptions.CommonOptions) *cobra.Command {
+func NewAuthCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "auth",
 		DisableFlagsInUseLine: true,

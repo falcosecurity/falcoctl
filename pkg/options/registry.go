@@ -16,12 +16,12 @@ package options
 
 import "github.com/spf13/cobra"
 
-// RegistryOptions defines options that are common while interacting with a remote registry.
-type RegistryOptions struct {
+// Registry defines options that are common while interacting with a remote registry.
+type Registry struct {
 	PlainHTTP bool
 }
 
 // AddFlags registers the registry flags.
-func (r *RegistryOptions) AddFlags(cmd *cobra.Command) {
+func (r *Registry) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&r.PlainHTTP, "plain-http", false, "allows interacting with remote registry via plain http requests")
 }

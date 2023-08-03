@@ -54,22 +54,22 @@ Example - Pull artifact "myrulesfile":
 )
 
 type pullOptions struct {
-	*options.CommonOptions
-	*options.ArtifactOptions
-	*options.RegistryOptions
+	*options.Common
+	*options.Artifact
+	*options.Registry
 	destDir string
 }
 
 func (o *pullOptions) Validate() error {
-	return o.ArtifactOptions.Validate()
+	return o.Artifact.Validate()
 }
 
 // NewPullCmd returns the pull command.
-func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewPullCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := pullOptions{
-		CommonOptions:   opt,
-		ArtifactOptions: &options.ArtifactOptions{},
-		RegistryOptions: &options.RegistryOptions{},
+		Common:   opt,
+		Artifact: &options.Artifact{},
+		Registry: &options.Registry{},
 	}
 
 	cmd := &cobra.Command{
@@ -98,8 +98,8 @@ func NewPullCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 		},
 	}
 
-	o.RegistryOptions.AddFlags(cmd)
-	output.ExitOnErr(o.Printer, o.ArtifactOptions.AddFlags(cmd))
+	o.Registry.AddFlags(cmd)
+	output.ExitOnErr(o.Printer, o.Artifact.AddFlags(cmd))
 	cmd.Flags().StringVarP(&o.destDir, "dest-dir", "o", "", "destination dir where to save the artifacts(default: current directory)")
 	return cmd
 }
@@ -132,7 +132,7 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 	}
 
 	os, arch := runtime.GOOS, runtime.GOARCH
-	if len(o.ArtifactOptions.Platforms) > 0 {
+	if len(o.Artifact.Platforms) > 0 {
 		os, arch = o.OSArch(0)
 	}
 

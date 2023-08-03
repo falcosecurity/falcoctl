@@ -37,13 +37,13 @@ Example
 
 // RegistryGcpOptions contains the options for the registry gcp command.
 type RegistryGcpOptions struct {
-	*options.CommonOptions
+	*options.Common
 }
 
 // NewGcpCmd returns the gcp command.
-func NewGcpCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewGcpCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := RegistryGcpOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

@@ -48,7 +48,7 @@ var (
 )
 
 type options struct {
-	*commonoptions.CommonOptions
+	*commonoptions.Common
 	Output string
 }
 
@@ -77,9 +77,9 @@ func newVersion() version {
 }
 
 // NewVersionCmd returns the version command.
-func NewVersionCmd(opt *commonoptions.CommonOptions) *cobra.Command {
+func NewVersionCmd(opt *commonoptions.Common) *cobra.Command {
 	o := options{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	v := newVersion()

@@ -29,15 +29,15 @@ import (
 const CommandName = "list"
 
 type artifactListOptions struct {
-	*options.CommonOptions
+	*options.Common
 	artifactType oci.ArtifactType
 	index        string
 }
 
 // NewArtifactListCmd returns the artifact search command.
-func NewArtifactListCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewArtifactListCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := artifactListOptions{
-		CommonOptions: opt,
+		Common: opt,
 	}
 
 	cmd := &cobra.Command{

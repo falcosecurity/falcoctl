@@ -29,15 +29,15 @@ import (
 )
 
 type artifactInfoOptions struct {
-	*options.CommonOptions
-	*options.RegistryOptions
+	*options.Common
+	*options.Registry
 }
 
 // NewArtifactInfoCmd returns the artifact info command.
-func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewArtifactInfoCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := artifactInfoOptions{
-		CommonOptions:   opt,
-		RegistryOptions: &options.RegistryOptions{},
+		Common:   opt,
+		Registry: &options.Registry{},
 	}
 
 	cmd := &cobra.Command{
@@ -53,7 +53,7 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.CommonOptions) *cobra.
 		},
 	}
 
-	o.RegistryOptions.AddFlags(cmd)
+	o.Registry.AddFlags(cmd)
 
 	return cmd
 }

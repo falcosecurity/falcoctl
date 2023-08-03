@@ -67,21 +67,21 @@ Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with multiple d
 )
 
 type pushOptions struct {
-	*options.CommonOptions
-	*options.ArtifactOptions
-	*options.RegistryOptions
+	*options.Common
+	*options.Artifact
+	*options.Registry
 }
 
 func (o pushOptions) validate() error {
-	return o.ArtifactOptions.Validate()
+	return o.Artifact.Validate()
 }
 
 // NewPushCmd returns the push command.
-func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command {
+func NewPushCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	o := pushOptions{
-		CommonOptions:   opt,
-		ArtifactOptions: &options.ArtifactOptions{},
-		RegistryOptions: &options.RegistryOptions{},
+		Common:   opt,
+		Artifact: &options.Artifact{},
+		Registry: &options.Registry{},
 	}
 
 	cmd := &cobra.Command{
@@ -110,8 +110,8 @@ func NewPushCmd(ctx context.Context, opt *options.CommonOptions) *cobra.Command 
 			return o.runPush(ctx, args)
 		},
 	}
-	o.RegistryOptions.AddFlags(cmd)
-	output.ExitOnErr(o.Printer, o.ArtifactOptions.AddFlags(cmd))
+	o.Registry.AddFlags(cmd)
+	output.ExitOnErr(o.Printer, o.Artifact.AddFlags(cmd))
 
 	return cmd
 }
