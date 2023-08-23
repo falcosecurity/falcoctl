@@ -30,6 +30,8 @@ import (
 
 type loginOptions struct {
 	*options.Common
+	username string
+	password string
 }
 
 // NewBasicCmd returns the basic command.
@@ -51,15 +53,20 @@ func NewBasicCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVarP(&o.username, "username", "u", "", "username of the basic authentication to the OCI registry")
+	cmd.Flags().StringVarP(&o.password, "password", "p", "", "password of the basic authentication to the OCI registry")
+
 	return cmd
 }
 
 // RunBasic executes the business logic for the basic command.
 func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
-	reg := args[0]
+	var reg string
+	if len(args) > 0 {
+		reg = args[0]
+	}
 
-	user, token, err := utils.GetCredentials(o.Printer)
-	if err != nil {
+	if err := o.ensureCredentials(); err != nil {
 		return err
 	}
 
@@ -74,11 +81,22 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 		return fmt.Errorf("unable to create new store: %w", err)
 	}
 
-	if err := basic.Login(ctx, client, credentialStore, reg, user, token); err != nil {
+	if err := basic.Login(ctx, client, credentialStore, reg, o.username, o.password); err != nil {
 		return err
 	}
 	o.Printer.Verbosef("credentials added to credential store")
 	o.Printer.Success.Println("Login succeeded")
+
+	return nil
+}
+
+func (o *loginOptions) ensureCredentials() error {
+	if o.username == "" || o.password == "" {
+		var err error
+		if o.username, o.password, err = utils.GetCredentials(o.Printer); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
