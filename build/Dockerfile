@@ -1,4 +1,4 @@
-FROM golang:1.19 as builder
+FROM golang:1.21 as builder
 WORKDIR /tmp/builder
 
 ARG RELEASE
@@ -29,7 +29,7 @@ RUN CGO_ENABLED=0 \
 
 RUN echo ${RELEASE}
 
-FROM alpine:3.16.3
+FROM alpine:3.18.3
 
 RUN rm -rf /var/cache/apk/*
 
