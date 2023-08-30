@@ -18,6 +18,8 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/falcosecurity/falcoctl/cmd"
 	"github.com/falcosecurity/falcoctl/pkg/options"
@@ -27,7 +29,18 @@ func main() {
 	// Set up the root cmd.
 	opt := options.NewOptions()
 	opt.Initialize(options.WithWriter(os.Stdout))
-	rootCmd := cmd.New(context.Background(), opt)
+
+	// Register signal handler
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	// If the ctx is marked as done then we reset the signals.
+	go func() {
+		<-ctx.Done()
+		opt.Printer.Info.Println("Received signal, terminating...")
+		stop()
+	}()
+
+	// Create root command
+	rootCmd := cmd.New(ctx, opt)
 
 	// Execute the command.
 	if err := cmd.Execute(rootCmd, opt.Printer); err != nil {

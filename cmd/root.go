@@ -16,9 +16,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os/signal"
-	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -68,14 +65,6 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 
 // Execute configures the signal handlers and runs the command.
 func Execute(cmd *cobra.Command, printer *output.Printer) error {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-
-	// If the ctx is marked as done then we reset the signals.
-	go func() {
-		<-ctx.Done()
-		fmt.Printf("\nreceived signal, terminating...\n")
-		stop()
-	}()
 	// we do not log the error here since we expect that each subcommand
 	// handles the errors by itself.
 	err := cmd.Execute()
