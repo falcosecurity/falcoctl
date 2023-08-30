@@ -44,7 +44,7 @@ var (
 	ctx           = context.Background()
 	output        = gbytes.NewBuffer()
 	rootCmd       *cobra.Command
-	opt           *commonoptions.CommonOptions
+	opt           *commonoptions.Common
 	port          int
 	portBasic     int
 	configFile    string
