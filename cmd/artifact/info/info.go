@@ -16,6 +16,7 @@ package info
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -90,14 +91,22 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		}
 
 		tags, err := repo.Tags(ctx)
-		if err != nil {
-			o.Printer.Warning.Printfln("cannot retrieve tags from %q, %v", ref, err)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			o.Printer.Warning.Printfln("cannot retrieve tags from t %q, %v", ref, err)
 			continue
+		} else if errors.Is(err, context.Canceled) {
+			// When the context is canceled we exit, since we receive a termination signal.
+			return err
 		}
 
 		joinedTags := strings.Join(tags, ", ")
 		data = append(data, []string{ref, joinedTags})
 	}
 
-	return o.Printer.PrintTable(output.ArtifactInfo, data)
+	// Print the table header + data only if there is data.
+	if len(data) > 0 {
+		return o.Printer.PrintTable(output.ArtifactInfo, data)
+	}
+
+	return nil
 }
