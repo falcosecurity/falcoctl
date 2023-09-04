@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/pkg/install/tls"
+	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 // Defaults.
@@ -30,8 +31,9 @@ const (
 )
 
 // NewTLSInstallCmd returns the tls install command.
-func NewTLSInstallCmd() *cobra.Command {
+func NewTLSInstallCmd(opt *commonoptions.Common) *cobra.Command {
 	options := tls.Options{}
+	options.Common = opt
 
 	cmd := &cobra.Command{
 		Use:                   "install",

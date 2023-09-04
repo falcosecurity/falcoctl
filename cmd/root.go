@@ -54,7 +54,7 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 	opt.AddFlags(rootCmd.PersistentFlags())
 
 	// Commands
-	rootCmd.AddCommand(tls.NewTLSCmd())
+	rootCmd.AddCommand(tls.NewTLSCmd(opt))
 	rootCmd.AddCommand(version.NewVersionCmd(opt))
 	rootCmd.AddCommand(registry.NewRegistryCmd(ctx, opt))
 	rootCmd.AddCommand(index.NewIndexCmd(ctx, opt))

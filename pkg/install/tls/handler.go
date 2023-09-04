@@ -18,6 +18,8 @@ import (
 	"crypto/elliptic"
 	"fmt"
 	"os"
+
+	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 // Options represents the `install tls` command o.
@@ -31,6 +33,8 @@ type Options struct {
 	DNSSANs   []string
 	IPSANs    []string
 	Algorithm string
+
+	Common *commonoptions.Common
 }
 
 // Run executes the business logic of the `install tls` command.
@@ -43,6 +47,8 @@ func (o *Options) Run() error {
 		}
 		o.Path = cwd
 	}
+
+	o.Common.Printer.Info.Printf("Generating certificates in %s directory\n", o.Path)
 
 	keyGenerator := NewKeyGenerator(DSAType(o.Algorithm))
 
@@ -77,10 +83,5 @@ func (o *Options) Run() error {
 		return err
 	}
 
-	err = generator.FlushToDisk(o.Path)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return generator.FlushToDisk(o.Path, o.Common.Printer)
 }

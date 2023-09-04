@@ -18,10 +18,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/cmd/tls/install"
+	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 // NewTLSCmd return the tls command.
-func NewTLSCmd() *cobra.Command {
+func NewTLSCmd(opt *commonoptions.Common) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "tls",
 		TraverseChildren:      true,
@@ -30,7 +31,7 @@ func NewTLSCmd() *cobra.Command {
 		Long:                  `Generate and install TLS material for Falco`,
 	}
 
-	cmd.AddCommand(install.NewTLSInstallCmd())
+	cmd.AddCommand(install.NewTLSInstallCmd(opt))
 
 	return cmd
 }
