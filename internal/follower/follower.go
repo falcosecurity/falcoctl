@@ -262,13 +262,21 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 		return filePaths, res, fmt.Errorf("unable to pull artifact %q: %w", f.ref, err)
 	}
 
+	repo, err := utils.RepositoryFromRef(f.ref)
+	if err != nil {
+		return filePaths, res, err
+	}
+
+	digestRef := fmt.Sprintf("%s@%s", repo, res.RootDigest)
+
 	// Verify the signature if needed
 	if f.Config.Signature != nil {
-		f.Verbosef("verifying signature")
-		err = signature.Verify(ctx, res.RootDigest, f.Config.Signature)
+		f.Verbosef("verifying signature for %s", digestRef)
+		err = signature.Verify(ctx, digestRef, f.Config.Signature)
 		if err != nil {
 			return filePaths, res, fmt.Errorf("could not verify signature for %s: %w", res.RootDigest, err)
 		}
+		f.Verbosef("signature successfully verified")
 	}
 
 	f.Verbosef("extracting artifact")
