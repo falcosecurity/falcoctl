@@ -234,6 +234,9 @@ func (p *Printer) DisableStylingf() {
 // EnableStyling enables styling globally for all existing printers.
 func (p *Printer) EnableStyling() {
 	pterm.EnableStyling()
+	if p.DisableStyling {
+		pterm.DisableColor()
+	}
 }
 
 // ExitOnErr aborts the execution in case of errors, and prints the error using the configured printer.
