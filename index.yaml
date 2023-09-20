@@ -90,6 +90,56 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml
+- name: gcpaudit
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/gcpaudit
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Read GCP Audit Logs
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/gcpaudit
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - gcp
+    - gcpaudit
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/gcpaudit
+- name: gcpaudit-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/plugins/ruleset/gcpaudit
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Read GCP Audit Logs
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/gcpaudit
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - gcp
+    - gcpaudit-rules
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/gcpaudit/rules
 - name: github
   type: plugin
   registry: ghcr.io
@@ -148,6 +198,13 @@
   type: plugin
   registry: ghcr.io
   repository: falcosecurity/plugins/plugin/k8saudit
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
   keywords:
@@ -184,6 +241,13 @@
   type: rulesfile
   registry: ghcr.io
   repository: falcosecurity/plugins/ruleset/k8saudit
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit
   keywords:
