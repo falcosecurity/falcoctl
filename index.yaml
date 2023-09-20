@@ -16,6 +16,13 @@
   type: plugin
   registry: ghcr.io
   repository: falcosecurity/plugins/plugin/cloudtrail
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Reads Cloudtrail JSON logs from files/S3 and injects as events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail
   keywords:
@@ -34,6 +41,13 @@
   type: rulesfile
   registry: ghcr.io
   repository: falcosecurity/plugins/ruleset/cloudtrail
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Reads Cloudtrail JSON logs from files/S3 and injects as events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/cloudtrail
   keywords:
@@ -144,6 +158,13 @@
   type: plugin
   registry: ghcr.io
   repository: falcosecurity/plugins/plugin/github
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Github Webhook Events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/github
   keywords:
@@ -162,6 +183,13 @@
   type: rulesfile
   registry: ghcr.io
   repository: falcosecurity/plugins/ruleset/github
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Github Webhook Events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/github
   keywords:
@@ -181,6 +209,13 @@
   type: plugin
   registry: ghcr.io
   repository: falcosecurity/plugins/plugin/json
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Extract values from any JSON payload
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/json
   keywords:
@@ -223,6 +258,13 @@
   type: plugin
   registry: ghcr.io
   repository: falcosecurity/plugins/plugin/k8saudit-eks
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Read Kubernetes Audit Events from AWS EKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit-eks
   keywords:
@@ -266,6 +308,13 @@
   type: plugin
   registry: ghcr.io
   repository: falcosecurity/plugins/plugin/okta
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Okta Log Events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
   keywords:
@@ -282,6 +331,13 @@
   type: rulesfile
   registry: ghcr.io
   repository: falcosecurity/plugins/ruleset/okta
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
   description: Okta Log Events
   home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
   keywords:
