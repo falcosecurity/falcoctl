@@ -91,8 +91,7 @@ func NewClient(options ...func(*Options)) *auth.Client {
 					return cred, nil
 				}
 			}
-			// remember empty cred func for registries we dont have creds for
-			opt.CredentialsFuncsCache[reg] = EmptyCredentialFunc
+
 			return auth.EmptyCredential, nil
 		},
 	}
