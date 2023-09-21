@@ -62,7 +62,7 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.Common) *cobra.Command
 func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string) error {
 	var data [][]string
 
-	client, err := ociutils.Client()
+	client, err := ociutils.Client(true)
 	if err != nil {
 		return err
 	}

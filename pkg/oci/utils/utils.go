@@ -20,6 +20,7 @@ import (
 
 	credentials "github.com/oras-project/oras-credentials-go"
 	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
@@ -31,7 +32,7 @@ import (
 
 // Puller returns a new ocipuller.Puller ready to be used for pulling from oci registries.
 func Puller(plainHTTP bool, printer *output.Printer) (*ocipuller.Puller, error) {
-	client, err := Client()
+	client, err := Client(true)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func Puller(plainHTTP bool, printer *output.Printer) (*ocipuller.Puller, error) 
 
 // Pusher returns an ocipusher.Pusher ready to be used for pushing to oci registries.
 func Pusher(plainHTTP bool, printer *output.Printer) (*ocipusher.Pusher, error) {
-	client, err := Client()
+	client, err := Client(true)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func Pusher(plainHTTP bool, printer *output.Printer) (*ocipusher.Pusher, error) 
 
 // Client returns a new auth.Client.
 // It authenticates the client if credentials are found in the system.
-func Client() (remote.Client, error) {
+func Client(enableClientTokenCache bool) (remote.Client, error) {
 	credentialStore, err := credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
 		AllowPlaintextPut: true,
 	})
@@ -68,6 +69,9 @@ func Client() (remote.Client, error) {
 		authn.WithStore(credentialStore),
 		authn.WithOAuthCredentials(),
 		authn.WithGcpCredentials(),
+	}
+	if enableClientTokenCache {
+		ops = append(ops, authn.WithClientTokenCache(auth.NewCache()))
 	}
 	client := authn.NewClient(ops...)
 

@@ -101,7 +101,7 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 	}
 	tag := parsedRef.Reference
 
-	client, err := ociutils.Client()
+	client, err := ociutils.Client(false)
 	if err != nil {
 		return nil, err
 	}
