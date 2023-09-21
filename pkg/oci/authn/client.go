@@ -34,6 +34,7 @@ type Options struct {
 	CredentialsFuncsCache map[string]func(context.Context, string) (auth.Credential, error)
 	CredentialsFuncs      []func(context.Context, string) (auth.Credential, error)
 	AutoLoginHandler      *AutoLoginHandler
+	ClientTokenCache      auth.Cache
 }
 
 // NewClient creates a new authenticated client to interact with a remote registry.
@@ -62,7 +63,7 @@ func NewClient(options ...func(*Options)) *auth.Client {
 				// TODO(loresuso, alacuku): tls config.
 			},
 		},
-		Cache: auth.NewCache(),
+		Cache: opt.ClientTokenCache,
 		Credential: func(ctx context.Context, reg string) (auth.Credential, error) {
 			// try cred func from cache first
 			credFunc, exists := opt.CredentialsFuncsCache[reg]
@@ -141,5 +142,12 @@ func WithCredentials(cred *auth.Credential) func(c *Options) {
 func WithStore(store credentials.Store) func(c *Options) {
 	return func(c *Options) {
 		c.CredentialsFuncs = append(c.CredentialsFuncs, credentials.Credential(store))
+	}
+}
+
+// WithClientTokenCache adds a cache to the auth.Client used to store auth tokens.
+func WithClientTokenCache(cache auth.Cache) func(c *Options) {
+	return func(c *Options) {
+		c.ClientTokenCache = cache
 	}
 }
