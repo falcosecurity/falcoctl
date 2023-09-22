@@ -99,7 +99,7 @@
         certificate-oidc-issuer: https://token.actions.githubusercontent.com
         certificate-oidc-issuer-regexp: ""
         certificate-identity: ""
-        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-identity-regexp: https://github.com/falcosecurity/rules/
         certificate-github-workflow: ""
   description: Falco incubating rules
   home: https://github.com/falcosecurity/rules/blob/main/rules/falco-incubating_rules.yaml
@@ -120,7 +120,7 @@
         certificate-oidc-issuer: https://token.actions.githubusercontent.com
         certificate-oidc-issuer-regexp: ""
         certificate-identity: ""
-        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-identity-regexp: https://github.com/falcosecurity/rules/
         certificate-github-workflow: ""
   description: Falco rules that are loaded by default
   home: https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml
@@ -141,7 +141,7 @@
         certificate-oidc-issuer: https://token.actions.githubusercontent.com
         certificate-oidc-issuer-regexp: ""
         certificate-identity: ""
-        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-identity-regexp: https://github.com/falcosecurity/rules/
         certificate-github-workflow: ""
   description: Falco sandbox rules
   home: https://github.com/falcosecurity/rules/blob/main/rules/falco-sandbox_rules.yaml
