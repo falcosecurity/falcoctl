@@ -327,7 +327,20 @@ func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
 		if isInt.MatchString(requirement.Version) { // handle integers
 			falcoVerInt, err := strconv.Atoi(falcoVer)
 			if err != nil {
-				return fmt.Errorf("expected integer for key %s: %w", reqName, err)
+				// Note: there is a mismatch. Requirement version is an int, but falco version is not.
+				// This is the case concerning the required engine version, that was converted to semver.
+				// Try to implicitly cast the requirement version to a semver string and
+				// check if it is compatible with the falco version, otherwise return an error.
+				reqSemver := implicitSemver(uint64(falcoVerInt))
+				falcoSemver, err := semver.Parse(falcoVer)
+				if err != nil {
+					return fmt.Errorf("expected semver for falco version key %s: %w", reqName, err)
+				}
+				err = semverCompatibleWith(falcoSemver, reqSemver, reqName)
+				if err != nil {
+					return err
+				}
+				continue
 			}
 
 			reqVerInt, err := strconv.Atoi(requirement.Version)
@@ -350,10 +363,9 @@ func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
 			}
 
 			// Normal semver check
-			if falcoSemver.Major != reqSemver.Major {
-				return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), reqName, reqSemver.String())
-			} else if falcoSemver.Compare(reqSemver) < 0 {
-				return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), reqName, reqSemver.String())
+			err = semverCompatibleWith(falcoSemver, reqSemver, reqName)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -415,4 +427,23 @@ func equal(files []string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func semverCompatibleWith(falcoSemver, reqSemver semver.Version, reqName string) error {
+	// if the major differs, the versions are incompatible
+	if falcoSemver.Major != reqSemver.Major {
+		return fmt.Errorf("incompatible versions, MAJOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), reqName, reqSemver.String())
+	} else if falcoSemver.Compare(reqSemver) < 0 {
+		// if the major is the same, just check if the falco version is lower than the requirement
+		return fmt.Errorf("incompatible versions, MINOR mismatch, Falco: %s, Requirement: %s:%s", falcoSemver.String(), reqName, reqSemver.String())
+	}
+	return nil
+}
+
+func implicitSemver(version uint64) semver.Version {
+	return semver.Version{
+		Major: 0,
+		Minor: version,
+		Patch: 0,
+	}
 }
