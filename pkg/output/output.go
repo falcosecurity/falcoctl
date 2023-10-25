@@ -16,6 +16,7 @@
 package output
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -40,100 +41,73 @@ const (
 
 var spinnerCharset = []string{"⠈⠁", "⠈⠑", "⠈⠱", "⠈⡱", "⢀⡱", "⢄⡱", "⢄⡱", "⢆⡱", "⢎⡱", "⢎⡰", "⢎⡠", "⢎⡀", "⢎⠁", "⠎⠁", "⠊⠁"}
 
-// Printer used by all commands to output messages.
-// If a commands needs a new format for its output add it here.
-type Printer struct {
-	Info    *pterm.PrefixPrinter
-	Success *pterm.PrefixPrinter
-	Warning *pterm.PrefixPrinter
-	Error   *pterm.PrefixPrinter
-
-	DefaultText  *pterm.BasicTextPrinter
-	TablePrinter *pterm.TablePrinter
-
-	ProgressBar *pterm.ProgressbarPrinter
-
-	Spinner *pterm.SpinnerPrinter
-
-	DisableStyling bool
-	verbose        bool
-}
-
-// NewPrinter returns a printer ready to be used.
-func NewPrinter(scope string, disableStyling, verbose bool, writer io.Writer) *Printer {
-	// If we are not in a tty then make sure that the disableStyling variable is set to true since
-	// we use it elsewhere to check if we are in a tty or not. We force the disableStyling to true
-	// only if it is set to false and we are not in a tty. Otherwise let it as it is, false if the
-	// user has not set it (default) otherwise true.
-	if !disableStyling && !isatty.IsTerminal(os.Stdout.Fd()) {
-		disableStyling = true
-	}
-
-	generic := &pterm.PrefixPrinter{MessageStyle: pterm.NewStyle(pterm.FgDefault)}
-	basicText := &pterm.BasicTextPrinter{}
-	progressBar := pterm.DefaultProgressbar.
+// NewProgressBar returns a new progress bar printer.
+func NewProgressBar() pterm.ProgressbarPrinter {
+	return *pterm.DefaultProgressbar.
 		WithTitleStyle(pterm.NewStyle(pterm.FgDefault)).
 		WithBarStyle(pterm.NewStyle(pterm.FgDefault)).
 		WithBarCharacter("#").
 		WithLastCharacter("#").
-		WithShowElapsedTime(false)
+		WithShowElapsedTime(false).
+		WithShowCount(false).
+		WithMaxWidth(90).
+		WithRemoveWhenDone(true)
+}
+
+// Printer used by all commands to output messages.
+// If a commands needs a new format for its output add it here.
+type Printer struct {
+	Logger         *pterm.Logger
+	DefaultText    *pterm.BasicTextPrinter
+	TablePrinter   *pterm.TablePrinter
+	ProgressBar    *pterm.ProgressbarPrinter
+	Spinner        *pterm.SpinnerPrinter
+	DisableStyling bool
+}
+
+// NewPrinter returns a printer ready to be used.
+func NewPrinter(logLevel pterm.LogLevel, logFormatter pterm.LogFormatter, writer io.Writer) *Printer {
+	var disableStyling bool
+	// If we are not in a tty then make sure that the disableStyling variable is set to true since
+	// we use it elsewhere to check if we are in a tty or not. We force the disableStyling to true
+	// only if it is set to false and we are not in a tty. Otherwise let it as it is, false if the
+	// user has not set it (default) otherwise true.
+	if (logFormatter != pterm.LogFormatterJSON && !isatty.IsTerminal(os.Stdout.Fd())) || logFormatter == pterm.LogFormatterJSON {
+		disableStyling = true
+	}
+
+	logger := pterm.DefaultLogger.
+		WithLevel(logLevel).WithFormatter(logFormatter).
+		WithMaxWidth(150)
+
+	basicText := &pterm.BasicTextPrinter{}
+
 	tablePrinter := pterm.DefaultTable.WithHasHeader().WithSeparator("\t")
 	spinner := &pterm.SpinnerPrinter{
 		Sequence:            spinnerCharset,
 		Style:               pterm.NewStyle(pterm.FgDefault),
 		Delay:               time.Millisecond * 100,
 		MessageStyle:        pterm.NewStyle(pterm.FgDefault),
-		RemoveWhenDone:      false,
+		RemoveWhenDone:      true,
 		ShowTimer:           true,
 		TimerRoundingFactor: time.Second,
 		TimerStyle:          &pterm.ThemeDefault.TimerStyle,
 	}
 
 	printer := Printer{
-		verbose: verbose,
-		Info: generic.WithPrefix(pterm.Prefix{
-			Text:  "INFO",
-			Style: pterm.NewStyle(pterm.FgDefault),
-		}),
-
-		Success: generic.WithPrefix(pterm.Prefix{
-			Text:  "INFO",
-			Style: pterm.NewStyle(pterm.FgLightGreen),
-		}),
-
-		Warning: generic.WithPrefix(pterm.Prefix{
-			Text:  "WARN",
-			Style: pterm.NewStyle(pterm.FgYellow),
-		}),
-
-		Error: generic.WithPrefix(pterm.Prefix{
-			Text:  "ERRO",
-			Style: pterm.NewStyle(pterm.FgRed),
-		}),
-
-		DefaultText: basicText,
-
-		ProgressBar: progressBar,
-
-		TablePrinter: tablePrinter,
-
-		Spinner: spinner,
-
+		DefaultText:    basicText,
+		TablePrinter:   tablePrinter,
+		Spinner:        spinner,
 		DisableStyling: disableStyling,
+		Logger:         logger,
 	}
-
-	// Populate the printers for the spinner. We use the same one define in the printer.
-	printer.Spinner.FailPrinter = printer.Error
-	printer.Spinner.WarningPrinter = printer.Warning
-	printer.Spinner.SuccessPrinter = printer.Info
-	printer.Spinner.InfoPrinter = printer.Info
 
 	// We disable styling when the program is not attached to a tty or when requested by the user.
 	if disableStyling {
 		pterm.DisableStyling()
 	}
 
-	return printer.WithScope(scope).WithWriter(writer)
+	return printer.WithWriter(writer)
 }
 
 // CheckErr prints a user-friendly error based on the active printer.
@@ -143,20 +117,28 @@ func (p *Printer) CheckErr(err error) {
 	case err == nil:
 		return
 
-	// Print the error through the spinner, if active.
+	// Stop the spinner, if active.
 	case p != nil && p.Spinner.IsActive:
 		handlerFunc = func(msg string) {
-			p.Spinner.Fail(msg)
+			_ = p.Spinner.Stop()
+			p.Logger.Error(msg)
+		}
+		// Stop the progress bar, if active.
+	case p != nil && p.ProgressBar != nil && p.ProgressBar.IsActive:
+
+		handlerFunc = func(msg string) {
+			_, _ = p.ProgressBar.Stop()
+			p.Logger.Error(msg)
 		}
 
 	// If the printer is initialized then print the error through it.
 	case p != nil:
 		handlerFunc = func(msg string) {
-			msg = strings.TrimPrefix(msg, "error: ")
-			p.Error.Println(strings.TrimRight(msg, "\n"))
+			p.Logger.Error(msg)
 		}
 
 	// Otherwise, restore the default behavior.
+	// It should never happen.
 	default:
 		handlerFunc = func(msg string) {
 			fmt.Printf("%s (it seems that the printer has not been initialized, that's why you are seeing this message", msg)
@@ -164,13 +146,6 @@ func (p *Printer) CheckErr(err error) {
 	}
 
 	handlerFunc(err.Error())
-}
-
-// Verbosef outputs verbose messages if the verbose flags is set.
-func (p *Printer) Verbosef(format string, args ...interface{}) {
-	if p.verbose {
-		p.Info.Printfln(strings.TrimRight(format, "\n"), args...)
-	}
 }
 
 // PrintTable is a helper used to print data in table format.
@@ -196,48 +171,12 @@ func (p *Printer) PrintTable(header TableHeader, data [][]string) error {
 // WithWriter sets the writer for the current printer.
 func (p Printer) WithWriter(writer io.Writer) *Printer {
 	if writer != nil {
-		p.Info = p.Info.WithWriter(writer)
-		p.Success = p.Success.WithWriter(writer)
-		p.Warning = p.Warning.WithWriter(writer)
-		p.Error = p.Error.WithWriter(writer)
 		p.Spinner = p.Spinner.WithWriter(writer)
 		p.DefaultText = p.DefaultText.WithWriter(writer)
-		p.ProgressBar = p.ProgressBar.WithWriter(writer)
 		p.TablePrinter = p.TablePrinter.WithWriter(writer)
+		p.Logger = p.Logger.WithWriter(writer)
 	}
-
 	return &p
-}
-
-// WithScope sets the scope for the current printer.
-func (p Printer) WithScope(scope string) *Printer {
-	if scope != "" {
-		s := pterm.Scope{Text: scope, Style: pterm.NewStyle(pterm.FgGray)}
-
-		p.Info = p.Info.WithScope(s)
-		p.Error = p.Error.WithScope(s)
-		p.Warning = p.Warning.WithScope(s)
-
-		p.Spinner.FailPrinter = p.Error
-		p.Spinner.InfoPrinter = p.Info
-		p.Spinner.SuccessPrinter = p.Info
-		p.Spinner.WarningPrinter = p.Warning
-	}
-
-	return &p
-}
-
-// DisableStylingf disables styling globally for all existing printers.
-func (p *Printer) DisableStylingf() {
-	pterm.DisableStyling()
-}
-
-// EnableStyling enables styling globally for all existing printers.
-func (p *Printer) EnableStyling() {
-	pterm.EnableStyling()
-	if p.DisableStyling {
-		pterm.DisableColor()
-	}
 }
 
 // ExitOnErr aborts the execution in case of errors, and prints the error using the configured printer.
@@ -246,4 +185,12 @@ func ExitOnErr(p *Printer, err error) {
 		p.CheckErr(err)
 		os.Exit(1)
 	}
+}
+
+// FormatTitleAsLoggerInfo returns the msg formatted as been printed by
+// the Info logger.
+func (p *Printer) FormatTitleAsLoggerInfo(msg string) string {
+	buf := &bytes.Buffer{}
+	p.Logger.WithWriter(buf).Info(msg)
+	return strings.TrimRight(buf.String(), "\n")
 }

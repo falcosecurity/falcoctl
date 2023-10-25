@@ -52,25 +52,27 @@ func NewIndexUpdateCmd(ctx context.Context, opt *options.Common) *cobra.Command 
 }
 
 func (o *indexUpdateOptions) RunIndexUpdate(ctx context.Context, args []string) error {
-	o.Printer.Verbosef("Creating in-memory cache using indexes file %q and indexes directory %q", config.IndexesFile, config.IndexesDir)
+	logger := o.Printer.Logger
+
+	logger.Debug("Creating in-memory cache using", logger.Args("indexes file", config.IndexesFile, "indexes directory", config.IndexesDir))
 	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
 	if err != nil {
 		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
 	for _, arg := range args {
-		o.Printer.Info.Printfln("Updating index %q", arg)
+		logger.Info("Updating index file", logger.Args("name", arg))
 		if err := indexCache.Update(ctx, arg); err != nil {
 			return fmt.Errorf("an error occurred while updating index %q: %w", arg, err)
 		}
 	}
 
-	o.Printer.Verbosef("Writing cache to disk")
+	logger.Debug("Writing cache to disk")
 	if _, err = indexCache.Write(); err != nil {
 		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
 
-	o.Printer.Success.Printfln("Indexes successfully updated")
+	logger.Info("Indexes successfully updated")
 
 	return nil
 }

@@ -144,7 +144,7 @@ var registryPullTests = Describe("pull", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pullCmd}
 			})
-			pullAssertFailedBehavior(registryPullUsage, "ERRO: accepts 1 arg(s), received 0")
+			pullAssertFailedBehavior(registryPullUsage, "ERROR accepts 1 arg(s), received 0")
 		})
 
 		When("unreachable registry", func() {
@@ -155,7 +155,7 @@ var registryPullTests = Describe("pull", func() {
 				Expect(err).To(BeNil())
 				args = []string{registryCmd, pullCmd, "noregistry/testrules", "--plain-http", "--config", configFile}
 			})
-			pullAssertFailedBehavior(registryPullUsage, "ERRO: unable to connect to remote registry")
+			pullAssertFailedBehavior(registryPullUsage, "ERROR unable to connect to remote registry")
 		})
 
 		When("invalid repository", func() {
@@ -167,7 +167,7 @@ var registryPullTests = Describe("pull", func() {
 				Expect(err).To(BeNil())
 				args = []string{registryCmd, pullCmd, newReg, "--plain-http", "--config", configFile}
 			})
-			pullAssertFailedBehavior(registryPullUsage, fmt.Sprintf("ERRO: %s: not found", newReg))
+			pullAssertFailedBehavior(registryPullUsage, fmt.Sprintf("ERROR %s: not found", newReg))
 		})
 
 		When("unwritable --dest-dir", func() {
@@ -200,7 +200,7 @@ var registryPullTests = Describe("pull", func() {
 				artName := tmp[0]
 				tag := tmp[1]
 				expectedError := fmt.Sprintf(
-					"ERRO: unable to pull artifact generic-repo with %s tag from repo %s: failed to create file",
+					"ERROR unable to pull artifact generic-repo with %s tag from repo %s: failed to create file",
 					tag, artName)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(registryPullUsage)))
@@ -233,10 +233,8 @@ var registryPullTests = Describe("pull", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf(
-					"ERRO: unable to push artifact failed to ensure directories of the target path: mkdir %s: permission denied\n"+
-						"ERRO: unable to pull artifact %s with tag %s from repo %s: failed to ensure directories of the target path: mkdir %s: permission denied",
-					destDir, artifact, tag, artifact, destDir)
+				expectedError := fmt.Sprintf("ERROR unable to pull artifact %s with tag %s from repo %s: failed to ensure directories of the target path: "+
+					"mkdir %s: permission denied", artifact, tag, artifact, destDir)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(registryPullUsage)))
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(expectedError)))
@@ -264,7 +262,7 @@ var registryPullTests = Describe("pull", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERRO: %s: not found", registry+repo+"@"+wrongDigest)
+				expectedError := fmt.Sprintf("ERROR %s: not found", registry+repo+"@"+wrongDigest)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(registryPullUsage)))
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(expectedError)))
@@ -282,7 +280,7 @@ var registryPullTests = Describe("pull", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERRO: cannot extract registry name from ref %q", ref)
+				expectedError := fmt.Sprintf("ERROR cannot extract registry name from ref %q", ref)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(registryPullUsage)))
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(expectedError)))
@@ -298,7 +296,7 @@ var registryPullTests = Describe("pull", func() {
 				Expect(err).To(BeNil())
 				args = []string{registryCmd, pullCmd, newReg, "--plain-http", "--config", configFile}
 			})
-			pullAssertFailedBehavior(registryPullUsage, fmt.Sprintf("ERRO: unable to create new repository with ref %s: "+
+			pullAssertFailedBehavior(registryPullUsage, fmt.Sprintf("ERROR unable to create new repository with ref %s: "+
 				"invalid reference: invalid digest; invalid checksum digest format\n", newReg))
 		})
 

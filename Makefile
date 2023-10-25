@@ -34,7 +34,7 @@ test:
 .PHONY: gci
 gci:
 ifeq (, $(shell which gci))
-	@go install github.com/daixiang0/gci@v0.9.0
+	@go install github.com/daixiang0/gci@v0.11.1
 GCI=$(GOBIN)/gci
 else
 GCI=$(shell which gci)

@@ -57,28 +57,30 @@ func NewProgressTracker(printer *Printer, target oras.Target, msg string) *Progr
 
 // Push reimplements the Push function of the oras.Target interface adding the needed logic for the progress bar.
 func (t *ProgressTracker) Push(ctx context.Context, expected v1.Descriptor, content io.Reader) error { //nolint:gocritic,lll // needed to implement the oras.Target interface
-	var progressBar *pterm.ProgressbarPrinter
 	d := expected.Digest.Encoded()[:12]
 
+	t.Logger.Info(fmt.Sprintf("%s layer %s", t.msg, d))
+
 	if !t.Printer.DisableStyling {
-		progressBar, _ = t.ProgressBar.WithTotal(int(expected.Size)).WithTitle(fmt.Sprintf(" INFO  %s %s:", t.msg, d)).WithShowCount(false).Start()
-	} else {
-		t.Info.Printfln("%s %s", t.msg, d)
+		t.ProgressBar, _ = NewProgressBar().
+			WithTotal(int(expected.Size)).
+			WithTitle(fmt.Sprintf("%s layer %s", t.msg, d)).
+			Start()
 	}
 
 	reader := &trackedReader{
 		Reader:      content,
 		descriptor:  expected,
-		progressBar: progressBar,
+		progressBar: t.ProgressBar,
 	}
-	err := t.Target.Push(ctx, expected, reader)
-	if !t.Printer.DisableStyling {
-		_, _ = progressBar.Stop()
-	}
-	if err != nil {
-		t.Error.Printfln("unable to push artifact %s", err)
+	if err := t.Target.Push(ctx, expected, reader); err != nil {
 		return err
 	}
+
+	if !t.Printer.DisableStyling {
+		_, _ = t.ProgressBar.Stop()
+	}
+
 	return nil
 }
 
@@ -90,7 +92,7 @@ func (t *ProgressTracker) Exists(ctx context.Context, target v1.Descriptor) (boo
 		return ok, err
 	}
 	if ok {
-		t.Info.Printfln("%s: layer already exists", d)
+		t.Logger.Info(fmt.Sprintf("%s: layer already exists", d))
 	}
 	return ok, err
 }

@@ -62,6 +62,7 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.Common) *cobra.Command
 
 func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string) error {
 	var data [][]string
+	logger := o.Printer.Logger
 
 	client, err := ociutils.Client(true)
 	if err != nil {
@@ -75,7 +76,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 		if err != nil {
 			entry, ok := o.IndexCache.MergedIndexes.EntryByName(name)
 			if !ok {
-				o.Printer.Warning.Printfln("cannot find %q, skipping", name)
+				logger.Warn("Cannot find artifact, skipping", logger.Args("name", name))
 				continue
 			}
 			ref = fmt.Sprintf("%s/%s", entry.Registry, entry.Repository)
@@ -93,7 +94,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 
 		tags, err := repo.Tags(ctx)
 		if err != nil && !errors.Is(err, context.Canceled) {
-			o.Printer.Warning.Printfln("cannot retrieve tags from t %q, %v", ref, err)
+			logger.Warn("Cannot retrieve tags from", logger.Args("ref", ref, "reason", err.Error()))
 			continue
 		} else if errors.Is(err, context.Canceled) {
 			// When the context is canceled we exit, since we receive a termination signal.

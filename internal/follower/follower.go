@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/blang/semver"
+	"github.com/pterm/pterm"
 	"github.com/robfig/cron/v3"
 	"oras.land/oras-go/v2/registry"
 
@@ -52,8 +53,9 @@ type Follower struct {
 	currentDigest string
 	*ocipuller.Puller
 	*Config
-	*output.Printer
+	logger *pterm.Logger
 	config.FalcoVersions
+	*output.Printer
 }
 
 // Config configuration options for the Follower.
@@ -71,8 +73,6 @@ type Config struct {
 	ArtifactReference string
 	// PlainHTTP is set to true if all registry interaction must be in plain http.
 	PlainHTTP bool
-	// Verbose enables the verbose logs.
-	Verbose bool
 	// TmpDir directory where to save temporary files.
 	TmpDir string
 	// FalcoVersions is a struct containing all the required Falco versions that this follower
@@ -118,15 +118,13 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
 
-	customPrinter := printer.WithScope(ref)
-
 	return &Follower{
 		ref:           ref,
 		tag:           tag,
 		tmpDir:        tmpDir,
 		Puller:        puller,
 		Config:        conf,
-		Printer:       customPrinter,
+		logger:        printer.Logger,
 		FalcoVersions: conf.FalcoVersions,
 	}, nil
 }
@@ -142,7 +140,7 @@ func (f *Follower) Follow(ctx context.Context) {
 		select {
 		case <-f.CloseChan:
 			f.cleanUp()
-			fmt.Printf("follower for %q stopped\n", f.ref)
+			f.logger.Info("Follower stopped", f.logger.Args("followerName", f.ref))
 			// Notify that the follower is done.
 			f.WaitGroup.Done()
 			return
@@ -155,109 +153,111 @@ func (f *Follower) Follow(ctx context.Context) {
 
 func (f *Follower) follow(ctx context.Context) {
 	// First thing get the descriptor from remote repo.
-	f.Verbosef("fetching descriptor from remote repository...")
+	f.logger.Debug("Fetching descriptor from remote repository...", f.logger.Args("followerName", f.ref))
 	desc, err := f.Descriptor(ctx, f.ref)
 	if err != nil {
-		f.Error.Printfln("an error occurred while fetching descriptor from remote repository: %v", err)
+		f.logger.Debug(fmt.Sprintf("an error occurred while fetching descriptor from remote repository: %v", err))
 		return
 	}
-	f.Verbosef("descriptor correctly fetched")
+	f.logger.Debug("Descriptor correctly fetched", f.logger.Args("followerName", f.ref))
 
 	// If we have already processed then do nothing.
 	// TODO(alacuku): check that the file also exists to cover the case when someone has removed the file.
 	if desc.Digest.String() == f.currentDigest {
-		f.Verbosef("nothing to do, artifact already up to date.")
+		f.logger.Debug("Nothing to do, artifact already up to date.", f.logger.Args("followerName", f.ref))
 		return
 	}
 
-	f.Info.Printfln("found new version under tag %q", f.tag)
+	f.logger.Info("Found new artifact version", f.logger.Args("followerName", f.ref, "tag", f.tag))
 
 	// Pull config layer to check falco versions
 	artifactConfig, err := f.PullConfigLayer(ctx, f.ref)
 	if err != nil {
-		f.Error.Printfln("unable to pull config layer for ref %q: %v", f.ref, err)
+		f.logger.Error("Unable to pull config layer", f.logger.Args("followerName", f.ref, "reason", err.Error()))
 		return
 	}
 
 	err = f.checkRequirements(artifactConfig)
 	if err != nil {
-		f.Error.Printfln("unmet requirements for ref %q: %v", f.ref, err)
+		f.logger.Error("Unmet requirements", f.logger.Args("followerName", f.ref, "reason", err.Error()))
 		return
 	}
 
-	f.Verbosef("pulling artifact from remote repository...")
+	f.logger.Debug("Pulling artifact", f.logger.Args("followerName", f.ref))
 	// Pull the artifact from the repository.
 	filePaths, res, err := f.pull(ctx)
 	if err != nil {
-		f.Error.Printfln("an error occurred while pulling artifact from remote repository: %v", err)
+		f.logger.Error("Unable to pull artifact", f.logger.Args("followerName", f.ref, "reason", err.Error()))
 		return
 	}
-	f.Verbosef("artifact correctly pulled")
+	f.logger.Debug("Artifact correctly pulled", f.logger.Args("followerName", f.ref))
 
 	dstDir := f.destinationDir(res)
 
 	// Check if directory exists and is writable.
 	err = utils.ExistsAndIsWritable(dstDir)
 	if err != nil {
-		f.Error.Printfln("cannot use directory %q as install destination: %v", dstDir, err)
+		f.logger.Error("Invalid destination", f.logger.Args("followerName", f.ref, "directory", dstDir, "reason", err.Error()))
 		return
 	}
 
 	// Install the artifacts if necessary.
 	for _, path := range filePaths {
 		baseName := filepath.Base(path)
-		f.Verbosef("installing file %q...", baseName)
+		f.logger.Debug("Installing file", f.logger.Args("followerName", f.ref, "fileName", baseName))
 		dstPath := filepath.Join(dstDir, baseName)
 		// Check if the file exists.
-		f.Verbosef("checking if file %q already exists in %q", baseName, dstDir)
+		f.logger.Debug("Checking if file already exists", f.logger.Args("followerName", f.ref, "fileName", baseName, "directory", dstDir))
 		exists, err := fileExists(dstPath)
 		if err != nil {
-			f.Error.Printfln("an error occurred while checking %q existence: %v", baseName, err)
+			f.logger.Error("Unable to check existence for file", f.logger.Args("followerName", f.ref, "fileName", baseName, "reason", err.Error()))
 			return
 		}
 
 		if !exists {
-			f.Verbosef("file %q does not exist in %q, moving it", baseName, dstDir)
+			f.logger.Debug("Moving file", f.logger.Args("followerName", f.ref, "fileName", baseName, "destDirectory", dstDir))
 			if err = utils.Move(path, dstPath); err != nil {
-				f.Error.Printfln("an error occurred while moving file %q to %q: %v", baseName, dstDir, err)
+				f.logger.Error("Unable to move file", f.logger.Args("followerName", f.ref, "fileName", baseName, "destDirectory", dstDir, "reason", err.Error()))
 				return
 			}
-			f.Verbosef("file %q correctly installed", path)
+			f.logger.Debug("File correctly installed", f.logger.Args("followerName", f.ref, "path", path))
 			// It's done, move to the next file.
 			continue
 		}
-		f.Verbosef("file %q already exists in %q, checking if it is equal to the existing one", baseName, dstDir)
+		f.logger.Debug(fmt.Sprintf("file %q already exists in %q, checking if it is equal to the existing one", baseName, dstDir),
+			f.logger.Args("followerName", f.ref))
 		// Check if the files are equal.
 		eq, err := equal([]string{path, dstPath})
 		if err != nil {
-			f.Error.Printfln("an error occurred while comparing files %q and %q: %v", path, dstPath, err)
+			f.logger.Error("Unable to compare files", f.logger.Args("followerName", f.ref, "newFile", path, "existingFile", dstPath, "reason", err.Error()))
 			return
 		}
 
 		if !eq {
-			f.Verbosef("overwriting file %q with file %q", dstPath, path)
+			f.logger.Debug(fmt.Sprintf("Overwriting file %q with file %q", dstPath, path), f.logger.Args("followerName", f.ref))
 			if err = utils.Move(path, dstPath); err != nil {
-				f.Error.Printfln("an error occurred while overwriting file %q: %v", dstPath, err)
+				f.logger.Error("Unable to overwrite file", f.logger.Args("followerName", f.ref, "existingFile", dstPath, "reason", err.Error()))
 				return
 			}
 		} else {
-			f.Verbosef("the two file are equal, nothing to be done")
+			f.logger.Debug("The two file are equal, nothing to be done")
 		}
 	}
 
-	f.Info.Printfln("artifact with tag %q correctly installed", f.tag)
+	f.logger.Info("Artifact correctly installed",
+		f.logger.Args("followerName", f.ref, "artifactName", f.ref, "type", res.Type, "digest", res.Digest, "directory", dstDir))
 	f.currentDigest = desc.Digest.String()
 }
 
 // pull downloads, extracts, and installs the artifact.
 func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.RegistryResult, err error) {
-	f.Verbosef("check if pulling an allowed type of artifact")
+	f.logger.Debug("Check if pulling an allowed type of artifact", f.logger.Args("followerName", f.ref))
 	if err := f.Puller.CheckAllowedType(ctx, f.ref, f.Config.AllowedTypes.Types); err != nil {
 		return nil, nil, err
 	}
 
 	// Pull the artifact from the repository.
-	f.Verbosef("pulling artifact %q", f.ref)
+	f.logger.Debug("Pulling artifact %q", f.logger.Args("followerName", f.ref, "artifactName", f.ref))
 	res, err = f.Pull(ctx, f.ref, f.tmpDir, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to pull artifact %q: %w", f.ref, err)
@@ -272,15 +272,15 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 
 	// Verify the signature if needed
 	if f.Config.Signature != nil {
-		f.Verbosef("verifying signature for %s", digestRef)
+		f.logger.Debug("Verifying signature", f.logger.Args("followerName", f.ref, "digest", digestRef))
 		err = signature.Verify(ctx, digestRef, f.Config.Signature)
 		if err != nil {
 			return filePaths, res, fmt.Errorf("could not verify signature for %s: %w", res.RootDigest, err)
 		}
-		f.Verbosef("signature successfully verified")
+		f.logger.Debug("Signature successfully verified")
 	}
 
-	f.Verbosef("extracting artifact")
+	f.logger.Debug("Extracting artifact", f.logger.Args("followerName", f.ref))
 	res.Filename = filepath.Join(f.tmpDir, res.Filename)
 
 	file, err := os.Open(res.Filename)
@@ -294,7 +294,7 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 		return filePaths, res, fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.tmpDir, err)
 	}
 
-	f.Verbosef("cleaning up leftovers files")
+	f.logger.Debug("Cleaning up leftovers files", f.logger.Args("followerName", f.ref))
 	err = os.Remove(res.Filename)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to remove file %q: %w", res.Filename, err)
@@ -364,7 +364,7 @@ func (f *Follower) checkRequirements(artifactConfig *oci.ArtifactConfig) error {
 
 func (f *Follower) cleanUp() {
 	if err := os.RemoveAll(f.tmpDir); err != nil {
-		f.DefaultText.Printfln("an error occurred while removing working directory %q:%v", f.tmpDir, err)
+		f.logger.Warn("Unable to clean working directory", f.logger.Args("followerName", f.ref, "directory", f.tmpDir, "reason", err))
 	}
 }
 

@@ -49,10 +49,9 @@ Flags:
       --version string             set the version of the artifact
 
 Global Flags:
-      --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
-
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 `
 
 //nolint:lll,unused // no need to check for line length.
@@ -104,9 +103,9 @@ Flags:
       --version string             set the version of the artifact
 
 Global Flags:
-      --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 `
 
 //nolint:unused // false positive
@@ -156,8 +155,8 @@ var registryPushTests = Describe("push", func() {
 		})
 
 		It("should match the saved one", func() {
-
-			Expect(output).Should(gbytes.Say(regexp.QuoteMeta(registryPushHelp)))
+			outputMsg := string(output.Contents())
+			Expect(outputMsg).Should(Equal(registryPushHelp))
 		})
 	})
 
@@ -174,21 +173,21 @@ var registryPushTests = Describe("push", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, "--config", configFile, rulesRepo, rulesfiletgz, "--type", "rulesfile"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: required flag(s) \"version\" not set\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR required flag(s) \"version\" not set")
 		})
 
 		When("without rulesfile", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, "--config", configFile, rulesRepo, "--type", "rulesfile"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: requires at least 2 arg(s), only received 1\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR requires at least 2 arg(s), only received 1")
 		})
 
 		When("without registry", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, "--config", configFile, rulesfiletgz, "--type", "rulesfile"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: requires at least 2 arg(s), only received 1\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR requires at least 2 arg(s), only received 1")
 		})
 
 		When("multiple rulesfiles", func() {
@@ -196,7 +195,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, rulesRepo, "--config", configFile, rulesfiletgz, rulesfiletgz,
 					"--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: expecting 1 rulesfile object received 2: invalid number of rulesfiles\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR expecting 1 rulesfile object received 2: invalid number of rulesfiles")
 		})
 
 		When("unreachable registry", func() {
@@ -204,7 +203,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, "noregistry/testrules", "--config", configFile, rulesfiletgz,
 					"--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: unable to connect to remote "+
+			pushAssertFailedBehavior(registryPushUsage, "ERROR unable to connect to remote "+
 				"registry \"noregistry\": Get \"http://noregistry/v2/\": dial tcp: lookup noregistry")
 		})
 
@@ -212,7 +211,7 @@ var registryPushTests = Describe("push", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, registry, rulesfiletgz, "--config", configFile, "--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, fmt.Sprintf("ERRO: cannot extract registry name from ref %q", registry))
+			pushAssertFailedBehavior(registryPushUsage, fmt.Sprintf("ERROR cannot extract registry name from ref %q", registry))
 		})
 
 		When("invalid repository", func() {
@@ -220,7 +219,7 @@ var registryPushTests = Describe("push", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, newReg, rulesfiletgz, "--config", configFile, "--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, fmt.Sprintf("ERRO: unable to create new repository with ref %s: "+
+			pushAssertFailedBehavior(registryPushUsage, fmt.Sprintf("ERROR unable to create new repository with ref %s: "+
 				"invalid reference: invalid digest; invalid checksum digest format\n", newReg))
 		})
 
@@ -229,7 +228,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, rulesRepo, rulesfiletgz, "--config", configFile, "--type", "rulesfile", "--version", "1.1.1",
 					"--plain-http", "--requires", "wrongreq"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: cannot parse \"wrongreq\"\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR cannot parse \"wrongreq\"")
 		})
 
 		When("invalid dependency", func() {
@@ -237,7 +236,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, rulesRepo, rulesfiletgz, "--config", configFile, "--type", "rulesfile",
 					"--version", "1.1.1", "--plain-http", "--depends-on", "wrongdep"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: cannot parse \"wrongdep\": invalid artifact reference "+
+			pushAssertFailedBehavior(registryPushUsage, "ERROR cannot parse \"wrongdep\": invalid artifact reference "+
 				"(must be in the format \"name:version\")\n")
 		})
 
@@ -245,8 +244,8 @@ var registryPushTests = Describe("push", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, pluginsRepo, plugintgz, "--config", configFile, "--type", "plugin", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: \"filepaths\" length (1) must match \"platforms\" "+
-				"length (0): number of filepaths and platform should be the same\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR \"filepaths\" length (1) must match \"platforms\" "+
+				"length (0): number of filepaths and platform should be the same")
 		})
 
 		When("wrong plugin type", func() {
@@ -254,7 +253,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, pluginsRepo, pluginsRepo, "--config", configFile,
 					"--type", "wrongType", "--version", "1.1.1", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERRO: invalid argument \"wrongType\" for \"--type\" flag: must be one of \"rulesfile\", \"plugin\"\n")
+			pushAssertFailedBehavior(registryPushUsage, "ERROR invalid argument \"wrongType\" for \"--type\" flag: must be one of \"rulesfile\", \"plugin\"")
 		})
 	})
 
@@ -295,7 +294,7 @@ var registryPushTests = Describe("push", func() {
 				// We do not check the error here since we are checking it before
 				// pulling the artifact.
 				By("checking no error in output")
-				Expect(output).ShouldNot(gbytes.Say("ERRO:"))
+				Expect(output).ShouldNot(gbytes.Say("ERROR"))
 				Expect(output).ShouldNot(gbytes.Say("Unable to remove temporary dir"))
 
 				By("checking descriptor")
@@ -471,7 +470,7 @@ var registryPushTests = Describe("push", func() {
 				// We do not check the error here since we are checking it before
 				// pulling the artifact.
 				By("checking no error in output")
-				Expect(output).ShouldNot(gbytes.Say("ERRO:"))
+				Expect(output).ShouldNot(gbytes.Say("ERROR"))
 				Expect(output).ShouldNot(gbytes.Say("Unable to remove temporary dir"))
 
 				By("checking descriptor")

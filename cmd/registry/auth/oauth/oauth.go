@@ -17,6 +17,7 @@ package oauth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2/clientcredentials"
@@ -24,6 +25,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/oauth"
 	"github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -67,17 +69,15 @@ func NewOauthCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 
 	cmd.Flags().StringVar(&o.Conf.TokenURL, "token-url", "", "token URL used to get access and refresh tokens")
 	if err := cmd.MarkFlagRequired("token-url"); err != nil {
-		o.Printer.Error.Println("unable to mark flag \"token-url\" as required")
-		return nil
+		output.ExitOnErr(o.Printer, fmt.Errorf("unable to mark flag \"token-url\" as required"))
 	}
 	cmd.Flags().StringVar(&o.Conf.ClientID, "client-id", "", "client ID of the OAuth2.0 app")
 	if err := cmd.MarkFlagRequired("client-id"); err != nil {
-		o.Printer.Error.Println("unable to mark flag \"client-id\" as required")
-		return nil
+		output.ExitOnErr(o.Printer, fmt.Errorf("unable to mark flag \"client-id\" as required"))
 	}
 	cmd.Flags().StringVar(&o.Conf.ClientSecret, "client-secret", "", "client secret of the OAuth2.0 app")
 	if err := cmd.MarkFlagRequired("client-secret"); err != nil {
-		o.Printer.Error.Println("unable to mark flag \"client-secret\" as required")
+		output.ExitOnErr(o.Printer, fmt.Errorf("unable to mark flag \"client-secret\" as required"))
 		return nil
 	}
 	cmd.Flags().StringSliceVar(&o.Conf.Scopes, "scopes", nil, "comma separeted list of scopes for which requesting access")
@@ -91,6 +91,6 @@ func (o *RegistryOauthOptions) RunOAuth(ctx context.Context, args []string) erro
 	if err := oauth.Login(ctx, reg, &o.Conf); err != nil {
 		return err
 	}
-	o.Printer.Success.Printfln("client credentials correctly saved in %q", config.ClientCredentialsFile)
+	o.Printer.Logger.Info("Client credentials correctly saved", o.Printer.Logger.Args("file", config.ClientCredentialsFile))
 	return nil
 }

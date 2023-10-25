@@ -67,7 +67,6 @@ var _ = BeforeSuite(func() {
 	// Create and configure the common options.
 	opt = commonoptions.NewOptions()
 	opt.Initialize(commonoptions.WithWriter(output))
-	opt.Printer.DisableStylingf()
 
 	// Create temporary directory used to save the configuration file.
 	configFile, err = testutils.CreateEmptyFile("falcoctl.yaml")
@@ -84,5 +83,5 @@ var _ = AfterSuite(func() {
 func executeRoot(args []string) error {
 	rootCmd.SetArgs(args)
 	rootCmd.SetOut(output)
-	return cmd.Execute(rootCmd, opt.Printer)
+	return cmd.Execute(rootCmd, opt)
 }

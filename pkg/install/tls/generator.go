@@ -28,7 +28,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/falcosecurity/falcoctl/pkg/output"
+	"github.com/pterm/pterm"
 )
 
 // A GRPCTLS represents a TLS Generator for Falco.
@@ -242,7 +242,7 @@ func (g *GRPCTLS) GenerateClient(caTemplate *x509.Certificate, caKey DSAKey, not
 }
 
 // FlushToDisk is used to persist the cert material from a GRPCTLS to disk given a path.
-func (g *GRPCTLS) FlushToDisk(path string, logger *output.Printer) error {
+func (g *GRPCTLS) FlushToDisk(path string, logger *pterm.Logger) error {
 	p, err := satisfyDir(path)
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
@@ -251,13 +251,13 @@ func (g *GRPCTLS) FlushToDisk(path string, logger *output.Printer) error {
 
 	for _, name := range certsFilenames {
 		f := filepath.Join(path, name)
-		logger.Info.Printf("Saving %s to %s\n", name, path)
+		logger.Info("Saving file", logger.Args("name", name, "directory", path))
 		if err := os.WriteFile(f, g.certs[name].Bytes(), 0o600); err != nil {
 			return fmt.Errorf("unable to write %q: %w", name, err)
 		}
 	}
 
-	logger.Info.Println("Done generating the TLS certificates")
+	logger.Info("Done generating the TLS certificates")
 	return nil
 }
 

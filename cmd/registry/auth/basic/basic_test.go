@@ -107,32 +107,8 @@ var registryAuthBasicTests = Describe("auth", func() {
 				args = []string{registryCmd, authCmd, basicCmd}
 			})
 			registryAuthBasicAssertFailedBehavior(registryAuthBasicUsage,
-				"ERRO: accepts 1 arg(s), received 0")
+				"ERROR accepts 1 arg(s), received 0")
 		})
-
-		/*
-					When("wrong credentials", func() {
-						BeforeEach(func() {
-
-							ptyFile, ttyFile, err := pty.Open()
-							Expect(err).To(BeNil())
-
-							os.Stdin = ttyFile
-							input := `username1
-			password1
-			`
-							_, err = ptyFile.Write([]byte(input))
-							Expect(err).To(BeNil())
-
-							http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-							args = []string{registryCmd, authCmd, basicCmd, "--config", configFile, registryBasic}
-						})
-
-						registryAuthBasicAssertFailedBehavior(registryAuthBasicUsage,
-							"ERRO: accepts 0 arg(s), received 0")
-					})
-		*/
 	})
 
 })

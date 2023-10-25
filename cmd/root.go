@@ -26,7 +26,6 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/tls"
 	"github.com/falcosecurity/falcoctl/cmd/version"
 	"github.com/falcosecurity/falcoctl/pkg/options"
-	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
 const (
@@ -48,7 +47,14 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 		Use:               "falcoctl",
 		Short:             "The official CLI tool for working with Falco and its ecosystem components",
 		Long:              longRootCmd,
+		SilenceErrors:     true,
 		DisableAutoGenTag: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Initialize the common options for all subcommands.
+			// Subcommands con overwrite the default settings by calling initialize with
+			// different options.
+			opt.Initialize()
+		},
 	}
 
 	// Global flags
@@ -65,10 +71,10 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 }
 
 // Execute configures the signal handlers and runs the command.
-func Execute(cmd *cobra.Command, printer *output.Printer) error {
+func Execute(cmd *cobra.Command, opt *options.Common) error {
 	// we do not log the error here since we expect that each subcommand
 	// handles the errors by itself.
 	err := cmd.Execute()
-	printer.CheckErr(err)
+	opt.Printer.CheckErr(err)
 	return err
 }

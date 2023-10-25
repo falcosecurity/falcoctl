@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -183,6 +184,9 @@ Examples:
 
 // RunArtifactInstall executes the business logic for the artifact install command.
 func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []string) error {
+	var sp *pterm.SpinnerPrinter
+
+	logger := o.Printer.Logger
 	// Retrieve configuration for installer
 	configuredInstaller, err := config.Installer()
 	if err != nil {
@@ -244,7 +248,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	var refs []string
 	if o.resolveDeps {
 		// Solve dependencies
-		o.Printer.Info.Println("Resolving dependencies ...")
+		logger.Info("Resolving dependencies ...")
 		refs, err = ResolveDeps(resolver, args...)
 		if err != nil {
 			return err
@@ -253,7 +257,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		refs = args
 	}
 
-	o.Printer.Info.Printfln("Installing the following artifacts: %v", refs)
+	logger.Info("Installing artifacts", logger.Args("refs", refs))
 
 	for _, ref := range refs {
 		ref, err = o.IndexCache.ResolveReference(ref)
@@ -261,7 +265,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		o.Printer.Info.Printfln("Preparing to pull %q", ref)
+		logger.Info("Preparing to pull artifact", logger.Args("ref", ref))
 
 		if err := puller.CheckAllowedType(ctx, ref, o.allowedTypes.Types); err != nil {
 			return err
@@ -290,12 +294,12 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			// the exact digest that we just pulled, even if the tag gets overwritten in the meantime.
 			digestRef := fmt.Sprintf("%s@%s", repo, result.RootDigest)
 
-			o.Printer.Info.Printfln("Verifying signature for %s", digestRef)
+			logger.Info("Verifying signature for artifact", logger.Args("digest", digestRef))
 			err = signature.Verify(ctx, digestRef, sig)
 			if err != nil {
 				return fmt.Errorf("error while verifying signature for %s: %w", digestRef, err)
 			}
-			o.Printer.Info.Printfln("Signature successfully verified!")
+			logger.Info("Signature successfully verified!")
 		}
 
 		var destDir string
@@ -312,14 +316,18 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return fmt.Errorf("cannot use directory %q as install destination: %w", destDir, err)
 		}
 
-		sp, _ := o.Printer.Spinner.Start(fmt.Sprintf("INFO: Extracting and installing %q %q", result.Type, result.Filename))
+		logger.Info("Extracting and installing artifact", logger.Args("type", result.Type, "file", result.Filename))
+
+		if !o.Printer.DisableStyling {
+			sp, _ = o.Printer.Spinner.Start("Extracting and installing")
+		}
+
 		result.Filename = filepath.Join(tmpDir, result.Filename)
 
 		f, err := os.Open(result.Filename)
 		if err != nil {
 			return err
 		}
-
 		// Extract artifact and move it to its destination directory
 		_, err = utils.ExtractTarGz(f, destDir)
 		if err != nil {
@@ -331,7 +339,10 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		sp.Success(fmt.Sprintf("Artifact successfully installed in %q", destDir))
+		if sp != nil {
+			_ = sp.Stop()
+		}
+		logger.Info("Artifact successfully installed", logger.Args("name", ref, "type", result.Type, "digest", result.Digest, "directory", destDir))
 	}
 
 	return nil

@@ -88,6 +88,7 @@ func NewPullCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			o.Common.Initialize()
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -103,6 +104,7 @@ func NewPullCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 
 // RunPull executes the business logic for the pull command.
 func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
+	logger := o.Printer.Logger
 	ref := args[0]
 
 	registry, err := utils.GetRegistryFromRef(ref)
@@ -120,12 +122,12 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		return err
 	}
 
-	o.Printer.Info.Printfln("Preparing to pull artifact %q", args[0])
+	logger.Info("Preparing to pull artifact", logger.Args("name", args[0]))
 
 	if o.destDir == "" {
-		o.Printer.Info.Printfln("Pulling artifact in the current directory")
+		logger.Info("Pulling artifact in the current directory")
 	} else {
-		o.Printer.Info.Printfln("Pulling artifact in %q directory", o.destDir)
+		logger.Info("Pulling artifact in", logger.Args("directory", o.destDir))
 	}
 
 	os, arch := runtime.GOOS, runtime.GOARCH
@@ -138,7 +140,7 @@ func (o *pullOptions) RunPull(ctx context.Context, args []string) error {
 		return err
 	}
 
-	o.Printer.Success.Printfln("Artifact of type %q pulled. Digest: %q", res.Type, res.Digest)
+	logger.Info("Artifact pulled", logger.Args("name", args[0], "type", res.Type, "digest", res.Digest))
 
 	return nil
 }

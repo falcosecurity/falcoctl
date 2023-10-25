@@ -56,6 +56,7 @@ func NewIndexAddCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 // RunIndexAdd implements the index add command.
 func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error {
 	var err error
+	logger := o.Printer.Logger
 
 	name := args[0]
 	url := args[1]
@@ -64,24 +65,24 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 		backend = args[2]
 	}
 
-	o.Printer.Verbosef("Creating in-memory cache using indexes file %q and indexes directory %q", config.IndexesFile, config.IndexesDir)
+	logger.Debug("Creating in-memory cache using", logger.Args("indexes file", config.IndexesFile, "indexes directory", config.IndexesDir))
 	indexCache, err := cache.New(ctx, config.IndexesFile, config.IndexesDir)
 	if err != nil {
 		return fmt.Errorf("unable to create index cache: %w", err)
 	}
 
-	o.Printer.Info.Printfln("Adding index")
+	logger.Info("Adding index", logger.Args("name", name, "path", url))
 
 	if err = indexCache.Add(ctx, name, backend, url); err != nil {
 		return fmt.Errorf("unable to add index: %w", err)
 	}
 
-	o.Printer.Verbosef("Writing cache to disk")
+	logger.Debug("Writing cache to disk")
 	if _, err = indexCache.Write(); err != nil {
 		return fmt.Errorf("unable to write cache to disk: %w", err)
 	}
 
-	o.Printer.Verbosef("Adding new index entry to configuration file %q", o.ConfigFile)
+	logger.Debug("Adding new index entry to configuration", logger.Args("file", o.ConfigFile))
 	if err = config.AddIndexes([]config.Index{{
 		Name:    name,
 		URL:     url,
@@ -90,7 +91,7 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 		return fmt.Errorf("index entry %q: %w", name, err)
 	}
 
-	o.Printer.Success.Printfln("Index %q successfully added", name)
+	logger.Info("Index successfully added")
 
 	return nil
 }

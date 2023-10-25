@@ -21,9 +21,9 @@ Available Commands:
   version     Print the falcoctl version information
 
 Flags:
-      --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -h, --help              help for falcoctl
-  -v, --verbose           Enable verbose logs (default false)
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+  -h, --help                help for falcoctl
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 
 Use "falcoctl [command] --help" for more information about a command.

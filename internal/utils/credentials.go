@@ -29,19 +29,17 @@ import (
 func GetCredentials(p *output.Printer) (username, password string, err error) {
 	reader := bufio.NewReader(os.Stdin)
 
-	p.DefaultText.Print("Username: ")
+	p.DefaultText.Print(p.FormatTitleAsLoggerInfo("Enter username:"))
 	username, err = reader.ReadString('\n')
 	if err != nil {
 		return "", "", err
 	}
 
-	p.DefaultText.Print("Password: ")
+	p.Logger.Info("Enter password: ")
 	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		return "", "", err
 	}
-
-	p.DefaultText.Println()
 
 	password = string(bytePassword)
 	return strings.TrimSpace(username), strings.TrimSpace(password), nil

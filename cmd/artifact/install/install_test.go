@@ -51,8 +51,8 @@ Flags:
 
 Global Flags:
       --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 
 `
 
@@ -170,7 +170,7 @@ var artifactInstallTests = Describe("install", func() {
 				args = []string{artifactCmd, installCmd, "--config", configFile}
 			})
 			installAssertFailedBehavior(artifactInstallUsage,
-				"ERRO: no artifacts to install, please configure artifacts or pass them as arguments to this command")
+				"ERROR no artifacts to install, please configure artifacts or pass them as arguments to this command")
 		})
 
 		When("unreachable registry", func() {
@@ -181,7 +181,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(err).To(BeNil())
 				args = []string{artifactCmd, installCmd, "noregistry/testrules", "--plain-http", "--config", configFile}
 			})
-			installAssertFailedBehavior(artifactInstallUsage, `ERRO: unable to fetch reference`)
+			installAssertFailedBehavior(artifactInstallUsage, `ERROR unable to fetch reference`)
 		})
 
 		When("invalid repository", func() {
@@ -193,7 +193,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(err).To(BeNil())
 				args = []string{artifactCmd, installCmd, newReg, "--plain-http", "--config", configFile}
 			})
-			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERRO: unable to fetch reference %q", newReg))
+			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERROR unable to fetch reference %q", newReg))
 		})
 
 		When("with disallowed types (rulesfile)", func() {
@@ -222,7 +222,7 @@ var artifactInstallTests = Describe("install", func() {
 					"--config", configFilePath, "--allowed-types", "rulesfile"}
 			})
 
-			installAssertFailedBehavior(artifactInstallUsage, "ERRO: cannot download artifact of type \"plugin\": type not permitted")
+			installAssertFailedBehavior(artifactInstallUsage, "ERROR cannot download artifact of type \"plugin\": type not permitted")
 		})
 
 		When("with disallowed types (plugin)", func() {
@@ -251,7 +251,7 @@ var artifactInstallTests = Describe("install", func() {
 					"--config", configFilePath, "--allowed-types", "plugin"}
 			})
 
-			installAssertFailedBehavior(artifactInstallUsage, "ERRO: cannot download artifact of type \"rulesfile\": type not permitted")
+			installAssertFailedBehavior(artifactInstallUsage, "ERROR cannot download artifact of type \"rulesfile\": type not permitted")
 		})
 
 		When("an unknown type is used", func() {
@@ -281,7 +281,7 @@ var artifactInstallTests = Describe("install", func() {
 					"--config", configFilePath, "--allowed-types", "plugin," + wrongType}
 			})
 
-			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERRO: invalid argument \"plugin,%s\" for \"--allowed-types\" flag: "+
+			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERROR invalid argument \"plugin,%s\" for \"--allowed-types\" flag: "+
 				"not valid token %q: must be one of \"rulesfile\", \"plugin\"", wrongType, wrongType))
 		})
 
@@ -315,7 +315,7 @@ var artifactInstallTests = Describe("install", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERRO: cannot use directory %q "+
+				expectedError := fmt.Sprintf("ERROR cannot use directory %q "+
 					"as install destination: %s is not writable", destDir, destDir)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(artifactInstallUsage)))
@@ -353,7 +353,7 @@ var artifactInstallTests = Describe("install", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERRO: cannot use directory %q "+
+				expectedError := fmt.Sprintf("ERROR cannot use directory %q "+
 					"as install destination: %s doesn't exists", destDir, destDir)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(artifactInstallUsage)))
@@ -391,7 +391,7 @@ var artifactInstallTests = Describe("install", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERRO: cannot use directory %q "+
+				expectedError := fmt.Sprintf("ERROR cannot use directory %q "+
 					"as install destination: %s is not writable", destDir, destDir)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(artifactInstallUsage)))
@@ -429,7 +429,7 @@ var artifactInstallTests = Describe("install", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERRO: cannot use directory %q "+
+				expectedError := fmt.Sprintf("ERROR cannot use directory %q "+
 					"as install destination: %s doesn't exists", destDir, destDir)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(artifactInstallUsage)))

@@ -66,20 +66,21 @@ func NewGcpCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 // RunGcp executes the business logic for the gcp command.
 func (o *RegistryGcpOptions) RunGcp(ctx context.Context, args []string) error {
 	var err error
+	logger := o.Printer.Logger
 	reg := args[0]
 	if err = gcp.Login(ctx, reg); err != nil {
 		return err
 	}
-	o.Printer.Success.Printfln("GCP authentication successful for %q", reg)
+	logger.Info("GCP authentication successful", logger.Args("registry", reg))
 
-	o.Printer.Verbosef("Adding new gcp entry to configuration file %q", o.ConfigFile)
+	logger.Debug("Adding new gcp entry to configuration", logger.Args("file", o.ConfigFile))
 	if err = config.AddGcp([]config.GcpAuth{{
 		Registry: reg,
 	}}, o.ConfigFile); err != nil {
 		return fmt.Errorf("index entry %q: %w", reg, err)
 	}
 
-	o.Printer.Success.Printfln("GCP authentication entry for %q successfully added in configuration file", reg)
+	logger.Info("GCG authentication entry successfully added", logger.Args("registry", reg, "confgi file", o.ConfigFile))
 
 	return nil
 }
