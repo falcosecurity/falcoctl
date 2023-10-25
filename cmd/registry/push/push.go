@@ -124,6 +124,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	// When creating the tar.gz archives we need to remove them after we are done.
 	// We save the temporary dir where they live here.
 	var toBeDeleted string
+	logger := o.Printer.Logger
 
 	registry, err := utils.GetRegistryFromRef(ref)
 	if err != nil {
@@ -140,12 +141,12 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	o.Printer.Info.Printfln("Preparing to push artifact %q of type %q", args[0], o.ArtifactType)
+	logger.Info("Preparing to push artifact", o.Printer.Logger.Args("name", args[0], "type", o.ArtifactType))
 
 	// Make sure to remove temporary working dir.
 	defer func() {
 		if err := os.RemoveAll(toBeDeleted); err != nil {
-			o.Printer.Warning.Printfln("Unable to remove temporary dir %q: %s", toBeDeleted, err.Error())
+			logger.Warn("Unable to remove temporary dir", logger.Args("name", toBeDeleted, "error", err.Error()))
 		}
 	}()
 
@@ -202,7 +203,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	o.Printer.Success.Printfln("Artifact pushed. Digest: %q", res.Digest)
+	logger.Info("Artifact pushed", logger.Args("name", args[0], "type", res.Type, "digest", res.Digest))
 
 	return nil
 }

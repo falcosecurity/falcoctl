@@ -33,9 +33,9 @@ Flags:
 -h, --help   help for add
 
 Global Flags:
-	--config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-	--disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
--v, --verbose           Enable verbose logs (default false)
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 `
 
 //nolint:lll // no need to check for line length.
@@ -48,9 +48,9 @@ Flags:
   -h, --help   help for add
 
 Global Flags:
-      --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 `
 
 var addAssertFailedBehavior = func(usage, specificError string) {
@@ -97,14 +97,14 @@ var indexAddTests = Describe("add", func() {
 			BeforeEach(func() {
 				args = []string{indexCmd, addCmd, "--config", configFile, indexName}
 			})
-			addAssertFailedBehavior(indexAddUsage, "ERRO: accepts between 2 and 3 arg(s), received 1")
+			addAssertFailedBehavior(indexAddUsage, "ERROR accepts between 2 and 3 arg(s), received 1")
 		})
 
 		When("with invalid URL", func() {
 			BeforeEach(func() {
 				args = []string{indexCmd, addCmd, "--config", configFile, indexName, "NOTAPROTOCAL://something"}
 			})
-			addAssertFailedBehavior(indexAddUsage, "ERRO: unable to add index: unable to fetch index \"testName\""+
+			addAssertFailedBehavior(indexAddUsage, "ERROR unable to add index: unable to fetch index \"testName\""+
 				" with URL \"NOTAPROTOCAL://something\": unable to fetch index: cannot fetch index: Get "+
 				"\"notaprotocal://something\": unsupported protocol scheme \"notaprotocal\"")
 		})
@@ -113,7 +113,7 @@ var indexAddTests = Describe("add", func() {
 			BeforeEach(func() {
 				args = []string{indexCmd, addCmd, "--config", configFile, indexName, "http://noindex", "notabackend"}
 			})
-			addAssertFailedBehavior(indexAddUsage, "ERRO: unable to add index: unable to fetch index \"testName\" "+
+			addAssertFailedBehavior(indexAddUsage, "ERROR unable to add index: unable to fetch index \"testName\" "+
 				"with URL \"http://noindex\": unsupported index backend type: notabackend")
 		})
 	})

@@ -65,8 +65,9 @@ Flags:
 
 Global Flags:
       --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
+
 `
 
 //nolint:unused // false positive
@@ -132,7 +133,7 @@ var registryAuthOAuthTests = Describe("auth", func() {
 				args = []string{registryCmd, authCmd, oauthCmd}
 			})
 			registryAuthOAuthAssertFailedBehavior(registryAuthOAuthUsage,
-				"ERRO: accepts 1 arg(s), received 0")
+				"ERROR accepts 1 arg(s), received 0")
 		})
 
 		When("wrong client id", func() {
@@ -152,7 +153,7 @@ var registryAuthOAuthTests = Describe("auth", func() {
 				}
 			})
 			registryAuthOAuthAssertFailedBehavior(registryAuthOAuthUsage,
-				`ERRO: wrong client credentials, unable to retrieve token`)
+				`ERROR wrong client credentials, unable to retrieve token`)
 		})
 
 		When("wrong client secret", func() {
@@ -172,7 +173,7 @@ var registryAuthOAuthTests = Describe("auth", func() {
 				}
 			})
 			registryAuthOAuthAssertFailedBehavior(registryAuthOAuthUsage,
-				`ERRO: wrong client credentials, unable to retrieve token`)
+				`ERROR wrong client credentials, unable to retrieve token`)
 		})
 	})
 
@@ -199,7 +200,7 @@ var registryAuthOAuthTests = Describe("auth", func() {
 
 			It("should successed", func() {
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(
-					`INFO: client credentials correctly saved in`)))
+					`INFO  Client credentials correctly saved`)))
 			})
 		})
 

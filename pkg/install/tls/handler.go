@@ -40,6 +40,7 @@ type Options struct {
 
 // Run executes the business logic of the `install tls` command.
 func (o *Options) Run() error {
+	logger := o.Common.Printer.Logger
 	// If the output path is not given then get the current working directory.
 	if o.Path == "" {
 		cwd, err := os.Getwd()
@@ -49,7 +50,7 @@ func (o *Options) Run() error {
 		o.Path = cwd
 	}
 
-	o.Common.Printer.Info.Printf("Generating certificates in %s directory\n", o.Path)
+	logger.Info("Generating certificates", logger.Args("directory", o.Path))
 
 	keyGenerator := NewKeyGenerator(DSAType(o.Algorithm))
 
@@ -84,5 +85,5 @@ func (o *Options) Run() error {
 		return err
 	}
 
-	return generator.FlushToDisk(o.Path, o.Common.Printer)
+	return generator.FlushToDisk(o.Path, logger)
 }

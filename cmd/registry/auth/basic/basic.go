@@ -58,7 +58,7 @@ func NewBasicCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 // RunBasic executes the business logic for the basic command.
 func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	reg := args[0]
-
+	logger := o.Printer.Logger
 	user, token, err := utils.GetCredentials(o.Printer)
 	if err != nil {
 		return err
@@ -78,8 +78,8 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	if err := basic.Login(ctx, client, credentialStore, reg, user, token); err != nil {
 		return err
 	}
-	o.Printer.Verbosef("credentials added to credential store")
-	o.Printer.Success.Println("Login succeeded")
+	logger.Debug("Credentials added", logger.Args("credential store", config.RegistryCredentialConfPath()))
+	logger.Info("Login succeeded", logger.Args("registry", reg, "user", user))
 
 	return nil
 }

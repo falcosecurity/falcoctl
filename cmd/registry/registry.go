@@ -36,6 +36,8 @@ func NewRegistryCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Comma
 		Long:                  "Interact with OCI registries",
 		SilenceErrors:         true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Initialize the options.
+			opt.Initialize()
 			// Load configuration from ENV variables and/or config file.
 			return config.Load(opt.ConfigFile)
 		},

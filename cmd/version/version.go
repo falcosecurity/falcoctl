@@ -119,20 +119,17 @@ func (o *options) Run(v *version) error {
 	case yamlFormat:
 		marshaled, err := yaml.Marshal(v)
 		if err != nil {
-			o.Printer.Error.Println(err.Error())
 			return err
 		}
 		o.Printer.DefaultText.Printf("%s:\n%s\n", "Client Version", string(marshaled))
 	case jsonFormat:
 		marshaled, err := json.MarshalIndent(v, "", "   ")
 		if err != nil {
-			o.Printer.Error.Println(err.Error())
 			return err
 		}
 		o.Printer.DefaultText.Printf("%s:\n%s \n", "Client Version", string(marshaled))
 	default:
 		// We should never hit this case.
-		o.Printer.Error.Printf("options of the version command were not validated: --output=%q should have been rejected", o.Output)
 		return fmt.Errorf("options of the version command were not validated: --output=%q should have been rejected", o.Output)
 	}
 

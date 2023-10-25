@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2023 The Falco Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package options
+
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/pterm/pterm"
+)
+
+var _ = Describe("LogLevel", func() {
+	var (
+		logLevel *LogLevel
+	)
+	BeforeEach(func() {
+		logLevel = NewLogLevel()
+	})
+
+	Context("NewLogLevel Func", func() {
+		It("should return a new LogLevel", func() {
+			Expect(logLevel).ShouldNot(BeNil())
+			Expect(logLevel.value).Should(Equal(LogLevelInfo))
+			Expect(logLevel.allowed).Should(Equal(logLevels))
+		})
+	})
+
+	Context("ToPtermLogLevel Func", func() {
+		var output pterm.LogLevel
+
+		JustBeforeEach(func() {
+			output = logLevel.ToPtermLogLevel()
+		})
+
+		Context("Info", func() {
+			BeforeEach(func() {
+				Expect(logLevel.Set(LogLevelInfo)).ShouldNot(HaveOccurred())
+			})
+
+			It("should return the Info level", func() {
+				Expect(output).Should(Equal(pterm.LogLevelInfo))
+			})
+		})
+
+		Context("Warn", func() {
+			BeforeEach(func() {
+				Expect(logLevel.Set(LogLevelWarn)).ShouldNot(HaveOccurred())
+			})
+
+			It("should return the Warn level", func() {
+				Expect(output).Should(Equal(pterm.LogLevelWarn))
+			})
+		})
+
+		Context("Debug", func() {
+			BeforeEach(func() {
+				Expect(logLevel.Set(LogLevelDebug)).ShouldNot(HaveOccurred())
+			})
+
+			It("should return the Debug level", func() {
+				Expect(output).Should(Equal(pterm.LogLevelDebug))
+			})
+		})
+
+		Context("Trace", func() {
+			BeforeEach(func() {
+				Expect(logLevel.Set(LogLevelTrace)).ShouldNot(HaveOccurred())
+			})
+
+			It("should return the Info level", func() {
+				Expect(output).Should(Equal(pterm.LogLevelTrace))
+			})
+		})
+	})
+})

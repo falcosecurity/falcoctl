@@ -150,7 +150,6 @@ var _ = Describe("Version", func() {
 			Context("run method", func() {
 				It("should print the error message", func() {
 					Expect(opt.Run(version)).Error().Should(HaveOccurred())
-					Expect(writer).Should(gbytes.Say("options of the version command were not validated"))
 				})
 			})
 		})

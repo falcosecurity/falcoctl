@@ -84,7 +84,6 @@ var _ = BeforeSuite(func() {
 	// Create and configure the common options.
 	opt = commonoptions.NewOptions()
 	opt.Initialize(commonoptions.WithWriter(output))
-	opt.Printer.DisableStylingf()
 
 	// Create the oras registry.
 	orasRegistry, err = testutils.NewOrasRegistry(registry, true)
@@ -115,5 +114,5 @@ var _ = AfterSuite(func() {
 func executeRoot(args []string) error {
 	rootCmd.SetArgs(args)
 	rootCmd.SetOut(output)
-	return cmd.Execute(rootCmd, opt.Printer)
+	return cmd.Execute(rootCmd, opt)
 }

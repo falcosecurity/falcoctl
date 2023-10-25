@@ -36,7 +36,11 @@ func main() {
 	// If the ctx is marked as done then we reset the signals.
 	go func() {
 		<-ctx.Done()
-		opt.Printer.Info.Println("Received signal, terminating...")
+		// Stop all the printers if any is active
+		if opt.Printer != nil && opt.Printer.ProgressBar != nil && opt.Printer.ProgressBar.IsActive {
+			_, _ = opt.Printer.ProgressBar.Stop()
+		}
+		opt.Printer.Logger.Info("Received signal, terminating...")
 		stop()
 	}()
 
@@ -44,7 +48,7 @@ func main() {
 	rootCmd := cmd.New(ctx, opt)
 
 	// Execute the command.
-	if err := cmd.Execute(rootCmd, opt.Printer); err != nil {
+	if err := cmd.Execute(rootCmd, opt); err != nil {
 		os.Exit(1)
 	}
 	os.Exit(0)

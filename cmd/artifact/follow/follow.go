@@ -253,6 +253,7 @@ Examples:
 
 // RunArtifactFollow executes the business logic for the artifact follow command.
 func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []string) error {
+	logger := o.Printer.Logger
 	// Retrieve configuration for follower
 	configuredFollower, err := config.Follower()
 	if err != nil {
@@ -278,15 +279,13 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 	}
 
 	var wg sync.WaitGroup
-	// Disable styling
-	o.Printer.DisableStylingf()
 	// For each artifact create a follower.
 	var followers = make(map[string]*follower.Follower, 0)
 	for _, a := range args {
 		if o.cron != "" {
-			o.Printer.Info.Printfln("Creating follower for %q, with check using cron %s", a, o.cron)
+			logger.Info("Creating follower", logger.Args("artifact", a, "cron", o.cron))
 		} else {
-			o.Printer.Info.Printfln("Creating follower for %q, with check every %s", a, o.every.String())
+			logger.Info("Creating follower", logger.Args("artifact", a, "check every", o.every.String()))
 		}
 		ref, err := o.IndexCache.ResolveReference(a)
 		if err != nil {
@@ -305,7 +304,6 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			PluginsDir:        o.pluginsDir,
 			ArtifactReference: ref,
 			PlainHTTP:         o.PlainHTTP,
-			Verbose:           o.IsVerbose(),
 			CloseChan:         o.closeChan,
 			TmpDir:            o.tmpDir,
 			FalcoVersions:     o.versions,
@@ -319,11 +317,9 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		wg.Add(1)
 		followers[ref] = fol
 	}
-	// Enable styling
-	o.Printer.EnableStyling()
 
 	for k, f := range followers {
-		o.Printer.Info.Printfln("Starting follower for %q", k)
+		logger.Info("Starting follower", logger.Args("artifact", k))
 		go f.Follow(ctx)
 	}
 
@@ -331,7 +327,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 	<-ctx.Done()
 
 	// We are done, shutdown the followers.
-	o.Printer.DefaultText.Printfln("closing followers...")
+	logger.Info("Closing followers...")
 	close(o.closeChan)
 
 	// Wait for the followers to shutdown or that the timer expires.
@@ -344,9 +340,9 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 
 	select {
 	case <-doneChan:
-		o.Printer.DefaultText.Printfln("followers correctly stopped.")
+		logger.Info("Followers correctly stopped.")
 	case <-time.After(timeout):
-		o.Printer.DefaultText.Printfln("Timed out waiting for followers to exit")
+		logger.Info("Timed out waiting for followers to exit")
 	}
 
 	return nil
@@ -433,11 +429,11 @@ type backoffTransport struct {
 func (bt *backoffTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var err error
 	var resp *http.Response
-
+	logger := bt.Printer.Logger
 	bt.startTime = time.Now()
 	bt.attempts = 0
 
-	bt.Printer.Verbosef("Retrieving versions from Falco (timeout %s) ...", bt.Config.MaxDelay)
+	logger.Debug(fmt.Sprintf("Retrieving versions from Falco (timeout %s) ...", bt.Config.MaxDelay))
 
 	for {
 		resp, err = bt.Base.RoundTrip(req)
@@ -452,10 +448,10 @@ func (bt *backoffTransport) RoundTrip(req *http.Request) (*http.Response, error)
 				return resp, fmt.Errorf("timeout occurred while retrieving versions from Falco")
 			}
 
-			bt.Printer.Verbosef("error: %s. Trying again in %s", err.Error(), sleep.String())
+			logger.Debug(fmt.Sprintf("error: %s. Trying again in %s", err.Error(), sleep.String()))
 			time.Sleep(sleep)
 		} else {
-			bt.Printer.Verbosef("Successfully retrieved versions from Falco ...")
+			logger.Debug("Successfully retrieved versions from Falco")
 			return resp, err
 		}
 
