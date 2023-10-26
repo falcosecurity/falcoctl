@@ -75,8 +75,6 @@ func NewPullCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:                 "Pull a Falco OCI artifact from remote registry",
 		Long:                  longPull,
 		Args:                  cobra.ExactArgs(1),
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Validate(); err != nil {
 				return err

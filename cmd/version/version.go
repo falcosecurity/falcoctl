@@ -85,12 +85,10 @@ func NewVersionCmd(opt *commonoptions.Common) *cobra.Command {
 
 	v := newVersion()
 	cmd := &cobra.Command{
-		Use:           "version",
-		Short:         "Print the falcoctl version information",
-		Long:          "Print the falcoctl version information",
-		Args:          cobra.NoArgs,
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		Use:   "version",
+		Short: "Print the falcoctl version information",
+		Long:  "Print the falcoctl version information",
+		Args:  cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return o.validate()
 		},

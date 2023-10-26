@@ -45,8 +45,6 @@ func NewBasicCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:                 "Login to an OCI registry",
 		Long:                  "Login to an OCI registry to push and pull artifacts",
 		Args:                  cobra.ExactArgs(1),
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunBasic(ctx, args)
 		},

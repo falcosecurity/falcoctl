@@ -48,8 +48,6 @@ func NewArtifactInfoCmd(ctx context.Context, opt *options.Common) *cobra.Command
 		Short:                 "Retrieve all available versions of a given artifact",
 		Long:                  "Retrieve all available versions of a given artifact",
 		Args:                  cobra.MinimumNArgs(1),
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunArtifactInfo(ctx, args)
 		},

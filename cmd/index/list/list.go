@@ -43,8 +43,6 @@ func NewIndexListCmd(_ context.Context, opt *options.Common) *cobra.Command {
 		Long:                  "List all the added indexes that were configured in falcoctl",
 		Args:                  cobra.ExactArgs(0),
 		Aliases:               []string{"ls"},
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return o.RunIndexList()
 		},

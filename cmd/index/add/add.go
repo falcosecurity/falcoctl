@@ -43,8 +43,6 @@ func NewIndexAddCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:                 "Add an index to the local falcoctl configuration",
 		Long:                  "Add an index to the local falcoctl configuration. Indexes are used to perform search operations for artifacts",
 		Args:                  cobra.RangeArgs(2, 3),
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunIndexAdd(ctx, args)
 		},

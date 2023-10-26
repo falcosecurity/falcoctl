@@ -4,7 +4,6 @@ go 1.21
 
 require (
 	cloud.google.com/go/storage v1.32.0
-	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/distribution/distribution/v3 v3.0.0-20230608105614-4501a6e06d3b
 	github.com/docker/cli v24.0.5+incompatible
@@ -29,7 +28,6 @@ require (
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	google.golang.org/api v0.138.0
 	gopkg.in/yaml.v3 v3.0.1
-	gotest.tools v2.2.0+incompatible
 	oras.land/oras-go/v2 v2.2.1
 )
 
