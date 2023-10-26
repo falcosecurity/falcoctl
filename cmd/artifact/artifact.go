@@ -37,8 +37,6 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Comma
 		DisableFlagsInUseLine: true,
 		Short:                 "Interact with Falco artifacts",
 		Long:                  "Interact with Falco artifacts",
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			var indexes []config.Index
 			var indexCache *cache.Cache

@@ -60,8 +60,6 @@ func NewOauthCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:                 "Retrieve access and refresh tokens for OAuth2.0 client credentials flow authentication",
 		Long:                  longOauth,
 		Args:                  cobra.ExactArgs(1),
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunOAuth(ctx, args)
 		},

@@ -43,8 +43,6 @@ func NewIndexRemoveCmd(ctx context.Context, opt *options.Common) *cobra.Command 
 		Long:                  "Remove an index from the local falcoctl configuration",
 		Args:                  cobra.MinimumNArgs(1),
 		Aliases:               []string{"rm"},
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunIndexRemove(ctx, args)
 		},

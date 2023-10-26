@@ -48,6 +48,8 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:             "The official CLI tool for working with Falco and its ecosystem components",
 		Long:              longRootCmd,
 		SilenceErrors:     true,
+		SilenceUsage:      true,
+		TraverseChildren:  true,
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			// Initialize the common options for all subcommands.

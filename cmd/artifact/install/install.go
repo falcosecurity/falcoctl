@@ -92,8 +92,6 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comm
 		DisableFlagsInUseLine: true,
 		Short:                 "Install a list of artifacts",
 		Long:                  longInstall,
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
 			f := cmd.Flags().Lookup(FlagRulesFilesDir)

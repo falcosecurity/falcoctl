@@ -53,8 +53,6 @@ func NewGcpCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:                 "Register an Artifact Registry to log in using GCP Application Default credentials",
 		Long:                  longGcp,
 		Args:                  cobra.ExactArgs(1),
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunGcp(ctx, args)
 		},

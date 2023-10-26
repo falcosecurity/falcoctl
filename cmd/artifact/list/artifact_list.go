@@ -47,8 +47,6 @@ func NewArtifactListCmd(ctx context.Context, opt *options.Common) *cobra.Command
 		Short:                 "List all artifacts",
 		Long:                  "List all artifacts",
 		Aliases:               []string{"ls"},
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunArtifactList(ctx, args)
 		},

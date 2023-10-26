@@ -106,11 +106,9 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 	}
 
 	cmd := &cobra.Command{
-		Use:           "follow [ref1 [ref2 ...]] [flags]",
-		Short:         "Install a list of artifacts and continuously checks if there are updates",
-		Long:          longFollow,
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		Use:   "follow [ref1 [ref2 ...]] [flags]",
+		Short: "Install a list of artifacts and continuously checks if there are updates",
+		Long:  longFollow,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Override "every" flag with viper config if not set by user.
 			f := cmd.Flags().Lookup("every")

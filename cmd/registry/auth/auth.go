@@ -33,7 +33,6 @@ func NewAuthCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command {
 		DisableFlagsInUseLine: true,
 		Short:                 "Handle authentication towards OCI registries",
 		Long:                  "Handle authentication towards OCI registries",
-		SilenceErrors:         true,
 	}
 
 	cmd.AddCommand(basic.NewBasicCmd(ctx, opt))

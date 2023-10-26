@@ -42,7 +42,6 @@ func NewIndexUpdateCmd(ctx context.Context, opt *options.Common) *cobra.Command 
 		Short:                 "Update an existing index",
 		Long:                  "Update an existing index",
 		Args:                  cobra.MinimumNArgs(1),
-		SilenceErrors:         true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunIndexUpdate(ctx, args)
 		},

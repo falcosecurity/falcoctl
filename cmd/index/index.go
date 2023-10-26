@@ -35,8 +35,6 @@ func NewIndexCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command 
 		DisableFlagsInUseLine: true,
 		Short:                 "Interact with index",
 		Long:                  "Interact with index",
-		SilenceErrors:         true,
-		SilenceUsage:          true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			opt.Initialize()
 			return config.Load(opt.ConfigFile)

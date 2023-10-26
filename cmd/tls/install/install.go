@@ -43,8 +43,6 @@ func NewTLSInstallCmd(opt *commonoptions.Common) *cobra.Command {
 		Long: `Falco gRPC server runs with mutually encrypted TLS by default.
 
 This command is a convenience to not only generate the TLS material, but also drop it off on the local filesystem.`,
-		SilenceErrors: true,
-		SilenceUsage:  true,
 		RunE: func(c *cobra.Command, args []string) error {
 			return options.Run()
 		},
