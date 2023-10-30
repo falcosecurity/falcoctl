@@ -219,7 +219,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return nil, err
 		}
 
-		artifactConfig, err := puller.PullConfigLayer(ctx, ref)
+		artifactConfig, err := puller.GetArtifactConfig(ctx, ref)
 		if err != nil {
 			return nil, err
 		}

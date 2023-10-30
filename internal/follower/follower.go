@@ -171,7 +171,7 @@ func (f *Follower) follow(ctx context.Context) {
 	f.logger.Info("Found new artifact version", f.logger.Args("followerName", f.ref, "tag", f.tag))
 
 	// Pull config layer to check falco versions
-	artifactConfig, err := f.PullConfigLayer(ctx, f.ref)
+	artifactConfig, err := f.GetArtifactConfig(ctx, f.ref)
 	if err != nil {
 		f.logger.Error("Unable to pull config layer", f.logger.Args("followerName", f.ref, "reason", err.Error()))
 		return
