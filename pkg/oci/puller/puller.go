@@ -170,7 +170,7 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 
 	desc, manifestReader, err := repo.FetchReference(ctx, ref)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch reference %q", ref)
+		return nil, fmt.Errorf("unable to fetch reference %q: %w", ref, err)
 	}
 	defer manifestReader.Close()
 
@@ -212,7 +212,7 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 	var manifest v1.Manifest
 	manifestBytes, err := io.ReadAll(manifestReader)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read bytes from manifest reader for ref %q", ref)
+		return nil, fmt.Errorf("unable to read bytes from manifest reader for ref %q: %w", ref, err)
 	}
 
 	if err = json.Unmarshal(manifestBytes, &manifest); err != nil {
@@ -222,8 +222,23 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 	return &manifest, nil
 }
 
+// GetArtifactConfig fetches only the config layer from a given ref.
+func (p *Puller) GetArtifactConfig(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
+	configBytes, err := p.PullConfigLayer(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	var artifactConfig oci.ArtifactConfig
+	if err = json.Unmarshal(configBytes, &artifactConfig); err != nil {
+		return nil, err
+	}
+
+	return &artifactConfig, nil
+}
+
 // PullConfigLayer fetches only the config layer from a given ref.
-func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
+func (p *Puller) PullConfigLayer(ctx context.Context, ref string) ([]byte, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
@@ -238,12 +253,12 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 
 	descriptor, err := repo.Blobs().Resolve(ctx, configRef)
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve to get descriptor for config blob %q", configRef)
+		return nil, err
 	}
 
 	rc, err := repo.Fetch(ctx, descriptor)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch descriptor with digest: %s", descriptor.Digest.String())
+		return nil, err
 	}
 
 	configBytes, err := io.ReadAll(rc)
@@ -251,12 +266,11 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) (*oci.Artifact
 		return nil, err
 	}
 
-	var artifactConfig oci.ArtifactConfig
-	if err = json.Unmarshal(configBytes, &artifactConfig); err != nil {
+	if err := rc.Close(); err != nil {
 		return nil, err
 	}
 
-	return &artifactConfig, nil
+	return configBytes, nil
 }
 
 // CheckAllowedType does a preliminary check on the manifest to state whether we are allowed
