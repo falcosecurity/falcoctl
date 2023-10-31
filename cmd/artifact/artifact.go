@@ -20,6 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	artifactconfig "github.com/falcosecurity/falcoctl/cmd/artifact/config"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/follow"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/info"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
@@ -69,6 +70,7 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Comma
 	cmd.AddCommand(list.NewArtifactListCmd(ctx, opt))
 	cmd.AddCommand(info.NewArtifactInfoCmd(ctx, opt))
 	cmd.AddCommand(follow.NewArtifactFollowCmd(ctx, opt))
+	cmd.AddCommand(artifactconfig.NewArtifactConfigCmd(ctx, opt))
 
 	return cmd
 }
