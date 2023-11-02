@@ -109,11 +109,27 @@ var _ = BeforeSuite(func() {
 		Expect(err).ToNot(BeNil())
 	}()
 
+	// Check that the registry is up and accepting connections.
+	Eventually(func(g Gomega) error {
+		res, err := http.Get(fmt.Sprintf("http://%s", config.HTTP.Addr))
+		g.Expect(err).ShouldNot(HaveOccurred())
+		g.Expect(res.StatusCode).Should(Equal(http.StatusOK))
+		return err
+	}).WithTimeout(time.Second * 5).ShouldNot(HaveOccurred())
+
 	// Start the local registry with basic authentication.
 	go func() {
 		err := testutils.StartRegistry(context.Background(), configBasic)
 		Expect(err).ToNot(BeNil())
 	}()
+
+	// Check that the registry is up and accepting connections.
+	Eventually(func(g Gomega) error {
+		res, err := http.Get(fmt.Sprintf("https://%s", configBasic.HTTP.Addr))
+		g.Expect(err).ShouldNot(HaveOccurred())
+		g.Expect(res.StatusCode).Should(Equal(http.StatusOK))
+		return err
+	}).WithTimeout(time.Second * 5).ShouldNot(HaveOccurred())
 
 	// Create temporary directory used to save the configuration file.
 	configFile, err = testutils.CreateEmptyFile("falcoctl.yaml")
