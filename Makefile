@@ -80,4 +80,4 @@ docker:
 
 .PHONY: clean
 clean:
-	@rm falcoctl
+	@rm falcoctl || true
