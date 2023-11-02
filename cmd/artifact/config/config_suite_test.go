@@ -18,7 +18,9 @@ package config_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/distribution/distribution/v3/configuration"
 	_ "github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
@@ -78,6 +80,14 @@ var _ = BeforeSuite(func() {
 		err := testutils.StartRegistry(context.Background(), config)
 		Expect(err).ToNot(BeNil())
 	}()
+
+	// Check that the registry is up and accepting connections.
+	Eventually(func(g Gomega) error {
+		res, err := http.Get(fmt.Sprintf("http://%s", config.HTTP.Addr))
+		g.Expect(err).ShouldNot(HaveOccurred())
+		g.Expect(res.StatusCode).Should(Equal(http.StatusOK))
+		return err
+	}).WithTimeout(time.Second * 5).ShouldNot(HaveOccurred())
 
 	// Initialize options for command.
 	opt = commonoptions.NewOptions()
