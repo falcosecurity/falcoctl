@@ -56,7 +56,7 @@ fmt: gci addlicense
 	go mod tidy
 	go fmt ./...
 	find . -type f -name '*.go' -a -exec $(GCI) write -s standard -s default -s "prefix(github.com/falcosecurity/falcoctl)" {} \;
-	find . -type f -name '*.go' -exec $(ADDLICENSE) -l apache -c "The Falco Authors" -y "$(shell date +%Y)" {} \;
+	find . -type f -name '*.go' -exec $(ADDLICENSE) -l apache -s -c "The Falco Authors" -y "$(shell date +%Y)" {} \;
 
 # Install golangci-lint if not available
 .PHONY: golangci-lint
