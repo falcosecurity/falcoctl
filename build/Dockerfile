@@ -32,7 +32,7 @@ RUN echo ${RELEASE}
 FROM alpine:3.18.4
 
 RUN apk update --no-cache && \
-    apk add --upgrade --no-cache libssl3=3.1.4-r0 libcrypto3=3.1.4-r0
+    apk add --upgrade --no-cache libssl3 libcrypto3
 RUN rm -rf /var/cache/apk/*
 
 ARG BIN_NAME="falcoctl"
