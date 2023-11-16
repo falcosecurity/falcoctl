@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -146,17 +147,21 @@ var _ = Describe("Puller", func() {
 	Context("PullConfigLayer func", func() {
 		var (
 			ref      string
+			os       string
+			arch     string
 			cfgLayer []byte
 			err      error
 		)
 		JustBeforeEach(func() {
 			puller = ocipuller.NewPuller(authn.NewClient(authn.WithCredentials(&auth.EmptyCredential)), plainHTTP, tracker)
-			cfgLayer, err = puller.PullConfigLayer(ctx, ref)
+			cfgLayer, err = puller.PullConfigLayer(ctx, ref, os, arch)
 		})
 
 		JustAfterEach(func() {
 			cfgLayer = nil
 			err = nil
+			os = ""
+			arch = ""
 		})
 
 		When("Artifact does not exist", func() {
@@ -173,6 +178,9 @@ var _ = Describe("Puller", func() {
 		When("config layer is set", func() {
 			BeforeEach(func() {
 				ref = pluginMultiPlatformRef
+				tokens := strings.Split(testPluginPlatform1, "/")
+				os = tokens[0]
+				arch = tokens[1]
 			})
 
 			It("should get config layer", func() {
@@ -191,6 +199,48 @@ var _ = Describe("Puller", func() {
 				Expect(string(cfgLayer)).Should(Equal("{}"))
 			})
 		})
+
+		When("config layer for linux/arm64", func() {
+			BeforeEach(func() {
+				ref = pluginMultiPlatformRef
+				tokens := strings.Split(testPluginPlatform1, "/")
+				os = tokens[0]
+				arch = tokens[1]
+			})
+
+			It("should get config layer", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(cfgLayer).ShouldNot(BeNil())
+			})
+		})
+
+		When("config layer artifact without platform", func() {
+			BeforeEach(func() {
+				ref = rulesRef
+				tokens := strings.Split(testPluginPlatform1, "/")
+				os = tokens[0]
+				arch = tokens[1]
+			})
+
+			It("should get config layer", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(cfgLayer).ShouldNot(BeNil())
+			})
+		})
+
+		When("config layer for non existing platform", func() {
+			BeforeEach(func() {
+				ref = pluginMultiPlatformRef
+				os = "linux"
+				arch = "non-existing"
+			})
+
+			It("should error", func() {
+				Expect(err).Should(HaveOccurred())
+				Expect(cfgLayer).Should(BeNil())
+			})
+		})
+
 	})
 
 	Context("Descriptor func", func() {
@@ -251,7 +301,7 @@ var _ = Describe("Puller", func() {
 		)
 		JustBeforeEach(func() {
 			puller = ocipuller.NewPuller(authn.NewClient(authn.WithCredentials(&auth.EmptyCredential)), plainHTTP, tracker)
-			err = puller.CheckAllowedType(ctx, ref, allowedTypes)
+			err = puller.CheckAllowedType(ctx, ref, runtime.GOOS, runtime.GOARCH, allowedTypes)
 		})
 
 		JustAfterEach(func() {
