@@ -83,7 +83,7 @@ func (o *artifactConfigOptions) RunArtifactConfig(ctx context.Context, args []st
 		return fmt.Errorf("invalid platform format: %s", o.platform)
 	}
 
-	if config, err = puller.PullConfigLayer(ctx, ref, tokens[0], tokens[1]); err != nil {
+	if config, err = puller.RawConfigLayer(ctx, ref, tokens[0], tokens[1]); err != nil {
 		return err
 	}
 

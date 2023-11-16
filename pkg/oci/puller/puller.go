@@ -235,11 +235,11 @@ func (p *Puller) RawManifest(ctx context.Context, ref, os, arch string) ([]byte,
 	return manifestBytes, nil
 }
 
-// GetArtifactConfig fetches only the config layer from a given ref.
+// ArtifactConfig fetches only the config layer from a given ref.
 // If the artifact has a v1.MediaTypeImageIndex descriptor then it fetches the config layer for the
 // specified platform.
-func (p *Puller) GetArtifactConfig(ctx context.Context, ref, os, arch string) (*oci.ArtifactConfig, error) {
-	configBytes, err := p.PullConfigLayer(ctx, ref, os, arch)
+func (p *Puller) ArtifactConfig(ctx context.Context, ref, os, arch string) (*oci.ArtifactConfig, error) {
+	configBytes, err := p.RawConfigLayer(ctx, ref, os, arch)
 	if err != nil {
 		return nil, err
 	}
@@ -252,10 +252,10 @@ func (p *Puller) GetArtifactConfig(ctx context.Context, ref, os, arch string) (*
 	return &artifactConfig, nil
 }
 
-// PullConfigLayer fetches only the config layer from a given ref.
+// RawConfigLayer fetches only the config layer from a given ref.
 // If the artifact has a v1.MediaTypeImageIndex descriptor then it fetches the config layer for the
 // specified platform.
-func (p *Puller) PullConfigLayer(ctx context.Context, ref, os, arch string) ([]byte, error) {
+func (p *Puller) RawConfigLayer(ctx context.Context, ref, os, arch string) ([]byte, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err

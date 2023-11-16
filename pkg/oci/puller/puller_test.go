@@ -144,7 +144,7 @@ var _ = Describe("Puller", func() {
 		})
 	})
 
-	Context("PullConfigLayer func", func() {
+	Context("RawConfigLayer func", func() {
 		var (
 			ref      string
 			os       string
@@ -154,7 +154,7 @@ var _ = Describe("Puller", func() {
 		)
 		JustBeforeEach(func() {
 			puller = ocipuller.NewPuller(authn.NewClient(authn.WithCredentials(&auth.EmptyCredential)), plainHTTP, tracker)
-			cfgLayer, err = puller.PullConfigLayer(ctx, ref, os, arch)
+			cfgLayer, err = puller.RawConfigLayer(ctx, ref, os, arch)
 		})
 
 		JustAfterEach(func() {
