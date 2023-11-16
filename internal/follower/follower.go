@@ -171,7 +171,7 @@ func (f *Follower) follow(ctx context.Context) {
 	f.logger.Info("Found new artifact version", f.logger.Args("followerName", f.ref, "tag", f.tag))
 
 	// Pull config layer to check falco versions
-	artifactConfig, err := f.GetArtifactConfig(ctx, f.ref)
+	artifactConfig, err := f.GetArtifactConfig(ctx, f.ref, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		f.logger.Error("Unable to pull config layer", f.logger.Args("followerName", f.ref, "reason", err.Error()))
 		return
@@ -252,7 +252,7 @@ func (f *Follower) follow(ctx context.Context) {
 // pull downloads, extracts, and installs the artifact.
 func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.RegistryResult, err error) {
 	f.logger.Debug("Check if pulling an allowed type of artifact", f.logger.Args("followerName", f.ref))
-	if err := f.Puller.CheckAllowedType(ctx, f.ref, f.Config.AllowedTypes.Types); err != nil {
+	if err := f.Puller.CheckAllowedType(ctx, f.ref, runtime.GOOS, runtime.GOARCH, f.Config.AllowedTypes.Types); err != nil {
 		return nil, nil, err
 	}
 

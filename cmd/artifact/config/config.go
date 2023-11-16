@@ -17,6 +17,9 @@ package config
 
 import (
 	"context"
+	"fmt"
+	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -28,6 +31,7 @@ import (
 type artifactConfigOptions struct {
 	*options.Common
 	*options.Registry
+	platform string
 }
 
 // NewArtifactConfigCmd returns the artifact config command.
@@ -48,6 +52,8 @@ func NewArtifactConfigCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 	}
 
 	o.Registry.AddFlags(cmd)
+	cmd.Flags().StringVar(&o.platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		"os and architecture of the artifact in OS/ARCH format")
 
 	return cmd
 }
@@ -70,7 +76,14 @@ func (o *artifactConfigOptions) RunArtifactConfig(ctx context.Context, args []st
 		return err
 	}
 
-	if config, err = puller.PullConfigLayer(ctx, ref); err != nil {
+	// TODO: implement two new flags (platforms, platform) based on the oci platform struct.
+	// Split the platform.
+	tokens := strings.Split(o.platform, "/")
+	if len(tokens) != 2 {
+		return fmt.Errorf("invalid platform format: %s", o.platform)
+	}
+
+	if config, err = puller.PullConfigLayer(ctx, ref, tokens[0], tokens[1]); err != nil {
 		return err
 	}
 

@@ -121,7 +121,7 @@ var _ = Describe("Config", func() {
 				args = []string{artifactCmd, configCmd, "noregistry/noartifact", plaingHTTP, configFlag, configDir}
 			})
 
-			assertFailedBehavior(usage, "ERROR unable to fetch reference")
+			assertFailedBehavior(usage, "ERROR unable to get manifest: unable to fetch reference")
 		})
 
 		When("non existing repository", func() {

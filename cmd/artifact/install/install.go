@@ -219,7 +219,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return nil, err
 		}
 
-		artifactConfig, err := puller.GetArtifactConfig(ctx, ref)
+		artifactConfig, err := puller.GetArtifactConfig(ctx, ref, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return nil, err
 		}
@@ -265,7 +265,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 		logger.Info("Preparing to pull artifact", logger.Args("ref", ref))
 
-		if err := puller.CheckAllowedType(ctx, ref, o.allowedTypes.Types); err != nil {
+		if err := puller.CheckAllowedType(ctx, ref, runtime.GOOS, runtime.GOARCH, o.allowedTypes.Types); err != nil {
 			return err
 		}
 

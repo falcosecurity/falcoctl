@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"runtime"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
@@ -161,8 +160,28 @@ func manifestFromDesc(ctx context.Context, target oras.Target, desc *v1.Descript
 	return &manifest, nil
 }
 
-// manifestFromRef retieves the manifest of an artifact, also taking care of resolving to it walking through indexes.
-func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest, error) {
+// manifest retieves the manifest of an artifact, also taking care of resolving to it walking through indexes.
+// If the artifact has a v1.MediaTypeImageIndex descriptor then it fetches the manifest for the
+// specified platform.
+func (p *Puller) manifest(ctx context.Context, ref, os, arch string) (*v1.Manifest, error) {
+	var manifest v1.Manifest
+
+	manifestBytes, err := p.RawManifest(ctx, ref, os, arch)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get manifest: %w", err)
+	}
+
+	if err = json.Unmarshal(manifestBytes, &manifest); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
+	}
+
+	return &manifest, nil
+}
+
+// RawManifest fetches the manifest layer from a given reference.
+// If the artifact has a v1.MediaTypeImageIndex descriptor then it fetches the manifest for the
+// specified platform.
+func (p *Puller) RawManifest(ctx context.Context, ref, os, arch string) ([]byte, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
@@ -188,11 +207,10 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 			return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
 		}
 
-		// todo: decide if goos or arch should be passed to this function
 		found := false
 		for _, manifest := range index.Manifests {
-			if manifest.Platform.OS == runtime.GOOS &&
-				manifest.Platform.Architecture == runtime.GOARCH {
+			if manifest.Platform.OS == os &&
+				manifest.Platform.Architecture == arch {
 				desc = manifest
 				found = true
 				break
@@ -200,7 +218,7 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 		}
 
 		if !found {
-			return nil, fmt.Errorf("unable to find a manifest matching the given platform: %s %s", runtime.GOOS, runtime.GOARCH)
+			return nil, fmt.Errorf("unable to find a manifest matching the given platform: %s/%s", os, arch)
 		}
 
 		manifestReader, err = repo.Fetch(ctx, desc)
@@ -209,22 +227,19 @@ func (p *Puller) manifestFromRef(ctx context.Context, ref string) (*v1.Manifest,
 		}
 	}
 
-	var manifest v1.Manifest
 	manifestBytes, err := io.ReadAll(manifestReader)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read bytes from manifest reader for ref %q: %w", ref, err)
 	}
 
-	if err = json.Unmarshal(manifestBytes, &manifest); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal manifest: %w", err)
-	}
-
-	return &manifest, nil
+	return manifestBytes, nil
 }
 
 // GetArtifactConfig fetches only the config layer from a given ref.
-func (p *Puller) GetArtifactConfig(ctx context.Context, ref string) (*oci.ArtifactConfig, error) {
-	configBytes, err := p.PullConfigLayer(ctx, ref)
+// If the artifact has a v1.MediaTypeImageIndex descriptor then it fetches the config layer for the
+// specified platform.
+func (p *Puller) GetArtifactConfig(ctx context.Context, ref, os, arch string) (*oci.ArtifactConfig, error) {
+	configBytes, err := p.PullConfigLayer(ctx, ref, os, arch)
 	if err != nil {
 		return nil, err
 	}
@@ -238,13 +253,15 @@ func (p *Puller) GetArtifactConfig(ctx context.Context, ref string) (*oci.Artifa
 }
 
 // PullConfigLayer fetches only the config layer from a given ref.
-func (p *Puller) PullConfigLayer(ctx context.Context, ref string) ([]byte, error) {
+// If the artifact has a v1.MediaTypeImageIndex descriptor then it fetches the config layer for the
+// specified platform.
+func (p *Puller) PullConfigLayer(ctx context.Context, ref, os, arch string) ([]byte, error) {
 	repo, err := repository.NewRepository(ref, repository.WithClient(p.Client), repository.WithPlainHTTP(p.plainHTTP))
 	if err != nil {
 		return nil, err
 	}
 
-	manifest, err := p.manifestFromRef(ctx, ref)
+	manifest, err := p.manifest(ctx, ref, os, arch)
 	if err != nil {
 		return nil, err
 	}
@@ -276,12 +293,12 @@ func (p *Puller) PullConfigLayer(ctx context.Context, ref string) ([]byte, error
 // CheckAllowedType does a preliminary check on the manifest to state whether we are allowed
 // or not to download this type of artifact. If allowedTypes is empty, everything is allowed,
 // else it is used to perform the check.
-func (p *Puller) CheckAllowedType(ctx context.Context, ref string, allowedTypes []oci.ArtifactType) error {
+func (p *Puller) CheckAllowedType(ctx context.Context, ref, os, arch string, allowedTypes []oci.ArtifactType) error {
 	if len(allowedTypes) == 0 {
 		return nil
 	}
 
-	manifest, err := p.manifestFromRef(ctx, ref)
+	manifest, err := p.manifest(ctx, ref, os, arch)
 	if err != nil {
 		return err
 	}
