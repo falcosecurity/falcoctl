@@ -25,6 +25,7 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/artifact/info"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/install"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/list"
+	"github.com/falcosecurity/falcoctl/cmd/artifact/manifest"
 	"github.com/falcosecurity/falcoctl/cmd/artifact/search"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/index/cache"
@@ -71,6 +72,7 @@ func NewArtifactCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Comma
 	cmd.AddCommand(info.NewArtifactInfoCmd(ctx, opt))
 	cmd.AddCommand(follow.NewArtifactFollowCmd(ctx, opt))
 	cmd.AddCommand(artifactconfig.NewArtifactConfigCmd(ctx, opt))
+	cmd.AddCommand(manifest.NewArtifactManifestCmd(ctx, opt))
 
 	return cmd
 }
