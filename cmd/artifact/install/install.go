@@ -219,7 +219,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return nil, err
 		}
 
-		artifactConfig, err := puller.GetArtifactConfig(ctx, ref, runtime.GOOS, runtime.GOARCH)
+		artifactConfig, err := puller.ArtifactConfig(ctx, ref, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return nil, err
 		}
