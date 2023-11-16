@@ -44,20 +44,23 @@ Usage:
   falcoctl artifact config [ref] [flags]
 
 Flags:
-  -h, --help         help for config
-      --plain-http   allows interacting with remote registry via plain http requests
+  -h, --help              help for config
+      --plain-http        allows interacting with remote registry via plain http requests
+      --platform string   os and architecture of the artifact in OS/ARCH format (default "linux/amd64")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
       --log-format string   Set formatting for logs (color, text, json) (default "color")
-      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")`
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
+`
 
 var _ = Describe("Config", func() {
 	const (
-		artifactCmd = "artifact"
-		configCmd   = "config"
-		plaingHTTP  = "--plain-http"
-		configFlag  = "--config"
+		artifactCmd  = "artifact"
+		configCmd    = "config"
+		plaingHTTP   = "--plain-http"
+		configFlag   = "--config"
+		platformFlag = "--platform"
 	)
 
 	var (
@@ -93,7 +96,7 @@ var _ = Describe("Config", func() {
 
 		It("should match the saved one", func() {
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(string(output.Contents())).ShouldNot(Equal(help))
+			Expect(string(output.Contents())).Should(Equal(help))
 		})
 	})
 
@@ -139,6 +142,13 @@ var _ = Describe("Config", func() {
 
 			assertFailedBehavior(usage, "ERROR cannot find   among the configured indexes, skipping ")
 		})
+
+		When("no manifest for given platform", func() {
+			BeforeEach(func() {
+				args = []string{artifactCmd, configCmd, pluginMultiPlatformRef, plaingHTTP, configFlag, configDir, platformFlag, "linux/wrong"}
+			})
+			assertFailedBehavior(usage, "ERROR unable to get manifest: unable to find a manifest matching the given platform: linux/wrong")
+		})
 	})
 
 	Context("success", func() {
@@ -163,6 +173,41 @@ var _ = Describe("Config", func() {
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(`{"dependencies":[{"name":"dep1","version":"1.2.3"},{"name":"dep2","version":"2.3.1"}]}`)))
 			})
 		})
-	})
 
+		When("no platform flag", func() {
+			BeforeEach(func() {
+				args = []string{artifactCmd, configCmd, pluginMultiPlatformRef, plaingHTTP, configFlag, configDir}
+			})
+
+			It("should success getting the platform where tests are running", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(
+					`{"dependencies":[{"name":"my-dep","version":"1.2.3","alternatives":[{"name":"my-alt-dep","version":"`)))
+			})
+		})
+
+		When("with valid platform", func() {
+			BeforeEach(func() {
+				args = []string{artifactCmd, configCmd, pluginMultiPlatformRef, plaingHTTP, configFlag, configDir, platformFlag, testPluginPlatform3}
+			})
+
+			It("should success", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(
+					`{"dependencies":[{"name":"my-dep","version":"1.2.3","alternatives":[{"name":"my-alt-dep","version":"`)))
+			})
+		})
+
+		When("with non existing platform for artifacts without platforms", func() {
+			BeforeEach(func() {
+				args = []string{artifactCmd, configCmd, rulesRef, plaingHTTP, configFlag, configDir, platformFlag, testPluginPlatform3}
+			})
+
+			It("should success", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(`{"dependencies":[{"name":"dep1","version":"1.2.3"},{"name":"dep2","version":"2.3.1"}]}`)))
+			})
+		})
+
+	})
 })
