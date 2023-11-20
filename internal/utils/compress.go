@@ -74,7 +74,7 @@ func CreateTarGzArchive(path string) (file string, err error) {
 
 	if fInfo.IsDir() {
 		// write header of the directory
-		header, err := tar.FileInfoHeader(fInfo, fInfo.Name())
+		header, err := tar.FileInfoHeader(fInfo, path)
 		if err != nil {
 			return "", err
 		}
@@ -108,13 +108,15 @@ func CreateTarGzArchive(path string) (file string, err error) {
 }
 
 func copyToTarGz(path string, tw *tar.Writer, info fs.FileInfo) error {
-	header, err := tar.FileInfoHeader(info, info.Name())
-	if err != nil {
-		return err
+	header := &tar.Header{
+		Name:     path,
+		Size:     info.Size(),
+		Mode:     int64(info.Mode()),
+		Typeflag: tar.TypeReg,
 	}
 
 	// write the header
-	if err = tw.WriteHeader(header); err != nil {
+	if err := tw.WriteHeader(header); err != nil {
 		return err
 	}
 
