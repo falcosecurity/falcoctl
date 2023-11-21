@@ -106,14 +106,15 @@ func stripComponents(headerName string, stripComponents int) string {
 	return filepath.Clean(strings.Join(names[stripComponents:], "/"))
 }
 
-func listHeaders(gzipStream io.Reader) {
+func listHeaders(gzipStream io.Reader) ([]string, error) {
 	uncompressedStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	tarReader := tar.NewReader(uncompressedStream)
 
+	var files []string
 	for {
 		header, err := tarReader.Next()
 
@@ -122,9 +123,11 @@ func listHeaders(gzipStream io.Reader) {
 		}
 
 		if err != nil {
-			return
+			return nil, err
 		}
 
-		fmt.Println(header.Name)
+		files = append(files, header.Name)
 	}
+
+	return files, nil
 }
