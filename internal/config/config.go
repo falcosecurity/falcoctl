@@ -30,6 +30,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 
+	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
@@ -48,6 +49,8 @@ var (
 	DefaultIndex Index
 	// DefaultRegistryCredentialConfPath is the default path for the credential store configuration file.
 	DefaultRegistryCredentialConfPath = filepath.Join(config.Dir(), "config.json")
+	// DefaultDriver is the default config for the falcosecurity organization.
+	DefaultDriver driver
 
 	// Useful regexps for parsing.
 
@@ -109,6 +112,20 @@ const (
 	ArtifactAllowedTypesKey = "artifact.allowedTypes"
 	// ArtifactNoVerifyKey is the Viper key for skipping signature verification.
 	ArtifactNoVerifyKey = "artifact.noVerify"
+
+	// DriverKey is the Viper key for driver structure.
+	DriverKey = "driver"
+	// DriverTypeKey is the Viper key for the driver type.
+	DriverTypeKey = "driver.type"
+	// DriverVersionKey is the Viper key for the driver version.
+	DriverVersionKey = "driver.version"
+	// DriverReposKey is the Viper key for the driver repositories.
+	DriverReposKey = "driver.repos"
+	// DriverNameKey is the Viper key for the driver name.
+	DriverNameKey = "driver.name"
+	// DriverHostRootKey is the Viper key for the driver host root.
+	DriverHostRootKey   = "driver.hostRoot"
+	falcoHostRootEnvKey = "HOST_ROOT"
 )
 
 // Index represents a configured index.
@@ -158,6 +175,24 @@ type Install struct {
 	NoVerify      bool     `mapstructure:"noVerify"`
 }
 
+// driver represents the internal driver configuration (with Type string).
+type driver struct {
+	Type     string   `mapstructure:"type"`
+	Name     string   `mapstructure:"name"`
+	Repos    []string `mapstructure:"repos"`
+	Version  string   `mapstructure:"version"`
+	HostRoot string   `mapstructure:"hostRoot"`
+}
+
+// Driver represents the resolved driver configuration, exposed to be consumed.
+type Driver struct {
+	Type     drivertype.DriverType
+	Name     string
+	Repos    []string
+	Version  string
+	HostRoot string
+}
+
 func init() {
 	ConfigDir = filepath.Join(homedir.Get(), ".config")
 	FalcoctlPath = filepath.Join(ConfigDir, "falcoctl")
@@ -167,6 +202,13 @@ func init() {
 	DefaultIndex = Index{
 		Name: "falcosecurity",
 		URL:  "https://falcosecurity.github.io/falcoctl/index.yaml",
+	}
+	DefaultDriver = driver{
+		Type:     drivertype.TypeKmod,
+		Name:     "falco",
+		Repos:    []string{"https://download.falco.org/driver"},
+		Version:  "",
+		HostRoot: "",
 	}
 }
 
@@ -188,6 +230,8 @@ func Load(path string) error {
 	viper.SetDefault(IndexesKey, []Index{DefaultIndex})
 	// Set default registry auth config path
 	viper.SetDefault(RegistryCredentialConfigKey, DefaultRegistryCredentialConfPath)
+	// Set default driver
+	viper.SetDefault(DriverKey, DefaultDriver)
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
@@ -498,6 +542,53 @@ func Installer() (Install, error) {
 		ResolveDeps:   viper.GetBool(ArtifactInstallResolveDepsKey),
 		NoVerify:      viper.GetBool(ArtifactNoVerifyKey),
 	}, nil
+}
+
+// Driverer retrieves the driver section of the config file.
+func Driverer() (Driver, error) {
+	drvTypeStr := viper.GetString(DriverTypeKey)
+	drvType, err := drivertype.Parse(drvTypeStr)
+	if err != nil {
+		return Driver{}, err
+	}
+
+	// manage driver.Repos as ";" separated list.
+	repos := viper.GetStringSlice(DriverReposKey)
+	if len(repos) == 1 { // in this case it might come from the env
+		if !SemicolonSeparatedRegexp.MatchString(repos[0]) {
+			return Driver{}, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), repos[0])
+		}
+		repos = strings.Split(repos[0], ";")
+	}
+
+	// Bind FALCOCTL_DRIVER_HOSTROOT key to HOST_ROOT,
+	// so that we manage Falco HOST_ROOT variable too.
+	_ = viper.BindEnv(DriverHostRootKey, falcoHostRootEnvKey)
+
+	drvCfg := Driver{
+		Type:     drvType,
+		Name:     viper.GetString(DriverNameKey),
+		Repos:    repos,
+		Version:  viper.GetString(DriverVersionKey),
+		HostRoot: viper.GetString(DriverHostRootKey),
+	}
+	return drvCfg, nil
+}
+
+// StoreDriver stores a driver conf in config file.
+func StoreDriver(driverCfg *Driver, configFile string) error {
+	drvCfg := driver{
+		Type:     driverCfg.Type.String(),
+		Name:     driverCfg.Name,
+		Repos:    driverCfg.Repos,
+		Version:  driverCfg.Version,
+		HostRoot: driverCfg.HostRoot,
+	}
+
+	if err := UpdateConfigFile(DriverKey, drvCfg, configFile); err != nil {
+		return fmt.Errorf("unable to update driver in the config file %q: %w", configFile, err)
+	}
+	return nil
 }
 
 // ArtifactAllowedTypes retrieves the allowed types section of the config file.

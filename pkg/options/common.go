@@ -111,6 +111,6 @@ func (o *Common) AddFlags(flags *pflag.FlagSet) {
 	// Mark the disableStyling as deprecated.
 	_ = flags.MarkDeprecated("disable-styling", "please use --log-format")
 	flags.StringVar(&o.ConfigFile, "config", config.ConfigPath, "config file to be used for falcoctl")
-	flags.Var(o.logFormat, "log-format", "Set formatting for logs (color, text, json)")
-	flags.Var(o.logLevel, "log-level", "Set level for logs (info, warn, debug, trace)")
+	flags.Var(o.logFormat, "log-format", "Set formatting for logs "+o.logFormat.Allowed())
+	flags.Var(o.logLevel, "log-level", "Set level for logs "+o.logLevel.Allowed())
 }

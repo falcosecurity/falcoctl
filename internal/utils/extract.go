@@ -28,7 +28,7 @@ import (
 
 // ExtractTarGz extracts a *.tar.gz compressed archive and moves its content to destDir.
 // Returns a slice containing the full path of the extracted files.
-func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
+func ExtractTarGz(gzipStream io.Reader, destDir string, stripPathComponents int) ([]string, error) {
 	var files []string
 
 	uncompressedStream, err := gzip.NewReader(gzipStream)
@@ -49,15 +49,21 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
 			return nil, err
 		}
 
+		if strings.Contains(header.Name, "..") {
+			return nil, fmt.Errorf("not allowed relative path in tar archive")
+		}
+
+		strippedName := stripComponents(header.Name, stripPathComponents)
+
 		switch header.Typeflag {
 		case tar.TypeDir:
-			return nil, fmt.Errorf("unexepected dir inside the archive, expected to find only files without any tree structure")
-		case tar.TypeReg:
-			if strings.Contains(header.Name, "..") {
-				return nil, fmt.Errorf("not allowed relative path in tar archive")
+			d := filepath.Join(destDir, strippedName)
+			if err = os.Mkdir(filepath.Clean(d), 0o750); err != nil {
+				return nil, err
 			}
-
-			f := filepath.Join(destDir, filepath.Clean(header.Name))
+			files = append(files, d)
+		case tar.TypeReg:
+			f := filepath.Join(destDir, strippedName)
 			outFile, err := os.Create(filepath.Clean(f))
 			if err != nil {
 				return nil, err
@@ -78,4 +84,17 @@ func ExtractTarGz(gzipStream io.Reader, destDir string) ([]string, error) {
 	}
 
 	return files, nil
+}
+
+func stripComponents(headerName string, stripComponents int) string {
+	if stripComponents == 0 {
+		return headerName
+	}
+	names := strings.FieldsFunc(headerName, func(r rune) bool {
+		return r == os.PathSeparator
+	})
+	if len(names) < stripComponents {
+		return headerName
+	}
+	return filepath.Clean(strings.Join(names[stripComponents:], "/"))
 }

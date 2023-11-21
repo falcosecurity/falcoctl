@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/falcosecurity/falcoctl/cmd/artifact"
+	"github.com/falcosecurity/falcoctl/cmd/driver"
 	"github.com/falcosecurity/falcoctl/cmd/index"
 	"github.com/falcosecurity/falcoctl/cmd/registry"
 	"github.com/falcosecurity/falcoctl/cmd/tls"
@@ -68,6 +69,7 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 	rootCmd.AddCommand(registry.NewRegistryCmd(ctx, opt))
 	rootCmd.AddCommand(index.NewIndexCmd(ctx, opt))
 	rootCmd.AddCommand(artifact.NewArtifactCmd(ctx, opt))
+	rootCmd.AddCommand(driver.NewDriverCmd(ctx, opt))
 
 	return rootCmd
 }
