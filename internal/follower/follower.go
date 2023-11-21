@@ -208,7 +208,7 @@ func (f *Follower) follow(ctx context.Context) {
 		dstPath := filepath.Join(dstDir, baseName)
 		// Check if the file exists.
 		f.logger.Debug("Checking if file already exists", f.logger.Args("followerName", f.ref, "fileName", baseName, "directory", dstDir))
-		exists, err := fileExists(dstPath)
+		exists, err := utils.FileExists(dstPath)
 		if err != nil {
 			f.logger.Error("Unable to check existence for file", f.logger.Args("followerName", f.ref, "fileName", baseName, "reason", err.Error()))
 			return
@@ -289,7 +289,7 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	}
 
 	// Extract artifact and move it to its destination directory
-	filePaths, err = utils.ExtractTarGz(file, f.tmpDir)
+	filePaths, err = utils.ExtractTarGz(file, f.tmpDir, 0)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.tmpDir, err)
 	}
@@ -366,20 +366,6 @@ func (f *Follower) cleanUp() {
 	if err := os.RemoveAll(f.tmpDir); err != nil {
 		f.logger.Warn("Unable to clean working directory", f.logger.Args("followerName", f.ref, "directory", f.tmpDir, "reason", err))
 	}
-}
-
-// fileExists checks if a file exists on disk.
-func fileExists(filename string) (bool, error) {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-
-	if err != nil {
-		return false, err
-	}
-
-	return !info.IsDir(), nil
 }
 
 // equal checks if the two files are equal by comparing their sha256 hashes.

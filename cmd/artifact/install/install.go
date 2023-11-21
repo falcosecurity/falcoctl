@@ -327,7 +327,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 		// Extract artifact and move it to its destination directory
-		_, err = utils.ExtractTarGz(f, destDir)
+		_, err = utils.ExtractTarGz(f, destDir, 0)
 		if err != nil {
 			return fmt.Errorf("cannot extract %q to %q: %w", result.Filename, destDir, err)
 		}

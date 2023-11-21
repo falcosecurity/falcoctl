@@ -43,6 +43,11 @@ func (e *Enum) String() string {
 	return e.value
 }
 
+// Allowed returns the list of allowed values enclosed in parenthesis.
+func (e *Enum) Allowed() string {
+	return fmt.Sprintf("(%s)", strings.Join(e.allowed, ", "))
+}
+
 // Set the value for the flag.
 func (e *Enum) Set(p string) error {
 	if !slices.Contains(e.allowed, p) {
