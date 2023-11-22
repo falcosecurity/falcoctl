@@ -27,6 +27,7 @@ import (
 
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
 
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -37,14 +38,6 @@ const (
 	maxRmmodWait  = 10
 	rmmodWaitTime = 5 * time.Second
 )
-
-type errMissingDep struct {
-	program string
-}
-
-func (e *errMissingDep) Error() string {
-	return fmt.Sprintf("This program requires %s.", e.program)
-}
 
 func init() {
 	driverTypes[TypeKmod] = &kmod{}
@@ -61,40 +54,45 @@ func (k *kmod) String() string {
 // Then, using dkms, it tries to fetch all
 // dkms-installed versions of the module to clean them up.
 func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
-	_, err := exec.Command("bash", "-c", "hash lsmod").Output()
-	if err != nil {
-		return &errMissingDep{program: "lsmod"}
-	}
-	_, err = exec.Command("bash", "-c", "hash rmmod").Output()
-	if err != nil {
-		return &errMissingDep{program: "rmmod"}
-	}
-
 	kmodName := strings.ReplaceAll(driverName, "-", "_")
 	printer.Logger.Info("Check if kernel module is still loaded.")
-	lsmodCmdArgs := fmt.Sprintf(`lsmod | cut -d' ' -f1 | grep -qx %q`, kmodName)
-	_, err = exec.Command("bash", "-c", lsmodCmdArgs).Output() //nolint:gosec // false positive
+	f, err := os.Open("/proc/modules")
 	if err == nil {
-		unloaded := false
-		// Module is still loaded, try to remove it
-		for i := 0; i < maxRmmodWait; i++ {
-			printer.Logger.Info("Kernel module is still loaded.")
-			printer.Logger.Info("Trying to unload it with 'rmmod'.")
-			if _, err = exec.Command("rmmod", kmodName).Output(); err == nil { //nolint:gosec // false positive
-				printer.Logger.Info("OK! Unloading module succeeded.")
-				unloaded = true
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		found := false
+		// optionally, resize scanner's capacity for lines over 64K, see next example
+		for scanner.Scan() {
+			line := scanner.Text()
+			fields := strings.Fields(line)
+			if len(fields) > 0 && fields[0] == kmodName {
+				found = true
+				unloaded := false
+				// Module is still loaded, try to remove it
+				for i := 0; i < maxRmmodWait; i++ {
+					printer.Logger.Info("Kernel module is still loaded.")
+					printer.Logger.Info("Trying to unload it with 'rmmod'.")
+					if err = unix.DeleteModule(kmodName, 0); err == nil {
+						printer.Logger.Info("OK! Unloading module succeeded.")
+						unloaded = true
+						break
+					}
+					printer.Logger.Info("Nothing to do...'falcoctl' will wait until you remove the kernel module to have a clean termination.")
+					printer.Logger.Info("Check that no process is using the kernel module with 'lsmod'.")
+					printer.Logger.Info("Sleep 5 seconds...")
+					time.Sleep(rmmodWaitTime)
+				}
+				if !unloaded {
+					printer.Logger.Warn("Kernel module is still loaded, you could have incompatibility issues.")
+				}
 				break
 			}
-			printer.Logger.Info("Nothing to do...'falcoctl' will wait until you remove the kernel module to have a clean termination.")
-			printer.Logger.Info("Check that no process is using the kernel module with 'lsmod'.")
-			printer.Logger.Info("Sleep 5 seconds...")
-			time.Sleep(rmmodWaitTime)
 		}
-		if !unloaded {
-			printer.Logger.Warn("Kernel module is still loaded, you could have incompatibility issues.")
+		if !found {
+			printer.Logger.Info("OK! There is no module loaded.")
 		}
 	} else {
-		printer.Logger.Info("OK! There is no module loaded.")
+		printer.Logger.Warn("Failed to parse /proc/modules.", printer.Logger.Args("err", err))
 	}
 
 	_, err = exec.Command("bash", "-c", "hash dkms").Output()
