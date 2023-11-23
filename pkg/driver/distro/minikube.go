@@ -38,7 +38,7 @@ type minikube struct {
 	version string
 }
 
-var minikubeVersionRegex = regexp.MustCompile(`(\\d+(\\.\\d+){2})`)
+var minikubeVersionRegex = regexp.MustCompile(`(\d+(\.\d+){2})`)
 
 // check() will also load minikube version, because minikube has a different
 // code path from other "checker" distros.

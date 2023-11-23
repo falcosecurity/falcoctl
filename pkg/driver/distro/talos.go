@@ -33,10 +33,9 @@ type talos struct {
 
 //nolint:gocritic // the method shall not be able to modify kr
 func (t *talos) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File) error {
-	idKey := cfg.Section("").Key("VERSION_ID")
-	if idKey == nil {
-		// OS-release without `VERSION_ID` (can it happen?)
-		return fmt.Errorf("no VERSION_ID present for talos")
+	idKey, err := cfg.Section("").GetKey("VERSION_ID")
+	if err != nil {
+		return err
 	}
 	t.versionID = idKey.String()
 

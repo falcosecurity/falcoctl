@@ -16,7 +16,6 @@
 package driverdistro
 
 import (
-	"fmt"
 	"os/exec"
 
 	"github.com/blang/semver"
@@ -65,10 +64,9 @@ type flatcar struct {
 
 //nolint:gocritic // the method shall not be able to modify kr
 func (f *flatcar) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File) error {
-	idKey := cfg.Section("").Key("VERSION_ID")
-	if idKey == nil {
-		// OS-release without `VERSION_ID` (can it happen?)
-		return fmt.Errorf("no VERSION_ID present for flatcar")
+	idKey, err := cfg.Section("").GetKey("VERSION_ID")
+	if err != nil {
+		return err
 	}
 	f.versionID = idKey.String()
 	return f.generic.init(kr, id, cfg)
@@ -77,6 +75,7 @@ func (f *flatcar) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File)
 //nolint:gocritic // the method shall not be able to modify kr
 func (f *flatcar) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease {
 	kr.Version = semver.MustParse(f.versionID)
+	kr.Fullversion = kr.Version.String()
 	return kr
 }
 
