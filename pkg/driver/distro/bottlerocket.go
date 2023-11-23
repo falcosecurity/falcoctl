@@ -35,16 +35,15 @@ type bottlerocket struct {
 
 //nolint:gocritic // the method shall not be able to modify kr
 func (b *bottlerocket) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File) error {
-	idKey := cfg.Section("").Key("VERSION_ID")
-	if idKey == nil {
-		// OS-release without `VERSION_ID` (can it happen?)
-		return fmt.Errorf("no VERSION_ID present for bottlerocket")
+	idKey, err := cfg.Section("").GetKey("VERSION_ID")
+	if err != nil {
+		return err
 	}
 	b.versionID = idKey.String()
 
-	idKey = cfg.Section("").Key("VARIANT_ID")
-	if idKey == nil {
-		return fmt.Errorf("no VARIANT_ID present for bottlerocket")
+	idKey, err = cfg.Section("").GetKey("VARIANT_ID")
+	if err != nil {
+		return err
 	}
 	b.variantID = strings.Split(idKey.String(), "-")[0]
 

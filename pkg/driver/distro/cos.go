@@ -44,13 +44,13 @@ type cos struct {
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
-func (c *cos) init(kr kernelrelease.KernelRelease, _ string, cfg *ini.File) error {
-	idKey := cfg.Section("").Key("BUILD_ID")
-	if idKey == nil {
-		// OS-release without `VERSION_ID` (can it happen?)
-		return fmt.Errorf("no BUILD_ID present for COS")
+func (c *cos) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File) error {
+	idKey, err := cfg.Section("").GetKey("BUILD_ID")
+	if err != nil {
+		return err
 	}
-	return c.generic.init(kr, idKey.String(), cfg)
+	c.buildID = idKey.String()
+	return c.generic.init(kr, id, cfg)
 }
 
 //nolint:gocritic // the method shall not be able to modify kr

@@ -95,9 +95,8 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease, hostRoot string) (Distr
 	if err != nil {
 		return nil, err
 	}
-	idKey := cfg.Section("").Key("ID")
-	if idKey == nil {
-		// OS-release without `ID` (can it happen?)
+	idKey, err := cfg.Section("").GetKey("ID")
+	if err != nil {
 		return nil, nil
 	}
 	id := strings.ToLower(idKey.String())

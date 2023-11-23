@@ -16,8 +16,6 @@
 package driverdistro
 
 import (
-	"fmt"
-
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"gopkg.in/ini.v1"
 )
@@ -32,10 +30,9 @@ type amzn struct {
 
 //nolint:gocritic // the method shall not be able to modify kr
 func (a *amzn) init(kr kernelrelease.KernelRelease, _ string, cfg *ini.File) error {
-	idKey := cfg.Section("").Key("VERSION_ID")
-	if idKey == nil {
-		// OS-release without `VERSION_ID` (can it happen?)
-		return fmt.Errorf("no VERSION_ID present for amzn")
+	idKey, err := cfg.Section("").GetKey("VERSION_ID")
+	if err != nil {
+		return err
 	}
 	// overwrite id
 	newID := ""
