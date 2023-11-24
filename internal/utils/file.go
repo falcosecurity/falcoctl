@@ -22,11 +22,31 @@ import (
 	"strings"
 )
 
+// ReplaceTextInFile searches for occurrences of searchFor in the file pointed by filePath,
+// and substitutes the matching string with the provided one.
+// At most n substitutions are made.
+// If n < 0, there is no limit on the number of replacements.
+func ReplaceTextInFile(filePath, searchFor, newText string, n int) error {
+	return replaceInFile(filePath, searchFor, n, func(line string) string {
+		return strings.Replace(line, searchFor, newText, 1)
+	})
+}
+
 // ReplaceLineInFile searches for occurrences of searchFor in the file pointed by filePath,
-// and substitutes the matching line with the provided one.
+// and substitutes the whole matching line with the provided one.
 // At most n substitutions are made.
 // If n < 0, there is no limit on the number of replacements.
 func ReplaceLineInFile(filePath, searchFor, newLine string, n int) error {
+	return replaceInFile(filePath, searchFor, n, func(_ string) string {
+		return newLine
+	})
+}
+
+func replaceInFile(filePath, searchFor string, n int, replacementCB func(string) string) error {
+	if n == 0 {
+		return nil
+	}
+
 	stat, err := os.Stat(filePath)
 	if err != nil {
 		return err
@@ -42,7 +62,7 @@ func ReplaceLineInFile(filePath, searchFor, newLine string, n int) error {
 	replaced := 0
 	for i, line := range lines {
 		if strings.Contains(line, searchFor) {
-			lines[i] = newLine
+			lines[i] = replacementCB(line)
 			replaced++
 			if replaced == n {
 				break

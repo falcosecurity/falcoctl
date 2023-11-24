@@ -17,12 +17,16 @@ package driverconfig
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
+	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -38,7 +42,7 @@ import (
 )
 
 const (
-	configMapDriverTypeKey = "driver_mode"
+	configMapEngineKindKey = "engine.kind"
 )
 
 type driverConfigOptions struct {
@@ -169,8 +173,38 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 	return config.StoreDriver(&driverCfg, o.ConfigFile)
 }
 
+func checkFalcoRunsWithDrivers(engineKind string) error {
+	// Modify the data in the ConfigMap/Falco config file ONLY if engine.kind is set to a known driver type.
+	// This ensures that we modify the config only for Falcos running with drivers, and not plugins/gvisor.
+	// Scenario: user has multiple Falco pods deployed in its cluster, one running with driver,
+	// other running with plugins. We must only touch the one running with driver.
+	if _, err := drivertype.Parse(engineKind); err != nil {
+		return fmt.Errorf("engine.kind is not driver driven: %s", engineKind)
+	}
+	return nil
+}
+
 func replaceDriverTypeInFalcoConfig(hostRoot string, driverType drivertype.DriverType) error {
-	return utils.ReplaceLineInFile(hostRoot+"/etc/falco/falco.yaml", "driver_mode:", "driver_mode: "+driverType.String(), 1)
+	falcoCfgFile := filepath.Join(hostRoot, "etc", "falco", "falco.yaml")
+	type engineCfg struct {
+		Kind string `yaml:"kind"`
+	}
+	type falcoCfg struct {
+		Engine engineCfg `yaml:"engine"`
+	}
+	yamlFile, err := os.ReadFile(filepath.Clean(falcoCfgFile))
+	if err != nil {
+		return err
+	}
+	cfg := falcoCfg{}
+	if err = yaml.Unmarshal(yamlFile, &cfg); err != nil {
+		return err
+	}
+	if err = checkFalcoRunsWithDrivers(cfg.Engine.Kind); err != nil {
+		return err
+	}
+	const configKindKey = "kind: "
+	return utils.ReplaceTextInFile(falcoCfgFile, configKindKey+cfg.Engine.Kind, configKindKey+driverType.String(), 1)
 }
 
 func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig string, driverType drivertype.DriverType) error {
@@ -200,7 +234,7 @@ func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig 
 		return err
 	}
 	if configMapList.Size() == 0 {
-		return fmt.Errorf(`no configmaps matching "app.kubernetes.io/instance: falco" label were found`)
+		return errors.New(`no configmaps matching "app.kubernetes.io/instance: falco" label were found`)
 	}
 
 	type patchDriverTypeValue struct {
@@ -210,22 +244,17 @@ func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig 
 	}
 	payload := []patchDriverTypeValue{{
 		Op:    "replace",
-		Path:  "/data/" + configMapDriverTypeKey,
+		Path:  "/data/" + configMapEngineKindKey,
 		Value: driverType.String(),
 	}}
 	plBytes, _ := json.Marshal(payload)
 
 	for i := 0; i < configMapList.Size(); i++ {
 		configMap := configMapList.Items[i]
-		// Modify the data in the ConfigMap ONLY if driver_mode is NOT set to plugin
-		// TODO: we must be sure that we are modifying the configmap for a Falco
-		// that is running with drivers, and not plugins.
-		// Scenario: user has multiple Falco pods deployed in its cluster, one running with driver,
-		// other running with plugins. We must only touch the one running with driver.
-		if val, ok := configMap.Data[configMapDriverTypeKey]; !ok || val == "none" {
+		currEngineKind := configMap.Data[configMapEngineKindKey]
+		if err = checkFalcoRunsWithDrivers(currEngineKind); err != nil {
 			continue
 		}
-
 		// Patch the configMap
 		if _, err = cl.CoreV1().ConfigMaps(configMap.Namespace).Patch(
 			ctx, configMap.Name, types.JSONPatchType, plBytes, metav1.PatchOptions{}); err != nil {
