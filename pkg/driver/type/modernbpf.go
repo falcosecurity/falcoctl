@@ -23,7 +23,7 @@ import (
 )
 
 // TypeModernBpf is the string for the bpf driver type.
-const TypeModernBpf = "modern-bpf"
+const TypeModernBpf = "modern_ebpf"
 
 func init() {
 	driverTypes[TypeModernBpf] = &modernBpf{}

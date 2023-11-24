@@ -28,7 +28,7 @@ import (
 )
 
 // TypeBpf is the string for the bpf driver type.
-const TypeBpf = "bpf"
+const TypeBpf = "ebpf"
 
 func init() {
 	driverTypes[TypeBpf] = &bpf{}
