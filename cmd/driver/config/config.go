@@ -165,7 +165,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 	o.Printer.Logger.Info("Running falcoctl driver config", loggerArgs)
 
 	if o.Update {
-		err = commit(ctx, dType, driverCfg.HostRoot, o.Namespace, o.KubeConfig)
+		err = o.commit(ctx, dType, driverCfg.HostRoot)
 		if err != nil {
 			return err
 		}
@@ -184,7 +184,7 @@ func checkFalcoRunsWithDrivers(engineKind string) error {
 	return nil
 }
 
-func replaceDriverTypeInFalcoConfig(hostRoot string, driverType drivertype.DriverType) error {
+func (o *driverConfigOptions) replaceDriverTypeInFalcoConfig(hostRoot string, driverType drivertype.DriverType) error {
 	falcoCfgFile := filepath.Join(hostRoot, "etc", "falco", "falco.yaml")
 	type engineCfg struct {
 		Kind string `yaml:"kind"`
@@ -201,20 +201,22 @@ func replaceDriverTypeInFalcoConfig(hostRoot string, driverType drivertype.Drive
 		return err
 	}
 	if err = checkFalcoRunsWithDrivers(cfg.Engine.Kind); err != nil {
-		return err
+		o.Printer.Logger.Warn("Avoid updating Falco configuration",
+			o.Printer.Logger.Args("config", falcoCfgFile, "reason", err))
+		return nil
 	}
 	const configKindKey = "kind: "
 	return utils.ReplaceTextInFile(falcoCfgFile, configKindKey+cfg.Engine.Kind, configKindKey+driverType.String(), 1)
 }
 
-func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig string, driverType drivertype.DriverType) error {
+func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Context, driverType drivertype.DriverType) error {
 	var (
 		err error
 		cfg *rest.Config
 	)
 
-	if kubeconfig != "" {
-		cfg, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if o.KubeConfig != "" {
+		cfg, err = clientcmd.BuildConfigFromFlags("", o.KubeConfig)
 	} else {
 		cfg, err = rest.InClusterConfig()
 	}
@@ -227,7 +229,7 @@ func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig 
 		return err
 	}
 
-	configMapList, err := cl.CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{
+	configMapList, err := cl.CoreV1().ConfigMaps(o.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/instance: falco",
 	})
 	if err != nil {
@@ -253,6 +255,8 @@ func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig 
 		configMap := configMapList.Items[i]
 		currEngineKind := configMap.Data[configMapEngineKindKey]
 		if err = checkFalcoRunsWithDrivers(currEngineKind); err != nil {
+			o.Printer.Logger.Warn("Avoid updating Falco configMap",
+				o.Printer.Logger.Args("configMap", configMap.Name, "reason", err))
 			continue
 		}
 		// Patch the configMap
@@ -266,10 +270,10 @@ func replaceDriverTypeInK8SConfigMap(ctx context.Context, namespace, kubeconfig 
 
 // commit saves the updated driver type to Falco config,
 // either to the local falco.yaml or updating the deployment configmap.
-func commit(ctx context.Context, driverType drivertype.DriverType, hostroot, namespace, kubeconfig string) error {
-	if namespace != "" {
+func (o *driverConfigOptions) commit(ctx context.Context, driverType drivertype.DriverType, hostroot string) error {
+	if o.Namespace != "" {
 		// Ok we are on k8s
-		return replaceDriverTypeInK8SConfigMap(ctx, namespace, kubeconfig, driverType)
+		return o.replaceDriverTypeInK8SConfigMap(ctx, driverType)
 	}
-	return replaceDriverTypeInFalcoConfig(hostroot, driverType)
+	return o.replaceDriverTypeInFalcoConfig(hostroot, driverType)
 }
