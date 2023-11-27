@@ -43,6 +43,11 @@ import (
 
 const (
 	configMapEngineKindKey = "engine.kind"
+	longConfig             = `Configure a driver for future usages with other driver subcommands.
+It will also update local Falco configuration or k8s configmap depending on the environment where it is running, to let Falco use chosen driver.
+Only supports deployments of Falco that use a driver engine, ie: one between kmod, ebpf and modern-ebpf.
+If engine.kind key is set to a non-driver driven engine, Falco configuration won't be touched.
+`
 )
 
 type driverConfigOptions struct {
@@ -68,7 +73,7 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common) *cobra.Command
 		Use:                   "config [flags]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Configure a driver",
-		Long:                  "Configure a driver for future usages with other driver subcommands",
+		Long:                  longConfig,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunDriverConfig(ctx, cmd)
 		},
