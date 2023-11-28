@@ -49,7 +49,6 @@ func (g *generic) customizeBuild(_ context.Context,
 	_ *output.Printer,
 	_ drivertype.DriverType,
 	_ kernelrelease.KernelRelease,
-	_ string,
 ) (map[string]string, error) {
 	return nil, nil
 }

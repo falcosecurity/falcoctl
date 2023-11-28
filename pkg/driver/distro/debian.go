@@ -17,6 +17,7 @@ package driverdistro
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
@@ -36,9 +37,13 @@ type debian struct {
 var debianKernelReleaseRegex = regexp.MustCompile(`-?(rt-|cloud-|)(amd64|arm64)`)
 var debianKernelVersionRegex = regexp.MustCompile(`\d+\.\d+\.\d+-\d+`)
 
-func (d *debian) check(hostRoot string) bool {
-	exist, _ := utils.FileExists(hostRoot + "/etc/debian_version")
+func (d *debian) check() bool {
+	exist, _ := utils.FileExists(d.releaseFile())
 	return exist
+}
+
+func (d *debian) releaseFile() string {
+	return filepath.Clean(filepath.Join(hostRoot, "etc", "debian_version"))
 }
 
 //nolint:gocritic // the method shall not be able to modify kr

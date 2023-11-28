@@ -65,7 +65,7 @@ func (o *driverPrintenvOptions) RunDriverPrintenv(_ context.Context) error {
 		return err
 	}
 
-	d, err := driverdistro.DiscoverDistro(kr, driver.HostRoot)
+	d, err := driverdistro.Discover(kr, driver.HostRoot)
 	if err != nil {
 		return err
 	}

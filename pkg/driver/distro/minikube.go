@@ -42,8 +42,8 @@ var minikubeVersionRegex = regexp.MustCompile(`(\d+(\.\d+){2})`)
 
 // check() will also load minikube version, because minikube has a different
 // code path from other "checker" distros.
-func (m *minikube) check(hostRoot string) bool {
-	file, err := os.Open(filepath.Clean(hostRoot + "/etc/VERSION"))
+func (m *minikube) check() bool {
+	file, err := os.Open(m.releaseFile())
 	if err == nil {
 		defer func() {
 			_ = file.Close()
@@ -66,6 +66,10 @@ func (m *minikube) check(hostRoot string) bool {
 	return false
 }
 
+func (m *minikube) releaseFile() string {
+	return filepath.Clean(filepath.Join(hostRoot, "etc", "VERSION"))
+}
+
 //nolint:gocritic // the method shall not be able to modify kr
 func (m *minikube) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease {
 	kr.KernelVersion = fmt.Sprintf("1_%s", m.version)
@@ -77,7 +81,6 @@ func (m *minikube) customizeBuild(ctx context.Context,
 	printer *output.Printer,
 	driverType drivertype.DriverType,
 	kr kernelrelease.KernelRelease,
-	hostRoot string,
 ) (map[string]string, error) {
 	switch driverType.String() {
 	case drivertype.TypeBpf:
@@ -94,7 +97,7 @@ func (m *minikube) customizeBuild(ctx context.Context,
 		kernelVersionStr += fmt.Sprintf(".%d", kr.Patch)
 	}
 	bpfKernelSrcURL := fmt.Sprintf("http://mirrors.edge.kernel.org/pub/linux/kernel/v%d.x/linux-%s.tar.gz", kr.Major, kernelVersionStr)
-	env, err := downloadKernelSrc(ctx, printer, &kr, bpfKernelSrcURL, hostRoot, 1)
+	env, err := downloadKernelSrc(ctx, printer, &kr, bpfKernelSrcURL, 1)
 	if err != nil {
 		return nil, err
 	}

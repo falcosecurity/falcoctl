@@ -25,6 +25,10 @@ import (
 )
 
 func TestDistroMinikubeInitFixup(t *testing.T) {
+	const (
+		etcPath         = "/etc/"
+		releaseFilePath = etcPath + "VERSION"
+	)
 	type testCase struct {
 		hostRoot    string
 		preFn       func() error
@@ -44,15 +48,15 @@ func TestDistroMinikubeInitFixup(t *testing.T) {
 		},
 		{
 			// VERSION file present under hostroot
-			hostRoot: ".",
+			hostRoot: os.TempDir(),
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll(hostRoot+etcPath, 0o755); err != nil {
 					return err
 				}
-				return os.WriteFile("./etc/VERSION", []byte("v1.26.0-1655407986-14197"), os.ModePerm)
+				return os.WriteFile(hostRoot+releaseFilePath, []byte("v1.26.0-1655407986-14197"), os.ModePerm)
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/VERSION")
+				_ = os.RemoveAll(hostRoot + releaseFilePath)
 			},
 			retExpected: true,
 			kvExpected:  "1_1.26.0",
@@ -61,23 +65,24 @@ func TestDistroMinikubeInitFixup(t *testing.T) {
 			// VERSION file present but not under hostroot
 			hostRoot: "/foo",
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll("."+etcPath, 0o755); err != nil {
 					return err
 				}
-				return os.WriteFile("./etc/VERSION", []byte("v1.26.0-1655407986-14197"), os.ModePerm)
+				return os.WriteFile("."+releaseFilePath, []byte("v1.26.0-1655407986-14197"), os.ModePerm)
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/VERSION")
+				_ = os.RemoveAll("." + releaseFilePath)
 			},
 			retExpected: false,
 		},
 	}
 
 	for _, tCase := range testCases {
+		hostRoot = tCase.hostRoot
 		mn := &minikube{generic: &generic{}}
 		err := tCase.preFn()
 		require.NoError(t, err)
-		assert.Equal(t, tCase.retExpected, mn.check(tCase.hostRoot))
+		assert.Equal(t, tCase.retExpected, mn.check())
 		if tCase.retExpected {
 			kr := kernelrelease.KernelRelease{}
 			fixedKr := mn.FixupKernel(kr)

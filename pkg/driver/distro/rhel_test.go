@@ -24,6 +24,10 @@ import (
 )
 
 func TestDistroRhelCheck(t *testing.T) {
+	const (
+		etcPath         = "/etc/"
+		releaseFilePath = etcPath + "redhat-release"
+	)
 	type testCase struct {
 		hostRoot    string
 		preFn       func() error
@@ -42,16 +46,16 @@ func TestDistroRhelCheck(t *testing.T) {
 		},
 		{
 			// redhat-release file present under hostroot
-			hostRoot: ".",
+			hostRoot: os.TempDir(),
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll(hostRoot+etcPath, 0o755); err != nil {
 					return err
 				}
-				_, err := os.Create("./etc/redhat-release")
+				_, err := os.Create(hostRoot + releaseFilePath)
 				return err
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/redhat-release")
+				_ = os.RemoveAll(hostRoot + releaseFilePath)
 			},
 			retExpected: true,
 		},
@@ -59,24 +63,25 @@ func TestDistroRhelCheck(t *testing.T) {
 			// redhat-release file present but not under hostroot
 			hostRoot: "/foo",
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll("."+etcPath, 0o755); err != nil {
 					return err
 				}
-				_, err := os.Create("./etc/redhat-release")
+				_, err := os.Create("." + releaseFilePath)
 				return err
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/redhat-release")
+				_ = os.RemoveAll("." + releaseFilePath)
 			},
 			retExpected: false,
 		},
 	}
 
 	for _, tCase := range testCases {
+		hostRoot = tCase.hostRoot
 		r := &rhel{generic: &generic{}}
 		err := tCase.preFn()
 		require.NoError(t, err)
-		assert.Equal(t, tCase.retExpected, r.check(tCase.hostRoot))
+		assert.Equal(t, tCase.retExpected, r.check())
 		tCase.postFn()
 	}
 }

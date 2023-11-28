@@ -84,7 +84,6 @@ func (f *flatcar) customizeBuild(ctx context.Context,
 	printer *output.Printer,
 	driverType drivertype.DriverType,
 	_ kernelrelease.KernelRelease,
-	_ string,
 ) (map[string]string, error) {
 	switch driverType.String() {
 	case drivertype.TypeBpf, drivertype.TypeKmod:

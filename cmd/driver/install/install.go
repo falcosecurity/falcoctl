@@ -159,7 +159,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *con
 		return "", nil
 	}
 
-	d, err := driverdistro.DiscoverDistro(kr, driver.HostRoot)
+	d, err := driverdistro.Discover(kr, driver.HostRoot)
 	if err != nil {
 		if errors.Is(err, driverdistro.ErrUnsupported) && o.Compile {
 			o.Download = false
@@ -190,7 +190,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *con
 	}
 
 	if o.Compile {
-		dest, err = driverdistro.Build(ctx, d, o.Printer, kr, driver.Name, driver.Type, driver.Version, driver.HostRoot)
+		dest, err = driverdistro.Build(ctx, d, o.Printer, kr, driver.Name, driver.Type, driver.Version)
 		if err == nil {
 			return dest, nil
 		}
