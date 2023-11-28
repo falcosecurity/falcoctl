@@ -27,8 +27,8 @@ import (
 )
 
 func TestDiscoverDistro(t *testing.T) {
-	hostRoot := "."
-	etcDir := filepath.Join(hostRoot, "etc")
+	localHostRoot := os.TempDir()
+	etcDir := localHostRoot + "/etc"
 	osReleaseFile := filepath.Join(etcDir, "os-release")
 
 	type osID struct {
@@ -203,7 +203,7 @@ func TestDiscoverDistro(t *testing.T) {
 		err := tCase.preFn()
 		require.NoError(t, err)
 		kr := kernelrelease.FromString(tCase.krInput)
-		d, err := DiscoverDistro(kr, hostRoot)
+		d, err := Discover(kr, localHostRoot)
 		if tCase.errExpected {
 			assert.Error(t, err)
 		} else {

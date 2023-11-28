@@ -16,6 +16,8 @@
 package driverdistro
 
 import (
+	"path/filepath"
+
 	"github.com/falcosecurity/falcoctl/internal/utils"
 )
 
@@ -27,7 +29,11 @@ type rhel struct {
 	*generic
 }
 
-func (r *rhel) check(hostRoot string) bool {
-	exist, _ := utils.FileExists(hostRoot + "/etc/redhat-release")
+func (r *rhel) check() bool {
+	exist, _ := utils.FileExists(r.releaseFile())
 	return exist
+}
+
+func (r *rhel) releaseFile() string {
+	return filepath.Clean(filepath.Join(hostRoot, "etc", "redhat-release"))
 }

@@ -25,6 +25,10 @@ import (
 )
 
 func TestDistroDebianCheck(t *testing.T) {
+	const (
+		etcPath         = "/etc/"
+		releaseFilePath = etcPath + "debian_version"
+	)
 	type testCase struct {
 		hostRoot    string
 		preFn       func() error
@@ -43,16 +47,16 @@ func TestDistroDebianCheck(t *testing.T) {
 		},
 		{
 			// debian_version file present under hostroot
-			hostRoot: ".",
+			hostRoot: os.TempDir(),
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll(hostRoot+etcPath, 0o755); err != nil {
 					return err
 				}
-				_, err := os.Create("./etc/debian_version")
+				_, err := os.Create(hostRoot + releaseFilePath)
 				return err
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/debian_version")
+				_ = os.RemoveAll(hostRoot + releaseFilePath)
 			},
 			retExpected: true,
 		},
@@ -60,24 +64,25 @@ func TestDistroDebianCheck(t *testing.T) {
 			// debian_version file present but not under hostroot
 			hostRoot: "/foo",
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll("."+etcPath, 0o755); err != nil {
 					return err
 				}
-				_, err := os.Create("./etc/debian_version")
+				_, err := os.Create("." + releaseFilePath)
 				return err
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/debian_version")
+				_ = os.RemoveAll("." + releaseFilePath)
 			},
 			retExpected: false,
 		},
 	}
 
 	for _, tCase := range testCases {
+		hostRoot = tCase.hostRoot
 		deb := &debian{generic: &generic{}}
 		err := tCase.preFn()
 		require.NoError(t, err)
-		assert.Equal(t, tCase.retExpected, deb.check(tCase.hostRoot))
+		assert.Equal(t, tCase.retExpected, deb.check())
 		tCase.postFn()
 	}
 }

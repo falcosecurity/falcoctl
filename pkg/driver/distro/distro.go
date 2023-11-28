@@ -43,10 +43,12 @@ const (
 	kernelSrcDownloadFolder = "kernel-sources"
 )
 
-var distros = map[string]Distro{}
-
-// ErrUnsupported is the error returned when the target distro is not supported.
-var ErrUnsupported = errors.New("failed to determine distro")
+var (
+	distros  = map[string]Distro{}
+	hostRoot = string(os.PathSeparator)
+	// ErrUnsupported is the error returned when the target distro is not supported.
+	ErrUnsupported = errors.New("failed to determine distro")
+)
 
 // Distro is the common interface used by distro-specific implementations.
 // Most of the distro-specific only partially override the default `generic` implementation.
@@ -54,21 +56,25 @@ type Distro interface {
 	init(kr kernelrelease.KernelRelease, id string, cfg *ini.File) error    // private
 	FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease // private
 	customizeBuild(ctx context.Context, printer *output.Printer, driverType drivertype.DriverType,
-		kr kernelrelease.KernelRelease, hostRoot string) (map[string]string, error)
+		kr kernelrelease.KernelRelease) (map[string]string, error)
 	PreferredDriver(kr kernelrelease.KernelRelease) drivertype.DriverType
 	fmt.Stringer
 }
 
 type checker interface {
-	check(hostRoot string) bool // private
+	check() bool // private
 }
 
-// DiscoverDistro tries to fetch the correct Distro by looking at /etc/os-release or
+// Discover tries to fetch the correct Distro by looking at /etc/os-release or
 // by cycling on all supported distros and checking them one by one.
 //
 //nolint:gocritic // the method shall not be able to modify kr
-func DiscoverDistro(kr kernelrelease.KernelRelease, hostRoot string) (Distro, error) {
-	distro, err := getOSReleaseDistro(&kr, hostRoot)
+func Discover(kr kernelrelease.KernelRelease, hostroot string) (Distro, error) {
+	// Implicitly store hostroot to a package local variable
+	// to avoid passing it in other APIs
+	hostRoot = hostroot
+
+	distro, err := getOSReleaseDistro(&kr)
 	if err == nil {
 		return distro, nil
 	}
@@ -76,7 +82,7 @@ func DiscoverDistro(kr kernelrelease.KernelRelease, hostRoot string) (Distro, er
 	// Fallback to check any distro checker
 	for id, d := range distros {
 		dd, ok := d.(checker)
-		if ok && dd.check(hostRoot) {
+		if ok && dd.check() {
 			err = d.init(kr, id, nil)
 			return d, err
 		}
@@ -90,7 +96,7 @@ func DiscoverDistro(kr kernelrelease.KernelRelease, hostRoot string) (Distro, er
 	return distro, ErrUnsupported
 }
 
-func getOSReleaseDistro(kr *kernelrelease.KernelRelease, hostRoot string) (Distro, error) {
+func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 	cfg, err := ini.Load(hostRoot + "/etc/os-release")
 	if err != nil {
 		return nil, err
@@ -104,7 +110,7 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease, hostRoot string) (Distr
 	// Overwrite the OS_ID if /etc/VERSION file is present.
 	// Not sure if there is a better way to detect minikube.
 	dd := distros["minikube"].(checker)
-	if dd.check(hostRoot) {
+	if dd.check() {
 		id = "minikube"
 	}
 
@@ -155,9 +161,8 @@ func Build(ctx context.Context,
 	driverName string,
 	driverType drivertype.DriverType,
 	driverVer string,
-	hostRoot string,
 ) (string, error) {
-	env, err := d.customizeBuild(ctx, printer, driverType, kr, hostRoot)
+	env, err := d.customizeBuild(ctx, printer, driverType, kr)
 	if err != nil {
 		return "", err
 	}
@@ -237,7 +242,7 @@ func customizeDownloadKernelSrcBuild(printer *output.Printer, kr *kernelrelease.
 	return err
 }
 
-func getKernelConfig(printer *output.Printer, kr *kernelrelease.KernelRelease, hostRoot string) (string, error) {
+func getKernelConfig(printer *output.Printer, kr *kernelrelease.KernelRelease) (string, error) {
 	bootConfig := fmt.Sprintf("/boot/config-%s", kr.String())
 	hrBootConfig := fmt.Sprintf("%s%s", hostRoot, bootConfig)
 	ostreeConfig := fmt.Sprintf("/usr/lib/ostree-boot/config-%s", kr.String())
@@ -265,7 +270,7 @@ func getKernelConfig(printer *output.Printer, kr *kernelrelease.KernelRelease, h
 func downloadKernelSrc(ctx context.Context,
 	printer *output.Printer,
 	kr *kernelrelease.KernelRelease,
-	url string, hostRoot string,
+	url string,
 	stripComponents int,
 ) (map[string]string, error) {
 	env := make(map[string]string)
@@ -309,7 +314,7 @@ func downloadKernelSrc(ctx context.Context,
 		return env, err
 	}
 
-	kernelConfigPath, err := getKernelConfig(printer, kr, hostRoot)
+	kernelConfigPath, err := getKernelConfig(printer, kr)
 	if err != nil {
 		return nil, err
 	}

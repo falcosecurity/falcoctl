@@ -125,6 +125,9 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 		})
 	}
 	if f := cmd.Flags().Lookup("host-root"); f != nil && f.Changed {
+		if !filepath.IsAbs(o.HostRoot) {
+			return fmt.Errorf("host-root must be an absolute path: %s", o.HostRoot)
+		}
 		driverCfg.HostRoot = o.HostRoot
 		loggerArgs = append(loggerArgs, pterm.LoggerArgument{
 			Key:   "driver host root",
@@ -153,7 +156,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 				"kernel release", info.String(),
 				"kernel version", info.KernelVersion))
 
-			d, err := driverdistro.DiscoverDistro(info, driverCfg.HostRoot)
+			d, err := driverdistro.Discover(info, driverCfg.HostRoot)
 			if err != nil {
 				return err
 			}
@@ -170,7 +173,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 	o.Printer.Logger.Info("Running falcoctl driver config", loggerArgs)
 
 	if o.Update {
-		err = o.commit(ctx, dType, driverCfg.HostRoot)
+		err = o.commit(ctx, dType)
 		if err != nil {
 			return err
 		}
@@ -189,8 +192,8 @@ func checkFalcoRunsWithDrivers(engineKind string) error {
 	return nil
 }
 
-func (o *driverConfigOptions) replaceDriverTypeInFalcoConfig(hostRoot string, driverType drivertype.DriverType) error {
-	falcoCfgFile := filepath.Join(hostRoot, "etc", "falco", "falco.yaml")
+func (o *driverConfigOptions) replaceDriverTypeInFalcoConfig(driverType drivertype.DriverType) error {
+	falcoCfgFile := filepath.Clean(filepath.Join(string(os.PathSeparator), "etc", "falco", "falco.yaml"))
 	type engineCfg struct {
 		Kind string `yaml:"kind"`
 	}
@@ -275,10 +278,10 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 
 // commit saves the updated driver type to Falco config,
 // either to the local falco.yaml or updating the deployment configmap.
-func (o *driverConfigOptions) commit(ctx context.Context, driverType drivertype.DriverType, hostroot string) error {
+func (o *driverConfigOptions) commit(ctx context.Context, driverType drivertype.DriverType) error {
 	if o.Namespace != "" {
 		// Ok we are on k8s
 		return o.replaceDriverTypeInK8SConfigMap(ctx, driverType)
 	}
-	return o.replaceDriverTypeInFalcoConfig(hostroot, driverType)
+	return o.replaceDriverTypeInFalcoConfig(driverType)
 }

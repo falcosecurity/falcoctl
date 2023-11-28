@@ -30,6 +30,12 @@ func TestDistroCentosCheck(t *testing.T) {
 		postFn      func()
 		retExpected bool
 	}
+
+	const (
+		etcPath         = "/etc/"
+		releaseFilePath = etcPath + "centos-release"
+	)
+
 	testCases := []testCase{
 		{
 			// No centos-release file
@@ -44,14 +50,14 @@ func TestDistroCentosCheck(t *testing.T) {
 			// centos-release file present under hostroot
 			hostRoot: ".",
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll(hostRoot+etcPath, 0o755); err != nil {
 					return err
 				}
-				_, err := os.Create("./etc/centos-release")
+				_, err := os.Create(hostRoot + releaseFilePath)
 				return err
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/centos-release")
+				_ = os.RemoveAll(hostRoot + releaseFilePath)
 			},
 			retExpected: true,
 		},
@@ -59,24 +65,25 @@ func TestDistroCentosCheck(t *testing.T) {
 			// centos-release file present but not under hostroot
 			hostRoot: "/foo",
 			preFn: func() error {
-				if err := os.MkdirAll("./etc/", 0o755); err != nil {
+				if err := os.MkdirAll("."+etcPath, 0o755); err != nil {
 					return err
 				}
-				_, err := os.Create("./etc/centos-release")
+				_, err := os.Create("." + releaseFilePath)
 				return err
 			},
 			postFn: func() {
-				_ = os.RemoveAll("./etc/centos-release")
+				_ = os.RemoveAll("." + releaseFilePath)
 			},
 			retExpected: false,
 		},
 	}
 
 	for _, tCase := range testCases {
+		hostRoot = tCase.hostRoot
 		c := &centos{generic: &generic{}}
 		err := tCase.preFn()
 		require.NoError(t, err)
-		assert.Equal(t, tCase.retExpected, c.check(tCase.hostRoot))
+		assert.Equal(t, tCase.retExpected, c.check())
 		tCase.postFn()
 	}
 }

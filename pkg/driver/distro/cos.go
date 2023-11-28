@@ -58,7 +58,6 @@ func (c *cos) customizeBuild(ctx context.Context,
 	printer *output.Printer,
 	driverType drivertype.DriverType,
 	kr kernelrelease.KernelRelease,
-	hostRoot string,
 ) (map[string]string, error) {
 	switch driverType.String() {
 	case drivertype.TypeBpf:
@@ -70,7 +69,7 @@ func (c *cos) customizeBuild(ctx context.Context,
 	printer.Logger.Info("COS detected, using COS kernel headers.", printer.Logger.Args("build ID", c.buildID))
 	bpfKernelSrcURL := fmt.Sprintf("https://storage.googleapis.com/cos-tools/%s/kernel-headers.tgz", c.buildID)
 	kr.Extraversion = "+"
-	env, err := downloadKernelSrc(ctx, printer, &kr, bpfKernelSrcURL, hostRoot, 0)
+	env, err := downloadKernelSrc(ctx, printer, &kr, bpfKernelSrcURL, 0)
 	if err != nil {
 		return nil, err
 	}

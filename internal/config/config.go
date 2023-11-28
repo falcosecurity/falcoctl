@@ -208,7 +208,7 @@ func init() {
 		Name:     "falco",
 		Repos:    []string{"https://download.falco.org/driver"},
 		Version:  "",
-		HostRoot: "",
+		HostRoot: string(os.PathSeparator),
 	}
 }
 

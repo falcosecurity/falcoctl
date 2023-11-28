@@ -15,7 +15,11 @@
 
 package driverdistro
 
-import "github.com/falcosecurity/falcoctl/internal/utils"
+import (
+	"path/filepath"
+
+	"github.com/falcosecurity/falcoctl/internal/utils"
+)
 
 func init() {
 	distros["centos"] = &centos{generic: &generic{}}
@@ -25,7 +29,11 @@ type centos struct {
 	*generic
 }
 
-func (c *centos) check(hostRoot string) bool {
-	exist, _ := utils.FileExists(hostRoot + "/etc/centos-release")
+func (c *centos) check() bool {
+	exist, _ := utils.FileExists(c.releaseFile())
 	return exist
+}
+
+func (c *centos) releaseFile() string {
+	return filepath.Clean(filepath.Join(hostRoot, "etc", "centos-release"))
 }
