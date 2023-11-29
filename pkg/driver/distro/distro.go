@@ -218,8 +218,10 @@ func Download(ctx context.Context,
 		if err != nil || resp.StatusCode != 200 {
 			if err == nil {
 				_ = resp.Body.Close()
+				printer.Logger.Warn("Non-200 response from url.", printer.Logger.Args("code", resp.StatusCode))
+			} else {
+				printer.Logger.Warn("Error GETting url.", printer.Logger.Args("err", err))
 			}
-			printer.Logger.Warn("Error GETting url.", printer.Logger.Args("err", err))
 			continue
 		}
 		return destination, copyDataToLocalPath(destination, resp.Body)
