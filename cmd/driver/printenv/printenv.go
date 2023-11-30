@@ -16,6 +16,7 @@
 package driverprintenv
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -67,7 +68,9 @@ func (o *driverPrintenvOptions) RunDriverPrintenv(_ context.Context) error {
 
 	d, err := driverdistro.Discover(kr, driver.HostRoot)
 	if err != nil {
-		return err
+		if !errors.Is(err, driverdistro.ErrUnsupported) {
+			return err
+		}
 	}
 	o.Printer.DefaultText.Printf("TARGET_ID=%q\n", d.String())
 

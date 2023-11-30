@@ -16,6 +16,8 @@
 package options
 
 import (
+	"sort"
+
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 )
 
@@ -26,7 +28,9 @@ type DriverTypes struct {
 
 // NewDriverTypes returns a new Enum configured for the driver types.
 func NewDriverTypes() *DriverTypes {
+	types := drivertype.GetTypes()
+	sort.Strings(types)
 	return &DriverTypes{
-		Enum: NewEnum(drivertype.GetTypes(), drivertype.TypeKmod),
+		Enum: NewEnum(types, drivertype.TypeKmod),
 	}
 }

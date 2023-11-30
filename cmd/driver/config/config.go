@@ -158,7 +158,10 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 
 			d, err := driverdistro.Discover(info, driverCfg.HostRoot)
 			if err != nil {
-				return err
+				if !errors.Is(err, driverdistro.ErrUnsupported) {
+					return err
+				}
+				o.Printer.Logger.Info("Detected an unsupported target system; falling back at generic logic.")
 			}
 			o.Printer.Logger.Debug("Discovered distro", o.Printer.Logger.Args("target", d))
 

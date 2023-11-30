@@ -231,7 +231,11 @@ func Load(path string) error {
 	// Set default registry auth config path
 	viper.SetDefault(RegistryCredentialConfigKey, DefaultRegistryCredentialConfPath)
 	// Set default driver
-	viper.SetDefault(DriverKey, DefaultDriver)
+	viper.SetDefault(DriverTypeKey, DefaultDriver.Type)
+	viper.SetDefault(DriverHostRootKey, DefaultDriver.HostRoot)
+	viper.SetDefault(DriverNameKey, DefaultDriver.Name)
+	viper.SetDefault(DriverReposKey, DefaultDriver.Repos)
+	viper.SetDefault(DriverVersionKey, DefaultDriver.Version)
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
@@ -642,7 +646,7 @@ func UpdateConfigFile(key string, value interface{}, path string) error {
 	v.Set(key, value)
 
 	if err := v.WriteConfig(); err != nil {
-		return fmt.Errorf("unable to set key %q to config file: %w", IndexesKey, err)
+		return fmt.Errorf("unable to set key %q to config file: %w", key, err)
 	}
 
 	return nil
