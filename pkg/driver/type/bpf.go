@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 	"k8s.io/utils/mount"
 
+	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -45,9 +46,17 @@ func (b *bpf) Cleanup(printer *output.Printer, _ string) error {
 	// since these releases still did not support raw tracepoints.
 	// BPF_PROG_TYPE_RAW_TRACEPOINT was introduced in 4.17 indeed:
 	// https://github.com/torvalds/linux/commit/c4f6699dfcb8558d138fe838f741b2c10f416cf9
+	exists, _ := utils.FileExists("/sys/kernel/debug/tracing")
+	if exists {
+		return nil
+	}
 	printer.Logger.Info("Mounting debugfs for bpf driver.")
 	mounter := mount.New("/bin/mount")
-	return mounter.Mount("debugfs", "/sys/kernel/debug", "debugfs", []string{"nodev"})
+	// We don't fail if this fails; let's try to build a probe anyway.
+	if err := mounter.Mount("debugfs", "/sys/kernel/debug", "debugfs", []string{"nodev"}); err != nil {
+		printer.Logger.Warn("Failed to mount debugfs.", printer.Logger.Args("err", err))
+	}
+	return nil
 }
 
 func (b *bpf) Load(_ *output.Printer, _ string, _ bool) error {
