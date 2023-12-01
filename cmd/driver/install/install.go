@@ -60,8 +60,9 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comman
 	cmd := &cobra.Command{
 		Use:                   "install [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Install previously configured driver",
-		Long:                  "Install previously configured driver, either downloading it or attempting a build",
+		Short:                 "[Preview] Install previously configured driver",
+		Long: `[Preview] Install previously configured driver, either downloading it or attempting a build.
+** This command is in preview and under development. **`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			driver, err := config.Driverer()
 			if err != nil {

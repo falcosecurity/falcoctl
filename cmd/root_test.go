@@ -44,7 +44,7 @@ Usage:
 Available Commands:
   artifact    Interact with Falco artifacts
   completion  Generate the autocompletion script for the specified shell
-  driver      Interact with falcosecurity driver
+  driver      [Preview] Interact with falcosecurity driver
   help        Help about any command
   index       Interact with index
   registry    Interact with OCI registries
