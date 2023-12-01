@@ -25,7 +25,31 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd"
 )
 
-var driverConfigHelp = `Configure a driver for future usages with other driver subcommands.`
+var driverConfigHelp = `[Preview] Configure a driver for future usages with other driver subcommands.
+It will also update local Falco configuration or k8s configmap depending on the environment where it is running, to let Falco use chosen driver.
+Only supports deployments of Falco that use a driver engine, ie: one between kmod, ebpf and modern-ebpf.
+If engine.kind key is set to a non-driver driven engine, Falco configuration won't be touched.
+** This command is in preview and under development. **
+
+Usage:
+  falcoctl driver config [flags]
+
+Flags:
+  -h, --help                help for config
+      --host-root string    Driver host root to be configured. (default "/")
+      --kubeconfig string   Kubernetes config.
+      --name string         Driver name to be configured. (default "falco")
+      --namespace string    Kubernetes namespace.
+      --repo strings        Driver repo to be configured. (default [https://download.falco.org/driver])
+      --type string         Driver type to be configured (auto, ebpf, kmod, modern_ebpf) (default "kmod")
+      --update-falco        Whether to update Falco config/configmap. (default true)
+      --version string      Driver version to be configured.
+
+Global Flags:
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
+`
 
 var addAssertFailedBehavior = func(specificError string) {
 	It("check that fails and the usage is not printed", func() {
@@ -58,7 +82,7 @@ var _ = Describe("config", func() {
 		})
 
 		It("should match the saved one", func() {
-			Expect(output).Should(gbytes.Say(driverConfigHelp))
+			Expect(output).Should(gbytes.Say(regexp.QuoteMeta(driverConfigHelp)))
 		})
 	})
 
