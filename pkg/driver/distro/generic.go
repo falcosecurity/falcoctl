@@ -44,7 +44,7 @@ func (g *generic) String() string {
 //nolint:gocritic // the method shall not be able to modify kr
 func (g *generic) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease {
 	// Take eg: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
-	kv := strings.Trim(kr.KernelVersion, "#")
+	kv := strings.TrimLeft(kr.KernelVersion, "#")
 	kv = strings.Split(kv, " ")[0]
 	kr.KernelVersion = kv
 	return kr
