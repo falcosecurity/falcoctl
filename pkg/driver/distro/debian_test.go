@@ -95,33 +95,33 @@ func TestDistroDebianFixup(t *testing.T) {
 	}
 	testCases := []testCase{
 		{
-			// Substitution needed since kernelversion contains the real kernelrelease
+			// Substitution needed since kernelversion contains the real kernelrelease (-rt)
 			krInput:    "5.10.0-0.deb10.22-rt-amd64",
-			kvInput:    "5.10.178-3",
+			kvInput:    "#1 SMP PREEMPT_DYNAMIC Debian 5.10.178-3",
 			krExpected: "5.10.178-3-rt-amd64",
 		},
 		{
-			// Substitution needed since kernelversion contains the real kernelrelease
-			krInput:    "5.10.0-0.deb10.22-amd64",
-			kvInput:    "5.10.178-3",
-			krExpected: "5.10.178-3-amd64",
+			// Substitution needed since kernelversion contains the real kernelrelease (-cloud)
+			krInput:    "6.1.0-13-cloud-amd64",
+			kvInput:    "#1 SMP PREEMPT_DYNAMIC Debian 6.1.55-1 (2023-09-29)",
+			krExpected: "6.1.55-1-cloud-amd64",
 		},
 		{
 			// Substitution NOT needed
 			krInput:    "5.10.0-0.deb10.22-amd64",
-			kvInput:    "1",
+			kvInput:    "#1 SMP PREEMPT_DYNAMIC",
 			krExpected: "5.10.0-0.deb10.22-amd64",
 		},
 		{
 			// Substitution NOT needed
 			krInput:    "5.10.0-0",
-			kvInput:    "1",
+			kvInput:    "#1 SMP PREEMPT_DYNAMIC",
 			krExpected: "5.10.0-0",
 		},
 		{
 			// Substitution NOT needed
 			krInput:    "6.5.3-1~bpo12+1-rt-amd64",
-			kvInput:    "1",
+			kvInput:    "#1 SMP PREEMPT_DYNAMIC",
 			krExpected: "6.5.3-1~bpo12+1-rt-amd64",
 		},
 	}

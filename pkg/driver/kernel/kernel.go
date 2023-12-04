@@ -19,7 +19,6 @@ package driverkernel
 import (
 	"bytes"
 	"runtime"
-	"strings"
 
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/sys/unix"
@@ -44,21 +43,10 @@ func FetchInfo(enforcedKR, enforcedKV string) (kernelrelease.KernelRelease, erro
 		kv = enforcedKV
 	}
 	kernelRel := kernelrelease.FromString(kr)
-	kernelRel.KernelVersion = formatVersion(kv)
+	kernelRel.KernelVersion = kv
 	kernelRel.Architecture = kernelrelease.Architecture(runtime.GOARCH)
 	// we don't use this, it is used by bpf build to customize the kernel config LOCALVERSION.
 	// Expected value is empty.
 	kernelRel.Extraversion = ""
 	return kernelRel, nil
-}
-
-// formatVersion takes a kernelversion string (as taken from `uname -v`
-// and extracts the first part of the string.
-// Eg: '#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000' -> '1'.
-// Eg: '#26~22.04.1-Ubuntu SMP Mon Apr 24 01:58:15 UTC 2023' -> '26~22.04.1-Ubuntu'.
-func formatVersion(kv string) string {
-	// Take eg: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
-	kv = strings.Trim(kv, "#")
-	kv = strings.Split(kv, " ")[0]
-	return kv
 }

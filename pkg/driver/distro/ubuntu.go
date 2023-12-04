@@ -58,6 +58,8 @@ func (u *ubuntu) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.Kerne
 	// and everything starting from the first whitespace,
 	// so that eg: we receive "26~22.04.1-Ubuntu",
 	// therefore we only need to drop "-Ubuntu" suffix
+	// Take eg: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
+	kr = u.generic.FixupKernel(kr)
 	kr.KernelVersion = strings.TrimSuffix(kr.KernelVersion, "-Ubuntu")
 	return kr
 }
