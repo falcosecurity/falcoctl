@@ -68,10 +68,13 @@ func (d *debian) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.Kerne
 		archExtra = fmt.Sprintf("-%s%s", matches[1], matches[2])
 	}
 	if debianKernelVersionRegex.MatchString(kr.KernelVersion) {
+		newKV := debianKernelVersionRegex.FindStringSubmatch(kr.KernelVersion)[0]
 		// Real kernel release becomes: "5.10.178-3-rt-amd64"
-		realKernelReleaseStr := fmt.Sprintf("%s%s", kr.KernelVersion, archExtra)
+		realKernelReleaseStr := fmt.Sprintf("%s%s", newKV, archExtra)
 		// Parse it once again to a KernelRelease struct
 		kr, _ = driverkernel.FetchInfo(realKernelReleaseStr, "1")
+		return kr
 	}
-	return kr
+	// No substitutions needed; call generic FixupKernel.
+	return d.generic.FixupKernel(kr)
 }

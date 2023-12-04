@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -125,7 +126,7 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 }
 
 func toURL(repo, driverVer, fileName, arch string) string {
-	return fmt.Sprintf("%s/%s/%s/%s", repo, driverVer, arch, fileName)
+	return fmt.Sprintf("%s/%s/%s/%s", repo, url.QueryEscape(driverVer), arch, fileName)
 }
 
 func toLocalPath(driverVer, fileName, arch string) string {
@@ -138,7 +139,10 @@ func toFilename(d Distro, kr *kernelrelease.KernelRelease, driverName string, dr
 	return fmt.Sprintf("%s_%s_%s_%s%s", driverName, d, fixedKR.String(), fixedKR.KernelVersion, driverType.Extension())
 }
 
-func copyDataToLocalPath(destination string, src io.Reader) error {
+// copyDataToLocalPath will copy a src Reader to a destination file, creating it and its paths if needed.
+// Moreover, it will also take care of closing the reader.
+func copyDataToLocalPath(destination string, src io.ReadCloser) error {
+	defer src.Close()
 	err := os.MkdirAll(filepath.Dir(destination), 0o750)
 	if err != nil {
 		return err
@@ -162,6 +166,13 @@ func Build(ctx context.Context,
 	driverType drivertype.DriverType,
 	driverVer string,
 ) (string, error) {
+	driverFileName := toFilename(d, &kr, driverName, driverType)
+	destination := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
+	if exist, _ := utils.FileExists(destination); exist {
+		printer.Logger.Info("Skipping build, driver already present.", printer.Logger.Args("path", destination))
+		return destination, nil
+	}
+
 	env, err := d.customizeBuild(ctx, printer, driverType, kr)
 	if err != nil {
 		return "", err
@@ -173,15 +184,16 @@ func Build(ctx context.Context,
 	// Copy the path to the expected location.
 	// NOTE: for kmod, this is not useful since the driver will
 	// be loaded directly by dkms.
-	driverFileName := toFilename(d, &kr, driverName, driverType)
-	filePath := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
-	printer.Logger.Info("Copying built driver to its destination.", printer.Logger.Args("src", path, "dst", filePath))
+	printer.Logger.Info("Copying built driver to its destination.", printer.Logger.Args("src", path, "dst", destination))
 	f, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
-	return filePath, copyDataToLocalPath(filePath, f)
+	err = copyDataToLocalPath(destination, f)
+	if err == nil {
+		printer.Logger.Info("Driver built.", printer.Logger.Args("path", destination))
+	}
+	return destination, err
 }
 
 // Download will try to download drivers for a distro trying specified repos.
@@ -224,7 +236,11 @@ func Download(ctx context.Context,
 			}
 			continue
 		}
-		return destination, copyDataToLocalPath(destination, resp.Body)
+		err = copyDataToLocalPath(destination, resp.Body)
+		if err == nil {
+			printer.Logger.Info("Driver downloaded.", printer.Logger.Args("path", destination))
+		}
+		return destination, err
 	}
 	return destination, fmt.Errorf("unable to find a prebuilt driver")
 }
