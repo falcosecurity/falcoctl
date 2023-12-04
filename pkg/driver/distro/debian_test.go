@@ -92,6 +92,7 @@ func TestDistroDebianFixup(t *testing.T) {
 		krInput    string
 		kvInput    string
 		krExpected string
+		kvExpected string
 	}
 	testCases := []testCase{
 		{
@@ -99,30 +100,42 @@ func TestDistroDebianFixup(t *testing.T) {
 			krInput:    "5.10.0-0.deb10.22-rt-amd64",
 			kvInput:    "#1 SMP PREEMPT_DYNAMIC Debian 5.10.178-3",
 			krExpected: "5.10.178-3-rt-amd64",
+			kvExpected: "1",
 		},
 		{
-			// Substitution needed since kernelversion contains the real kernelrelease (-cloud)
-			krInput:    "6.1.0-13-cloud-amd64",
+			// Substitution needed since kernelversion contains the real kernelrelease (generic flavor)
+			krInput:    "6.1.0-13-amd64",
 			kvInput:    "#1 SMP PREEMPT_DYNAMIC Debian 6.1.55-1 (2023-09-29)",
-			krExpected: "6.1.55-1-cloud-amd64",
+			krExpected: "6.1.55-1-amd64",
+			kvExpected: "1",
 		},
 		{
 			// Substitution NOT needed
 			krInput:    "5.10.0-0.deb10.22-amd64",
 			kvInput:    "#1 SMP PREEMPT_DYNAMIC",
 			krExpected: "5.10.0-0.deb10.22-amd64",
+			kvExpected: "1",
 		},
 		{
-			// Substitution NOT needed
+			// Substitution NOT needed; kernelversion is 39
 			krInput:    "5.10.0-0",
-			kvInput:    "#1 SMP PREEMPT_DYNAMIC",
+			kvInput:    "#39 SMP PREEMPT_DYNAMIC",
 			krExpected: "5.10.0-0",
+			kvExpected: "39",
 		},
 		{
 			// Substitution NOT needed
 			krInput:    "6.5.3-1~bpo12+1-rt-amd64",
 			kvInput:    "#1 SMP PREEMPT_DYNAMIC",
 			krExpected: "6.5.3-1~bpo12+1-rt-amd64",
+			kvExpected: "1",
+		},
+		{
+			// Substitution NOT needed
+			krInput:    "6.5.3-1~bpo12+1-rt-amd64",
+			kvInput:    "malformed",
+			krExpected: "6.5.3-1~bpo12+1-rt-amd64",
+			kvExpected: "malformed",
 		},
 	}
 	for _, tCase := range testCases {
@@ -131,5 +144,6 @@ func TestDistroDebianFixup(t *testing.T) {
 		kr.KernelVersion = tCase.kvInput
 		fixedKr := deb.FixupKernel(kr)
 		assert.Equal(t, tCase.krExpected, fixedKr.String())
+		assert.Equal(t, tCase.kvExpected, fixedKr.KernelVersion)
 	}
 }
