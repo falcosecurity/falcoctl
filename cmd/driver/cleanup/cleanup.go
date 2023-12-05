@@ -19,18 +19,19 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
 type driverCleanupOptions struct {
 	*options.Common
+	*options.Driver
 }
 
 // NewDriverCleanupCmd cleans a driver up.
-func NewDriverCleanupCmd(ctx context.Context, opt *options.Common) *cobra.Command {
+func NewDriverCleanupCmd(ctx context.Context, opt *options.Common, driver *options.Driver) *cobra.Command {
 	o := driverCleanupOptions{
 		Common: opt,
+		Driver: driver,
 	}
 
 	cmd := &cobra.Command{
@@ -47,12 +48,8 @@ func NewDriverCleanupCmd(ctx context.Context, opt *options.Common) *cobra.Comman
 }
 
 func (o *driverCleanupOptions) RunDriverCleanup(_ context.Context) error {
-	driver, err := config.Driverer()
-	if err != nil {
-		return err
-	}
 	o.Printer.Logger.Info("Running falcoctl driver cleanup", o.Printer.Logger.Args(
-		"driver type", driver.Type,
-		"driver name", driver.Name))
-	return driver.Type.Cleanup(o.Printer, driver.Name)
+		"driver type", o.Driver.Type,
+		"driver name", o.Driver.Name))
+	return o.Driver.Type.Cleanup(o.Printer, o.Driver.Name)
 }

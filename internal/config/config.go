@@ -50,7 +50,7 @@ var (
 	// DefaultRegistryCredentialConfPath is the default path for the credential store configuration file.
 	DefaultRegistryCredentialConfPath = filepath.Join(config.Dir(), "config.json")
 	// DefaultDriver is the default config for the falcosecurity organization.
-	DefaultDriver driver
+	DefaultDriver Driver
 
 	// Useful regexps for parsing.
 
@@ -175,22 +175,13 @@ type Install struct {
 	NoVerify      bool     `mapstructure:"noVerify"`
 }
 
-// driver represents the internal driver configuration (with Type string).
-type driver struct {
+// Driver represents the internal driver configuration (with Type string).
+type Driver struct {
 	Type     string   `mapstructure:"type"`
 	Name     string   `mapstructure:"name"`
 	Repos    []string `mapstructure:"repos"`
 	Version  string   `mapstructure:"version"`
 	HostRoot string   `mapstructure:"hostRoot"`
-}
-
-// Driver represents the resolved driver configuration, exposed to be consumed.
-type Driver struct {
-	Type     drivertype.DriverType
-	Name     string
-	Repos    []string
-	Version  string
-	HostRoot string
 }
 
 func init() {
@@ -203,7 +194,7 @@ func init() {
 		Name: "falcosecurity",
 		URL:  "https://falcosecurity.github.io/falcoctl/index.yaml",
 	}
-	DefaultDriver = driver{
+	DefaultDriver = Driver{
 		Type:     drivertype.TypeKmod,
 		Name:     "falco",
 		Repos:    []string{"https://download.falco.org/driver"},
@@ -236,6 +227,9 @@ func Load(path string) error {
 	viper.SetDefault(DriverNameKey, DefaultDriver.Name)
 	viper.SetDefault(DriverReposKey, DefaultDriver.Repos)
 	viper.SetDefault(DriverVersionKey, DefaultDriver.Version)
+	// Bind FALCOCTL_DRIVER_HOSTROOT key to HOST_ROOT,
+	// so that we manage Falco HOST_ROOT variable too.
+	_ = viper.BindEnv(DriverHostRootKey, falcoHostRootEnvKey)
 
 	err = viper.ReadInConfig()
 	if errors.As(err, &viper.ConfigFileNotFoundError{}) || os.IsNotExist(err) {
@@ -548,48 +542,22 @@ func Installer() (Install, error) {
 	}, nil
 }
 
-// Driverer retrieves the driver section of the config file.
-func Driverer() (Driver, error) {
-	drvTypeStr := viper.GetString(DriverTypeKey)
-	drvType, err := drivertype.Parse(drvTypeStr)
-	if err != nil {
-		return Driver{}, err
-	}
-
+// DriverRepos retrieves the driver section of the config file.
+func DriverRepos() ([]string, error) {
 	// manage driver.Repos as ";" separated list.
 	repos := viper.GetStringSlice(DriverReposKey)
 	if len(repos) == 1 { // in this case it might come from the env
 		if !SemicolonSeparatedRegexp.MatchString(repos[0]) {
-			return Driver{}, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), repos[0])
+			return repos, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), repos[0])
 		}
 		repos = strings.Split(repos[0], ";")
 	}
-
-	// Bind FALCOCTL_DRIVER_HOSTROOT key to HOST_ROOT,
-	// so that we manage Falco HOST_ROOT variable too.
-	_ = viper.BindEnv(DriverHostRootKey, falcoHostRootEnvKey)
-
-	drvCfg := Driver{
-		Type:     drvType,
-		Name:     viper.GetString(DriverNameKey),
-		Repos:    repos,
-		Version:  viper.GetString(DriverVersionKey),
-		HostRoot: viper.GetString(DriverHostRootKey),
-	}
-	return drvCfg, nil
+	return repos, nil
 }
 
 // StoreDriver stores a driver conf in config file.
 func StoreDriver(driverCfg *Driver, configFile string) error {
-	drvCfg := driver{
-		Type:     driverCfg.Type.String(),
-		Name:     driverCfg.Name,
-		Repos:    driverCfg.Repos,
-		Version:  driverCfg.Version,
-		HostRoot: driverCfg.HostRoot,
-	}
-
-	if err := UpdateConfigFile(DriverKey, drvCfg, configFile); err != nil {
+	if err := UpdateConfigFile(DriverKey, driverCfg, configFile); err != nil {
 		return fmt.Errorf("unable to update driver in the config file %q: %w", configFile, err)
 	}
 	return nil

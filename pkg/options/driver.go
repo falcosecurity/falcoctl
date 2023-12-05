@@ -16,8 +16,11 @@
 package options
 
 import (
+	"fmt"
+	"path/filepath"
 	"sort"
 
+	"github.com/falcosecurity/falcoctl/internal/config"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 )
 
@@ -33,4 +36,32 @@ func NewDriverTypes() *DriverTypes {
 	return &DriverTypes{
 		Enum: NewEnum(types, drivertype.TypeKmod),
 	}
+}
+
+// Driver defines options that are common while interacting with driver commands.
+type Driver struct {
+	Type     drivertype.DriverType
+	Name     string
+	Repos    []string
+	Version  string
+	HostRoot string
+}
+
+// ToDriverConfig maps a Driver options to Driver config struct.
+func (d *Driver) ToDriverConfig() *config.Driver {
+	return &config.Driver{
+		Type:     d.Type.String(),
+		Name:     d.Name,
+		Repos:    d.Repos,
+		Version:  d.Version,
+		HostRoot: d.HostRoot,
+	}
+}
+
+// Validate runs all validators steps for Driver options.
+func (d *Driver) Validate() error {
+	if !filepath.IsAbs(d.HostRoot) {
+		return fmt.Errorf("host-root must be an absolute path: %s", d.HostRoot)
+	}
+	return nil
 }
