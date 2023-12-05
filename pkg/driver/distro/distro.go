@@ -49,6 +49,8 @@ var (
 	hostRoot = string(os.PathSeparator)
 	// ErrUnsupported is the error returned when the target distro is not supported.
 	ErrUnsupported = errors.New("failed to determine distro")
+	// ErrAlreadyPresent is the error returned when a driver is already present on filesystem.
+	ErrAlreadyPresent = errors.New("driver already present")
 )
 
 // Distro is the common interface used by distro-specific implementations.
@@ -169,8 +171,7 @@ func Build(ctx context.Context,
 	driverFileName := toFilename(d, &kr, driverName, driverType)
 	destination := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
 	if exist, _ := utils.FileExists(destination); exist {
-		printer.Logger.Info("Skipping build, driver already present.", printer.Logger.Args("path", destination))
-		return destination, nil
+		return destination, ErrAlreadyPresent
 	}
 
 	env, err := d.customizeBuild(ctx, printer, driverType, kr)
@@ -189,11 +190,7 @@ func Build(ctx context.Context,
 	if err != nil {
 		return "", err
 	}
-	err = copyDataToLocalPath(destination, f)
-	if err == nil {
-		printer.Logger.Info("Driver built.", printer.Logger.Args("path", destination))
-	}
-	return destination, err
+	return destination, copyDataToLocalPath(destination, f)
 }
 
 // Download will try to download drivers for a distro trying specified repos.
@@ -211,8 +208,7 @@ func Download(ctx context.Context,
 	// Skip if existent
 	destination := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
 	if exist, _ := utils.FileExists(destination); exist {
-		printer.Logger.Info("Skipping download, driver already present.", printer.Logger.Args("path", destination))
-		return destination, nil
+		return destination, ErrAlreadyPresent
 	}
 
 	// Try to download from any specified repository,
@@ -236,11 +232,7 @@ func Download(ctx context.Context,
 			}
 			continue
 		}
-		err = copyDataToLocalPath(destination, resp.Body)
-		if err == nil {
-			printer.Logger.Info("Driver downloaded.", printer.Logger.Args("path", destination))
-		}
-		return destination, err
+		return destination, copyDataToLocalPath(destination, resp.Body)
 	}
 	return destination, fmt.Errorf("unable to find a prebuilt driver")
 }

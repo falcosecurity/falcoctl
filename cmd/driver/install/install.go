@@ -16,12 +16,15 @@
 package driverinstall
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
@@ -140,30 +143,88 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 	}
 	o.Printer.Logger.Info("found distro", o.Printer.Logger.Args("target", d))
 
-	err = o.Driver.Type.Cleanup(o.Printer, o.Driver.Name)
+	var (
+		dest string
+		buf  bytes.Buffer
+	)
+
+	if !o.Printer.DisableStyling {
+		o.Printer.Spinner, _ = o.Printer.Spinner.Start("Cleaning up existing drivers")
+	}
+	err = o.Driver.Type.Cleanup(o.Printer.WithWriter(&buf), o.Driver.Name)
+	if o.Printer.Spinner != nil {
+		_ = o.Printer.Spinner.Stop()
+	}
+	if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
+		// Only print formatted text if we are formatting to json
+		out := strings.ReplaceAll(buf.String(), "\n", ";")
+		o.Printer.Logger.Info("Driver build", o.Printer.Logger.Args("output", out))
+	} else {
+		// Print much more readable output as-is
+		o.Printer.DefaultText.Print(buf.String())
+	}
 	if err != nil {
 		return "", err
 	}
 
-	setDefaultHTTPClientOpts(o.driverDownloadOptions)
-
-	var dest string
 	if o.Download {
-		dest, err = driverdistro.Download(ctx, d, o.Printer, kr, o.Driver.Name, o.Driver.Type, o.Driver.Version, o.Driver.Repos)
+		setDefaultHTTPClientOpts(o.driverDownloadOptions)
+		if !o.Printer.DisableStyling {
+			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to download the driver")
+		}
+		dest, err = driverdistro.Download(ctx, d, o.Printer.WithWriter(&buf), kr, o.Driver.Name, o.Driver.Type, o.Driver.Version, o.Driver.Repos)
+		if o.Printer.Spinner != nil {
+			_ = o.Printer.Spinner.Stop()
+		}
+		if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
+			// Only print formatted text if we are formatting to json
+			out := strings.ReplaceAll(buf.String(), "\n", ";")
+			o.Printer.Logger.Info("Driver build", o.Printer.Logger.Args("output", out))
+		} else {
+			// Print much more readable output as-is
+			o.Printer.DefaultText.Print(buf.String())
+		}
+		buf.Reset()
 		if err == nil {
+			o.Printer.Logger.Info("Driver downloaded.", o.Printer.Logger.Args("path", dest))
+			return dest, nil
+		}
+		if errors.Is(err, driverdistro.ErrAlreadyPresent) {
+			o.Printer.Logger.Info("Skipping download, driver already present.", o.Printer.Logger.Args("path", dest))
 			return dest, nil
 		}
 		// Print the error but go on
 		// attempting a build if requested
-		o.Printer.Logger.Warn(err.Error())
+		if o.Compile {
+			o.Printer.Logger.Warn(err.Error())
+		}
 	}
 
 	if o.Compile {
-		dest, err = driverdistro.Build(ctx, d, o.Printer, kr, o.Driver.Name, o.Driver.Type, o.Driver.Version)
+		if !o.Printer.DisableStyling {
+			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to build the driver")
+		}
+		dest, err = driverdistro.Build(ctx, d, o.Printer.WithWriter(&buf), kr, o.Driver.Name, o.Driver.Type, o.Driver.Version)
+		if o.Printer.Spinner != nil {
+			_ = o.Printer.Spinner.Stop()
+		}
+		if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
+			// Only print formatted text if we are formatting to json
+			out := strings.ReplaceAll(buf.String(), "\n", ";")
+			o.Printer.Logger.Info("Driver build", o.Printer.Logger.Args("output", out))
+		} else {
+			// Print much more readable output as-is
+			o.Printer.DefaultText.Print(buf.String())
+		}
+		buf.Reset()
 		if err == nil {
+			o.Printer.Logger.Info("Driver built.", o.Printer.Logger.Args("path", dest))
 			return dest, nil
 		}
-		o.Printer.Logger.Warn(err.Error())
+		if errors.Is(err, driverdistro.ErrAlreadyPresent) {
+			o.Printer.Logger.Info("Skipping build, driver already present.", o.Printer.Logger.Args("path", dest))
+			return dest, nil
+		}
 	}
 
 	return o.Driver.Name, fmt.Errorf("failed: %w", err)
