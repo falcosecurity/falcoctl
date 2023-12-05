@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v3"
@@ -35,8 +34,6 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
-	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
-	driverkernel "github.com/falcosecurity/falcoctl/pkg/driver/kernel"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -53,21 +50,17 @@ If engine.kind key is set to a non-driver driven engine, Falco configuration won
 
 type driverConfigOptions struct {
 	*options.Common
-	Type       *options.DriverTypes
-	Version    string
-	Repos      []string
-	Name       string
-	HostRoot   string
+	*options.Driver
 	Update     bool
 	Namespace  string
 	KubeConfig string
 }
 
 // NewDriverConfigCmd configures a driver and stores it in config.
-func NewDriverConfigCmd(ctx context.Context, opt *options.Common) *cobra.Command {
+func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *options.Driver) *cobra.Command {
 	o := driverConfigOptions{
 		Common: opt,
-		Type:   options.NewDriverTypes(),
+		Driver: driver,
 	}
 
 	cmd := &cobra.Command{
@@ -80,11 +73,6 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common) *cobra.Command
 		},
 	}
 
-	cmd.Flags().Var(o.Type, "type", "Driver type to be configured "+o.Type.Allowed())
-	cmd.Flags().StringVar(&o.Version, "version", config.DefaultDriver.Version, "Driver version to be configured.")
-	cmd.Flags().StringSliceVar(&o.Repos, "repo", config.DefaultDriver.Repos, "Driver repo to be configured.")
-	cmd.Flags().StringVar(&o.Name, "name", config.DefaultDriver.Name, "Driver name to be configured.")
-	cmd.Flags().StringVar(&o.HostRoot, "host-root", config.DefaultDriver.HostRoot, "Driver host root to be configured.")
 	cmd.Flags().BoolVar(&o.Update, "update-falco", true, "Whether to update Falco config/configmap.")
 	cmd.Flags().StringVar(&o.Namespace, "namespace", "", "Kubernetes namespace.")
 	cmd.Flags().StringVar(&o.KubeConfig, "kubeconfig", "", "Kubernetes config.")
@@ -98,83 +86,12 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 		err   error
 	)
 
-	driverCfg, err := config.Driverer()
-	if err != nil {
-		return err
-	}
-
-	loggerArgs := make([]pterm.LoggerArgument, 0)
-	if f := cmd.Flags().Lookup("version"); f != nil && f.Changed {
-		driverCfg.Version = o.Version
-		loggerArgs = append(loggerArgs, pterm.LoggerArgument{
-			Key:   "driver version",
-			Value: o.Version,
-		})
-	}
-	if f := cmd.Flags().Lookup("repo"); f != nil && f.Changed {
-		driverCfg.Repos = o.Repos
-		loggerArgs = append(loggerArgs, pterm.LoggerArgument{
-			Key:   "driver repos",
-			Value: strings.Join(o.Repos, ","),
-		})
-	}
-	if f := cmd.Flags().Lookup("name"); f != nil && f.Changed {
-		driverCfg.Name = o.Name
-		loggerArgs = append(loggerArgs, pterm.LoggerArgument{
-			Key:   "driver name",
-			Value: o.Name,
-		})
-	}
-	if f := cmd.Flags().Lookup("host-root"); f != nil && f.Changed {
-		if !filepath.IsAbs(o.HostRoot) {
-			return fmt.Errorf("host-root must be an absolute path: %s", o.HostRoot)
-		}
-		driverCfg.HostRoot = o.HostRoot
-		loggerArgs = append(loggerArgs, pterm.LoggerArgument{
-			Key:   "driver host root",
-			Value: o.HostRoot,
-		})
-	}
-	if f := cmd.Flags().Lookup("type"); f != nil && f.Changed {
-		loggerArgs = append(loggerArgs, pterm.LoggerArgument{
-			Key:   "driver type",
-			Value: o.Type.String(),
-		})
-		if o.Type.String() != "auto" {
-			// Ok driver type was enforced by the user
-			dType, err = drivertype.Parse(o.Type.String())
-			if err != nil {
-				return err
-			}
-		} else {
-			// automatic logic
-			info, err := driverkernel.FetchInfo("", "")
-			if err != nil {
-				return err
-			}
-			o.Printer.Logger.Debug("Fetched kernel info", o.Printer.Logger.Args(
-				"arch", info.Architecture.ToNonDeb(),
-				"kernel release", info.String(),
-				"kernel version", info.KernelVersion))
-
-			d, err := driverdistro.Discover(info, driverCfg.HostRoot)
-			if err != nil {
-				if !errors.Is(err, driverdistro.ErrUnsupported) {
-					return err
-				}
-				o.Printer.Logger.Info("Detected an unsupported target system; falling back at generic logic.")
-			}
-			o.Printer.Logger.Debug("Discovered distro", o.Printer.Logger.Args("target", d))
-
-			dType = d.PreferredDriver(info)
-			if dType == nil {
-				return fmt.Errorf("automatic driver selection failed")
-			}
-		}
-		driverCfg.Type = dType
-	}
-
-	o.Printer.Logger.Info("Running falcoctl driver config", loggerArgs)
+	o.Printer.Logger.Info("Running falcoctl driver config", o.Printer.Logger.Args(
+		"name", o.Driver.Name,
+		"version", o.Driver.Version,
+		"type", o.Driver.Type.String(),
+		"host-root", o.Driver.HostRoot,
+		"repos", strings.Join(o.Driver.Repos, ",")))
 
 	if o.Update {
 		err = o.commit(ctx, dType)
@@ -182,7 +99,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 			return err
 		}
 	}
-	return config.StoreDriver(&driverCfg, o.ConfigFile)
+	return config.StoreDriver(o.Driver.ToDriverConfig(), o.ConfigFile)
 }
 
 func checkFalcoRunsWithDrivers(engineKind string) error {

@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
 	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
 	driverkernel "github.com/falcosecurity/falcoctl/pkg/driver/kernel"
 	"github.com/falcosecurity/falcoctl/pkg/options"
@@ -30,12 +29,14 @@ import (
 
 type driverPrintenvOptions struct {
 	*options.Common
+	*options.Driver
 }
 
 // NewDriverPrintenvCmd print info about driver falcoctl config as env vars.
-func NewDriverPrintenvCmd(ctx context.Context, opt *options.Common) *cobra.Command {
+func NewDriverPrintenvCmd(ctx context.Context, opt *options.Common, driver *options.Driver) *cobra.Command {
 	o := driverPrintenvOptions{
 		Common: opt,
+		Driver: driver,
 	}
 
 	cmd := &cobra.Command{
@@ -52,22 +53,18 @@ func NewDriverPrintenvCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 }
 
 func (o *driverPrintenvOptions) RunDriverPrintenv(_ context.Context) error {
-	driver, err := config.Driverer()
-	if err != nil {
-		return err
-	}
-	o.Printer.DefaultText.Printf("DRIVER=%q\n", driver.Type.String())
-	o.Printer.DefaultText.Printf("DRIVERS_REPO=%q\n", strings.Join(driver.Repos, ", "))
-	o.Printer.DefaultText.Printf("DRIVER_VERSION=%q\n", driver.Version)
-	o.Printer.DefaultText.Printf("DRIVER_NAME=%q\n", driver.Name)
-	o.Printer.DefaultText.Printf("HOST_ROOT=%q\n", driver.HostRoot)
+	o.Printer.DefaultText.Printf("DRIVER=%q\n", o.Driver.Type.String())
+	o.Printer.DefaultText.Printf("DRIVERS_REPO=%q\n", strings.Join(o.Driver.Repos, ", "))
+	o.Printer.DefaultText.Printf("DRIVER_VERSION=%q\n", o.Driver.Version)
+	o.Printer.DefaultText.Printf("DRIVER_NAME=%q\n", o.Driver.Name)
+	o.Printer.DefaultText.Printf("HOST_ROOT=%q\n", o.Driver.HostRoot)
 
 	kr, err := driverkernel.FetchInfo("", "")
 	if err != nil {
 		return err
 	}
 
-	d, err := driverdistro.Discover(kr, driver.HostRoot)
+	d, err := driverdistro.Discover(kr, o.Driver.HostRoot)
 	if err != nil {
 		if !errors.Is(err, driverdistro.ErrUnsupported) {
 			return err

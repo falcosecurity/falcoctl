@@ -28,7 +28,6 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
 	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
 	driverkernel "github.com/falcosecurity/falcoctl/pkg/driver/kernel"
 	"github.com/falcosecurity/falcoctl/pkg/options"
@@ -41,6 +40,7 @@ type driverDownloadOptions struct {
 
 type driverInstallOptions struct {
 	*options.Common
+	*options.Driver
 	Download            bool
 	Compile             bool
 	DriverKernelRelease string
@@ -49,9 +49,10 @@ type driverInstallOptions struct {
 }
 
 // NewDriverInstallCmd returns the driver install command.
-func NewDriverInstallCmd(ctx context.Context, opt *options.Common) *cobra.Command {
+func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *options.Driver) *cobra.Command {
 	o := driverInstallOptions{
 		Common: opt,
+		Driver: driver,
 		// Defaults to downloading or building if needed
 		Download: true,
 		Compile:  true,
@@ -64,16 +65,12 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comman
 		Long: `[Preview] Install previously configured driver, either downloading it or attempting a build.
 ** This command is in preview and under development. **`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			driver, err := config.Driverer()
-			if err != nil {
-				return err
-			}
 			// If empty, try to load it automatically from /usr/src sub folders,
 			// using the most recent (ie: the one with greatest semver) driver version.
-			if driver.Version == "" {
-				driver.Version = loadDriverVersion()
+			if o.Driver.Version == "" {
+				o.Driver.Version = loadDriverVersion()
 			}
-			dest, err := o.RunDriverInstall(ctx, &driver)
+			dest, err := o.RunDriverInstall(ctx)
 			if dest != "" {
 				// We don't care about errors at this stage
 				// Fallback: try to load any available driver if leaving with an error.
@@ -134,23 +131,23 @@ func setDefaultHTTPClientOpts(downloadOptions driverDownloadOptions) {
 }
 
 // RunDriverInstall implements the driver install command.
-func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *config.Driver) (string, error) {
+func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, error) {
 	kr, err := driverkernel.FetchInfo(o.DriverKernelRelease, o.DriverKernelVersion)
 	if err != nil {
 		return "", err
 	}
 
 	o.Printer.Logger.Info("Running falcoctl driver install", o.Printer.Logger.Args(
-		"driver version", driver.Version,
-		"driver type", driver.Type,
-		"driver name", driver.Name,
+		"driver version", o.Driver.Version,
+		"driver type", o.Driver.Type,
+		"driver name", o.Driver.Name,
 		"compile", o.Compile,
 		"download", o.Download,
 		"arch", kr.Architecture.ToNonDeb(),
 		"kernel release", kr.String(),
 		"kernel version", kr.KernelVersion))
 
-	if !driver.Type.HasArtifacts() {
+	if !o.Driver.Type.HasArtifacts() {
 		o.Printer.Logger.Info("No artifacts needed for the selected driver.")
 		return "", nil
 	}
@@ -160,7 +157,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *con
 		return "", nil
 	}
 
-	d, err := driverdistro.Discover(kr, driver.HostRoot)
+	d, err := driverdistro.Discover(kr, o.Driver.HostRoot)
 	if err != nil {
 		if errors.Is(err, driverdistro.ErrUnsupported) && o.Compile {
 			o.Download = false
@@ -172,7 +169,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *con
 	}
 	o.Printer.Logger.Info("found distro", o.Printer.Logger.Args("target", d))
 
-	err = driver.Type.Cleanup(o.Printer, driver.Name)
+	err = o.Driver.Type.Cleanup(o.Printer, o.Driver.Name)
 	if err != nil {
 		return "", err
 	}
@@ -181,7 +178,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *con
 
 	var dest string
 	if o.Download {
-		dest, err = driverdistro.Download(ctx, d, o.Printer, kr, driver.Name, driver.Type, driver.Version, driver.Repos)
+		dest, err = driverdistro.Download(ctx, d, o.Printer, kr, o.Driver.Name, o.Driver.Type, o.Driver.Version, o.Driver.Repos)
 		if err == nil {
 			return dest, nil
 		}
@@ -191,12 +188,12 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context, driver *con
 	}
 
 	if o.Compile {
-		dest, err = driverdistro.Build(ctx, d, o.Printer, kr, driver.Name, driver.Type, driver.Version)
+		dest, err = driverdistro.Build(ctx, d, o.Printer, kr, o.Driver.Name, o.Driver.Type, o.Driver.Version)
 		if err == nil {
 			return dest, nil
 		}
 		o.Printer.Logger.Warn(err.Error())
 	}
 
-	return driver.Name, fmt.Errorf("failed: %w", err)
+	return o.Driver.Name, fmt.Errorf("failed: %w", err)
 }

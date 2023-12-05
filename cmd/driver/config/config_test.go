@@ -36,19 +36,19 @@ Usage:
 
 Flags:
   -h, --help                help for config
-      --host-root string    Driver host root to be configured. (default "/")
       --kubeconfig string   Kubernetes config.
-      --name string         Driver name to be configured. (default "falco")
       --namespace string    Kubernetes namespace.
-      --repo strings        Driver repo to be configured. (default [https://download.falco.org/driver])
-      --type string         Driver type to be configured (auto, ebpf, kmod, modern_ebpf) (default "kmod")
       --update-falco        Whether to update Falco config/configmap. (default true)
-      --version string      Driver version to be configured.
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --host-root string    Driver host root to be used. (default "/")
       --log-format string   Set formatting for logs (color, text, json) (default "color")
       --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
+      --name string         Driver name to be used. (default "falco")
+      --repo strings        Driver repo to be used. (default [https://download.falco.org/driver])
+      --type string         Driver type to be used (auto, ebpf, kmod, modern_ebpf) (default "kmod")
+      --version string      Driver version to be used.
 `
 
 var addAssertFailedBehavior = func(specificError string) {
