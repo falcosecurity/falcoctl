@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -182,8 +181,6 @@ Examples:
 
 // RunArtifactInstall executes the business logic for the artifact install command.
 func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []string) error {
-	var sp *pterm.SpinnerPrinter
-
 	logger := o.Printer.Logger
 	// Retrieve configuration for installer
 	configuredInstaller, err := config.Installer()
@@ -317,7 +314,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		logger.Info("Extracting and installing artifact", logger.Args("type", result.Type, "file", result.Filename))
 
 		if !o.Printer.DisableStyling {
-			sp, _ = o.Printer.Spinner.Start("Extracting and installing")
+			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Extracting and installing")
 		}
 
 		result.Filename = filepath.Join(tmpDir, result.Filename)
@@ -337,8 +334,8 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		if sp != nil {
-			_ = sp.Stop()
+		if o.Printer.Spinner != nil {
+			_ = o.Printer.Spinner.Stop()
 		}
 		logger.Info("Artifact successfully installed", logger.Args("name", ref, "type", result.Type, "digest", result.Digest, "directory", destDir))
 	}

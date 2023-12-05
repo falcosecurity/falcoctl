@@ -78,8 +78,6 @@ func (b *bpf) Build(ctx context.Context,
 	driverName, driverVersion string,
 	env map[string]string,
 ) (string, error) {
-	printer.Logger.Info("Trying to compile the eBPF probe")
-
 	srcPath := fmt.Sprintf("/usr/src/%s-%s/bpf", driverName, driverVersion)
 
 	makeCmdArgs := fmt.Sprintf(`make -C %q`, filepath.Clean(srcPath))
@@ -88,12 +86,10 @@ func (b *bpf) Build(ctx context.Context,
 	for key, val := range env {
 		makeCmd.Env = append(makeCmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}
-	err := runCmdPipingStdout(printer, makeCmd)
-	outProbe := fmt.Sprintf("%s/probe.o", srcPath)
-	if err == nil {
-		printer.Logger.Info("Probe successfully built.", printer.Logger.Args("file", outProbe))
-	} else {
-		printer.Logger.Info("Failed to build probe.", printer.Logger.Args("err", err))
+	out, err := makeCmd.CombinedOutput()
+	if err != nil {
+		printer.DefaultText.Print(string(out))
 	}
+	outProbe := fmt.Sprintf("%s/probe.o", srcPath)
 	return outProbe, err
 }

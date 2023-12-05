@@ -40,6 +40,9 @@ func main() {
 		if opt.Printer != nil && opt.Printer.ProgressBar != nil && opt.Printer.ProgressBar.IsActive {
 			_, _ = opt.Printer.ProgressBar.Stop()
 		}
+		if opt.Printer != nil && opt.Printer.Spinner != nil && opt.Printer.Spinner.IsActive {
+			_ = opt.Printer.Spinner.Stop()
+		}
 		opt.Printer.Logger.Info("Received signal, terminating...")
 		stop()
 	}()

@@ -192,8 +192,6 @@ func (k *kmod) Build(ctx context.Context,
 		return "", fmt.Errorf("unsupported on uek hosts")
 	}
 
-	printer.Logger.Info("Trying to compile the kernel module")
-
 	out, err := exec.Command("which", "gcc").Output()
 	if err != nil {
 		return "", err
@@ -224,8 +222,7 @@ func (k *kmod) Build(ctx context.Context,
 			driverName, driverVersion, kr.String())
 
 		// Try the build through dkms
-		dkmsCmd := exec.CommandContext(ctx, "bash", "-c", dkmsCmdArgs) //nolint:gosec // false positive
-		err = runCmdPipingStdout(printer, dkmsCmd)
+		out, err = exec.CommandContext(ctx, "bash", "-c", dkmsCmdArgs).CombinedOutput() //nolint:gosec // false positive
 		if err == nil {
 			koGlob := fmt.Sprintf("/var/lib/dkms/%s/%s/%s/%s/module/%s", driverName, driverVersion, kr.String(), kr.Architecture.ToNonDeb(), driverName)
 			var koFiles []string
@@ -238,6 +235,7 @@ func (k *kmod) Build(ctx context.Context,
 			printer.Logger.Info("Module installed in dkms.", printer.Logger.Args("file", koFile))
 			return koFile, nil
 		}
+		printer.DefaultText.Print(string(out))
 		dkmsLogFile := fmt.Sprintf("/var/lib/dkms/$%s/%s/build/make.log", driverName, driverVersion)
 		logs, err := os.ReadFile(filepath.Clean(dkmsLogFile))
 		if err != nil {

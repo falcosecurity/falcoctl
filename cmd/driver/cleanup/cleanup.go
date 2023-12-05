@@ -16,6 +16,10 @@
 package drivercleanup
 
 import (
+	"bytes"
+	"strings"
+
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
@@ -51,5 +55,21 @@ func (o *driverCleanupOptions) RunDriverCleanup(_ context.Context) error {
 	o.Printer.Logger.Info("Running falcoctl driver cleanup", o.Printer.Logger.Args(
 		"driver type", o.Driver.Type,
 		"driver name", o.Driver.Name))
-	return o.Driver.Type.Cleanup(o.Printer, o.Driver.Name)
+	var buf bytes.Buffer
+	if !o.Printer.DisableStyling {
+		o.Printer.Spinner, _ = o.Printer.Spinner.Start("Cleaning up existing drivers")
+	}
+	err := o.Driver.Type.Cleanup(o.Printer.WithWriter(&buf), o.Driver.Name)
+	if o.Printer.Spinner != nil {
+		_ = o.Printer.Spinner.Stop()
+	}
+	if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
+		// Only print formatted text if we are formatting to json
+		out := strings.ReplaceAll(buf.String(), "\n", ";")
+		o.Printer.Logger.Info("Driver build", o.Printer.Logger.Args("output", out))
+	} else {
+		// Print much more readable output as-is
+		o.Printer.DefaultText.Print(buf.String())
+	}
+	return err
 }

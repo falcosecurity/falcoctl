@@ -17,9 +17,7 @@
 package drivertype
 
 import (
-	"bufio"
 	"fmt"
-	"os/exec"
 
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
@@ -58,27 +56,4 @@ func Parse(driverType string) (DriverType, error) {
 		return dType, nil
 	}
 	return nil, fmt.Errorf("wrong driver type specified: %s", driverType)
-}
-
-func runCmdPipingStdout(printer *output.Printer, cmd *exec.Cmd) error {
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		printer.Logger.Warn("Failed to pipe output. Trying without piping.", printer.Logger.Args("err", err))
-		_, err = cmd.Output()
-	} else {
-		defer stdout.Close()
-		err = cmd.Start()
-		if err != nil {
-			printer.Logger.Warn("Failed to execute command.", printer.Logger.Args("err", err))
-		} else {
-			// print the output of the subprocess line by line
-			scanner := bufio.NewScanner(stdout)
-			for scanner.Scan() {
-				m := scanner.Text()
-				printer.DefaultText.Println(m)
-			}
-			err = cmd.Wait()
-		}
-	}
-	return err
 }
