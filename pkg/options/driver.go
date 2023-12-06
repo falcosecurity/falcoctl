@@ -16,12 +16,11 @@
 package options
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"path/filepath"
 	"sort"
-
-	"github.com/blang/semver"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
@@ -67,8 +66,8 @@ func (d *Driver) Validate() error {
 		return fmt.Errorf("host-root must be an absolute path (%s)", d.HostRoot)
 	}
 
-	if _, err := semver.Parse(d.Version); err != nil {
-		return fmt.Errorf("version must be semver compatible (%s): %w", d.Version, err)
+	if d.Version == "" {
+		return errors.New("version is mandatory and cannot be empty")
 	}
 
 	for _, repo := range d.Repos {
