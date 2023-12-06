@@ -20,11 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
@@ -65,11 +62,6 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 		Long: `[Preview] Install previously configured driver, either downloading it or attempting a build.
 ** This command is in preview and under development. **`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// If empty, try to load it automatically from /usr/src sub folders,
-			// using the most recent (ie: the one with greatest semver) driver version.
-			if o.Driver.Version == "" {
-				o.Driver.Version = loadDriverVersion()
-			}
 			dest, err := o.RunDriverInstall(ctx)
 			if dest != "" {
 				// We don't care about errors at this stage
@@ -98,27 +90,6 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 	cmd.Flags().BoolVar(&o.InsecureDownload, "http-insecure", false, "Whether you want to allow insecure downloads or not")
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
 	return cmd
-}
-
-func loadDriverVersion() string {
-	isSet := false
-	greatestVrs := semver.Version{}
-	paths, _ := filepath.Glob("/usr/src/falco-*+driver")
-	for _, path := range paths {
-		drvVer := strings.TrimPrefix(filepath.Base(path), "falco-")
-		sv, err := semver.Parse(drvVer)
-		if err != nil {
-			continue
-		}
-		if sv.GT(greatestVrs) {
-			greatestVrs = sv
-			isSet = true
-		}
-	}
-	if isSet {
-		return greatestVrs.String()
-	}
-	return ""
 }
 
 //nolint:gosec // this was an existent option in falco-driver-loader that we are porting.

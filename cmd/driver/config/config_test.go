@@ -92,7 +92,7 @@ var _ = Describe("config", func() {
 			BeforeEach(func() {
 				args = []string{driverCmd, configCmd, "--config", configFile, "--host-root", "foo/"}
 			})
-			addAssertFailedBehavior("ERROR host-root must be an absolute path: foo/")
+			addAssertFailedBehavior("ERROR host-root must be an absolute path (foo/)")
 		})
 
 		When("with invalid driver type", func() {
