@@ -69,7 +69,7 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 		Short:                 "[Preview] Configure a driver",
 		Long:                  longConfig,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.RunDriverConfig(ctx, cmd)
+			return o.RunDriverConfig(ctx)
 		},
 	}
 
@@ -80,12 +80,7 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 }
 
 // RunDriverConfig implements the driver configuration command.
-func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Command) error {
-	var (
-		dType drivertype.DriverType
-		err   error
-	)
-
+func (o *driverConfigOptions) RunDriverConfig(ctx context.Context) error {
 	o.Printer.Logger.Info("Running falcoctl driver config", o.Printer.Logger.Args(
 		"name", o.Driver.Name,
 		"version", o.Driver.Version,
@@ -94,8 +89,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context, cmd *cobra.Co
 		"repos", strings.Join(o.Driver.Repos, ",")))
 
 	if o.Update {
-		err = o.commit(ctx, dType)
-		if err != nil {
+		if err := o.commit(ctx, o.Driver.Type); err != nil {
 			return err
 		}
 	}
