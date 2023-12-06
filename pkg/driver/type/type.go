@@ -25,6 +25,9 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
+// TypeAuto enables a smart automatic driver selection logic instead of using a fixed driver type.
+const TypeAuto = "auto"
+
 var driverTypes = map[string]DriverType{}
 
 // DriverType is the interface that wraps driver types.
@@ -46,7 +49,7 @@ func GetTypes() []string {
 	}
 	// auto is a sentinel value to enable automatic driver selection logic,
 	// but it is not mapped to any DriverType
-	driverTypesSlice = append(driverTypesSlice, "auto")
+	driverTypesSlice = append(driverTypesSlice, TypeAuto)
 	return driverTypesSlice
 }
 

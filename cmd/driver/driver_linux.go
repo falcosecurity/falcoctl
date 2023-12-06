@@ -120,7 +120,7 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 				}
 			}
 
-			if driverTypes.String() != "auto" {
+			if driverTypes.String() != drivertype.TypeAuto {
 				var err error
 				// Ok driver type was enforced by the user
 				driver.Type, err = drivertype.Parse(driverTypes.String())
