@@ -22,7 +22,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 
+	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -76,7 +79,7 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+				if err := cmd.Flags().Set(f.Name, strings.Join(val, ",")); err != nil {
 					return fmt.Errorf("unable to overwrite \"repo\" flag: %w", err)
 				}
 			}
@@ -149,6 +152,11 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 					return fmt.Errorf("automatic driver selection failed")
 				}
 			}
+			// If empty, try to load it automatically from /usr/src sub folders,
+			// using the most recent (ie: the one with greatest semver) driver version.
+			if driver.Version == "" {
+				driver.Version = loadDriverVersion()
+			}
 			return driver.Validate()
 		},
 	}
@@ -164,4 +172,25 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	cmd.AddCommand(drivercleanup.NewDriverCleanupCmd(ctx, opt, driver))
 	cmd.AddCommand(driverprintenv.NewDriverPrintenvCmd(ctx, opt, driver))
 	return cmd
+}
+
+func loadDriverVersion() string {
+	isSet := false
+	greatestVrs := semver.Version{}
+	paths, _ := filepath.Glob("/usr/src/falco-*+driver")
+	for _, path := range paths {
+		drvVer := strings.TrimPrefix(filepath.Base(path), "falco-")
+		sv, err := semver.Parse(drvVer)
+		if err != nil {
+			continue
+		}
+		if sv.GT(greatestVrs) {
+			greatestVrs = sv
+			isSet = true
+		}
+	}
+	if isSet {
+		return greatestVrs.String()
+	}
+	return ""
 }
