@@ -72,7 +72,7 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 				// It is only useful for kmod, as it will try to
 				// modprobe a pre-existent version of the driver,
 				// hoping it will be compatible.
-				_ = driver.Type.Load(o.Printer, dest, err != nil)
+				_ = driver.Type.Load(o.Printer, dest, o.Driver.Name, err != nil)
 			}
 			return err
 		},
@@ -141,7 +141,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			return "", fmt.Errorf("detected an unsupported target system, please get in touch with the Falco community")
 		}
 	}
-	o.Printer.Logger.Info("found distro", o.Printer.Logger.Args("target", d))
+	o.Printer.Logger.Info("Found distro", o.Printer.Logger.Args("target", d))
 
 	var (
 		dest string
@@ -163,6 +163,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		// Print much more readable output as-is
 		o.Printer.DefaultText.Print(buf.String())
 	}
+	buf.Reset()
 	if err != nil {
 		return "", err
 	}
