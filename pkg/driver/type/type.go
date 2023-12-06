@@ -34,7 +34,7 @@ var driverTypes = map[string]DriverType{}
 type DriverType interface {
 	fmt.Stringer
 	Cleanup(printer *output.Printer, driverName string) error
-	Load(printer *output.Printer, driverName string, fallback bool) error
+	Load(printer *output.Printer, src, driverName string, fallback bool) error
 	Extension() string
 	HasArtifacts() bool
 	Build(ctx context.Context, printer *output.Printer, kr kernelrelease.KernelRelease,

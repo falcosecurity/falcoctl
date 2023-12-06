@@ -39,7 +39,7 @@ func (m *modernBpf) Cleanup(_ *output.Printer, _ string) error {
 	return nil
 }
 
-func (m *modernBpf) Load(_ *output.Printer, _ string, _ bool) error {
+func (m *modernBpf) Load(_ *output.Printer, _, _ string, _ bool) error {
 	return nil
 }
 

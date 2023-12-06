@@ -130,7 +130,7 @@ func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
 	return nil
 }
 
-func (k *kmod) Load(printer *output.Printer, driverName string, fallback bool) error {
+func (k *kmod) Load(printer *output.Printer, src, driverName string, fallback bool) error {
 	if fallback {
 		// Try to modprobe any existent version of the kmod; this is a fallback
 		// when both download and build of kmod fail.
@@ -144,15 +144,15 @@ func (k *kmod) Load(printer *output.Printer, driverName string, fallback bool) e
 		return err
 	}
 
-	chconCmdArgs := fmt.Sprintf(`chcon -t modules_object_t %q`, driverName)
+	chconCmdArgs := fmt.Sprintf(`chcon -t modules_object_t %q`, src)
 	// We don't want to catch any error from this call
 	// chcon(1): change file SELinux security context
 	_, _ = exec.Command("bash", "-c", chconCmdArgs).Output() //nolint:gosec // false positive
-	_, err := exec.Command("insmod", driverName).Output()
+	_, err := exec.Command("insmod", src).Output()
 	if err == nil {
-		printer.Logger.Info("Success: module found and loaded in dkms.", printer.Logger.Args("driver", driverName))
+		printer.Logger.Info("Success: module found and loaded in dkms.", printer.Logger.Args("driver", src))
 	} else {
-		printer.Logger.Warn("Unable to insmod module.", printer.Logger.Args("driver", driverName, "err", err))
+		printer.Logger.Warn("Unable to insmod module.", printer.Logger.Args("driver", src, "err", err))
 	}
 	return err
 }
