@@ -43,7 +43,10 @@ func (b *bpf) String() string {
 	return TypeBpf
 }
 
-func (b *bpf) Cleanup(_ *output.Printer, _ string) error {
+func (b *bpf) Cleanup(printer *output.Printer, driverName string) error {
+	symlinkPath := filepath.Join(homedir.Get(), ".falco", fmt.Sprintf("%s-bpf.o", driverName))
+	printer.Logger.Info("Removing eBPF probe symlink", printer.Logger.Args("path", symlinkPath))
+	_ = os.Remove(symlinkPath)
 	return nil
 }
 
@@ -51,7 +54,6 @@ func (b *bpf) Load(printer *output.Printer, src, driverName string, fallback boo
 	if !fallback {
 		symlinkPath := filepath.Join(homedir.Get(), ".falco", fmt.Sprintf("%s-bpf.o", driverName))
 		printer.Logger.Info("Symlinking eBPF probe", printer.Logger.Args("src", src, "dest", symlinkPath))
-		_ = os.Remove(symlinkPath)
 		err := os.Symlink(src, symlinkPath)
 		if err == nil {
 			printer.Logger.Info("eBPF probe symlinked")
