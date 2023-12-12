@@ -72,10 +72,13 @@ func (o *driverPrintenvOptions) RunDriverPrintenv(_ context.Context) error {
 	}
 	o.Printer.DefaultText.Printf("TARGET_ID=%q\n", d.String())
 
+	o.Printer.DefaultText.Printf("ARCH=%q\n", kr.Architecture.ToNonDeb())
+	o.Printer.DefaultText.Printf("KERNEL_RELEASE=%q\n", kr.String())
+	o.Printer.DefaultText.Printf("KERNEL_VERSION=%q\n", kr.KernelVersion)
+
 	fixedKr := d.FixupKernel(kr)
-	o.Printer.DefaultText.Printf("ARCH=%q\n", fixedKr.Architecture.ToNonDeb())
-	o.Printer.DefaultText.Printf("KERNEL_RELEASE=%q\n", fixedKr.String())
-	o.Printer.DefaultText.Printf("KERNEL_VERSION=%q\n", fixedKr.KernelVersion)
+	o.Printer.DefaultText.Printf("FIXED_KERNEL_RELEASE=%q\n", fixedKr.String())
+	o.Printer.DefaultText.Printf("FIXED_KERNEL_VERSION=%q\n", fixedKr.KernelVersion)
 
 	return nil
 }
