@@ -178,7 +178,7 @@ func Build(ctx context.Context,
 	if err != nil {
 		return "", err
 	}
-	path, err := driverType.Build(ctx, printer, d.FixupKernel(kr), driverName, driverVer, env)
+	path, err := driverType.Build(ctx, printer, kr, driverName, driverVer, env)
 	if err != nil {
 		return "", err
 	}
