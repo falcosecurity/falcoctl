@@ -62,3 +62,34 @@ func TestDistroFlatcarInitFixup(t *testing.T) {
 		}
 	}
 }
+
+func TestDistroFlatcarFixup(t *testing.T) {
+	type testCase struct {
+		krInput    string
+		kvInput    string
+		krExpected string
+		kvExpected string
+	}
+	testCases := []testCase{
+		{
+			krInput:    "6.1.62-flatcar",
+			kvInput:    "#1 SMP PREEMPT_DYNAMIC Mon Nov 20 22:57:52 -00 2023",
+			krExpected: "3794.0.0",
+			kvExpected: "1",
+		},
+		{
+			krInput:    "6.1.62-flatcar",
+			kvInput:    "#27 SMP PREEMPT_DYNAMIC Mon Nov 20 22:57:52 -00 2023",
+			krExpected: "3794.0.0",
+			kvExpected: "27",
+		},
+	}
+	for _, tCase := range testCases {
+		flat := &flatcar{generic: &generic{}, versionID: "3794.0.0"}
+		kr := kernelrelease.FromString(tCase.krInput)
+		kr.KernelVersion = tCase.kvInput
+		fixedKr := flat.FixupKernel(kr)
+		assert.Equal(t, tCase.krExpected, fixedKr.String())
+		assert.Equal(t, tCase.kvExpected, fixedKr.KernelVersion)
+	}
+}

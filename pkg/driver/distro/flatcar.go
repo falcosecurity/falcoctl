@@ -76,7 +76,8 @@ func (f *flatcar) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File)
 func (f *flatcar) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease {
 	kr.Version = semver.MustParse(f.versionID)
 	kr.Fullversion = kr.Version.String()
-	return kr
+	kr.FullExtraversion = ""
+	return f.generic.FixupKernel(kr)
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
@@ -93,6 +94,9 @@ func (f *flatcar) customizeBuild(ctx context.Context,
 		return nil, nil
 	}
 	printer.Logger.Info("Flatcar detected; relocating kernel tools.", printer.Logger.Args("version", f.versionID))
-	_, err := exec.CommandContext(ctx, "/bin/bash", "-c", flatcarRelocateScript).Output()
+	out, err := exec.CommandContext(ctx, "/bin/bash", "-c", flatcarRelocateScript).Output()
+	if err != nil {
+		printer.DefaultText.Print(string(out))
+	}
 	return nil, err
 }
