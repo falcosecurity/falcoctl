@@ -16,7 +16,11 @@
 package utils
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -113,4 +117,30 @@ func TestCreateTarGzArchiveDir(t *testing.T) {
 	if p != filename2 {
 		t.Errorf("Expected file2, got %s", p)
 	}
+}
+
+func listHeaders(gzipStream io.Reader) ([]string, error) {
+	uncompressedStream, err := gzip.NewReader(gzipStream)
+	if err != nil {
+		return nil, err
+	}
+
+	tarReader := tar.NewReader(uncompressedStream)
+
+	var files []string
+	for {
+		header, err := tarReader.Next()
+
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		files = append(files, header.Name)
+	}
+
+	return files, nil
 }

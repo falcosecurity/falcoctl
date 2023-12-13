@@ -35,7 +35,6 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
-	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -320,10 +319,7 @@ func downloadKernelSrc(ctx context.Context,
 		return env, err
 	}
 
-	// todo(loresuso,fededp): use oci.Asset as the artifact type
-	// oci.Asset is generic enough to be used for kernel sources but we might want to find
-	// a better way to handle this.
-	_, err = utils.ExtractTarGz(resp.Body, fullKernelDir, oci.Asset, stripComponents)
+	_, err = utils.ExtractTarGz(resp.Body, fullKernelDir, stripComponents)
 	if err != nil {
 		return env, err
 	}
