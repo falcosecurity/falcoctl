@@ -291,7 +291,7 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	}
 
 	// Extract artifact and move it to its destination directory
-	filePaths, err = utils.ExtractTarGz(file, f.tmpDir, res.Type, 0)
+	filePaths, err = utils.ExtractTarGz(file, f.tmpDir, 0)
 	if err != nil {
 		return filePaths, res, fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.tmpDir, err)
 	}
