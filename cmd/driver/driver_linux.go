@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -177,12 +178,23 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 func loadDriverVersion() string {
 	isSet := false
 	greatestVrs := semver.Version{}
-	paths, _ := filepath.Glob("/usr/src/falco-*+driver")
+	paths, _ := filepath.Glob("/usr/src/falco-*")
 	for _, path := range paths {
+		fileInfo, err := os.Stat(path)
+		// We expect path to point to a folder,
+		// otherwise skip it.
+		if err != nil {
+			continue
+		}
+		if !fileInfo.IsDir() {
+			continue
+		}
 		drvVer := strings.TrimPrefix(filepath.Base(path), "falco-")
 		sv, err := semver.Parse(drvVer)
 		if err != nil {
-			continue
+			// Not a semver; return it because we
+			// Won't be able to check it against semver driver versions.
+			return drvVer
 		}
 		if sv.GT(greatestVrs) {
 			greatestVrs = sv
