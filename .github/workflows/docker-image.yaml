@@ -75,7 +75,7 @@ jobs:
 
       - name: Install Cosign
         if: ${{ inputs.sign }}
-        uses: sigstore/cosign-installer@dd6b2e2b610a11fd73dd187a43d57cc1394e35f9 # v3.0.5
+        uses: sigstore/cosign-installer@9614fae9e5c5eddabb09f90a270fcb487c9f7149 # v3.3.0
 
       - name: Sign the images with GitHub OIDC Token
         if: ${{ inputs.sign }}
