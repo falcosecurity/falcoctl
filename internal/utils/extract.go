@@ -58,7 +58,7 @@ func ExtractTarGz(gzipStream io.Reader, destDir string, stripPathComponents int)
 		switch header.Typeflag {
 		case tar.TypeDir:
 			d := filepath.Join(destDir, strippedName)
-			if err = os.Mkdir(filepath.Clean(d), 0o750); err != nil {
+			if err = os.MkdirAll(filepath.Clean(d), 0o750); err != nil {
 				return nil, err
 			}
 			files = append(files, d)
@@ -76,8 +76,22 @@ func ExtractTarGz(gzipStream io.Reader, destDir string, stripPathComponents int)
 			if err = outFile.Close(); err != nil {
 				return nil, err
 			}
+			if err = os.Chmod(filepath.Clean(f), header.FileInfo().Mode()); err != nil {
+				return nil, err
+			}
 			files = append(files, f)
-
+		case tar.TypeLink, tar.TypeSymlink:
+			strippedSrcName := stripComponents(header.Linkname, stripPathComponents)
+			fDst := filepath.Join(destDir, strippedName)
+			if header.Typeflag == tar.TypeSymlink {
+				err = os.Symlink(filepath.Clean(strippedSrcName), filepath.Clean(fDst))
+			} else {
+				err = os.Link(filepath.Clean(strippedSrcName), filepath.Clean(fDst))
+			}
+			if err != nil {
+				return nil, err
+			}
+			files = append(files, fDst)
 		default:
 			return nil, fmt.Errorf("extractTarGz: uknown type: %b in %s", header.Typeflag, header.Name)
 		}
@@ -96,5 +110,5 @@ func stripComponents(headerName string, stripComponents int) string {
 	if len(names) < stripComponents {
 		return headerName
 	}
-	return filepath.Clean(strings.Join(names[stripComponents:], "/"))
+	return filepath.Clean(strings.Join(names[stripComponents:], string(os.PathSeparator)))
 }

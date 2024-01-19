@@ -18,6 +18,7 @@ package driverdistro
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/blang/semver"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
@@ -76,7 +77,7 @@ func (c *cos) customizeBuild(ctx context.Context,
 
 	currKernelDir := env[kernelDirEnv]
 
-	cosKernelDir := currKernelDir + "usr/src/"
+	cosKernelDir := filepath.Join(currKernelDir, "usr", "src")
 	entries, err := os.ReadDir(cosKernelDir)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (c *cos) customizeBuild(ctx context.Context,
 	if len(entries) == 0 {
 		return nil, fmt.Errorf("no COS kernel src found")
 	}
-	cosKernelDir = entries[0].Name()
+	cosKernelDir = filepath.Join(cosKernelDir, entries[0].Name())
 	// Override env key
 	env[kernelDirEnv] = cosKernelDir
 
