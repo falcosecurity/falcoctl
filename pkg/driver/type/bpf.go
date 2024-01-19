@@ -87,6 +87,7 @@ func (b *bpf) Build(ctx context.Context,
 	makeCmdArgs := fmt.Sprintf(`make -C %q`, filepath.Clean(srcPath))
 	makeCmd := exec.CommandContext(ctx, "bash", "-c", makeCmdArgs) //nolint:gosec // false positive
 	// Append requested env variables to the command env
+	makeCmd.Env = os.Environ()
 	for key, val := range env {
 		makeCmd.Env = append(makeCmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}

@@ -17,7 +17,7 @@
 package driverdistro
 
 import (
-	"archive/tar"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -336,12 +336,17 @@ func downloadKernelSrc(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	var src io.Reader
+	var src io.ReadCloser
 	if strings.HasSuffix(kernelConfigPath, ".gz") {
-		src = tar.NewReader(f)
+		src, err = gzip.NewReader(f)
+		if err != nil {
+			return env, err
+		}
 	} else {
 		src = f
 	}
+	defer src.Close()
+
 	fStat, err := f.Stat()
 	if err != nil {
 		return nil, err
