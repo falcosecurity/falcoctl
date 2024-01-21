@@ -36,7 +36,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Generate subject
         id: hash
         env:
@@ -46,7 +46,7 @@ jobs:
 
           checksum_file=$(echo "$ARTIFACTS" | jq -r '.[] | select (.type=="Checksum") | .path')
           echo "hashes=$(cat $checksum_file | base64 -w0)" >> "$GITHUB_OUTPUT"
-  
+
   provenance-for-binaries:
     needs: [goreleaser]
     permissions:
@@ -57,7 +57,7 @@ jobs:
     with:
       base64-subjects: "${{ needs.goreleaser.outputs.hashes }}"
       upload-assets: true # upload to a new release
-  
+
   verification:
     needs: [goreleaser, provenance-for-binaries]
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p "*.tar.gz"
           gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p "*.zip"
           gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME" -p "$PROVENANCE"
-      
+
       - name: Verify assets
         env:
           CHECKSUMS: ${{ needs.goreleaser.outputs.hashes }}
@@ -105,7 +105,7 @@ jobs:
           echo "release=$(echo $GITHUB_REF | cut -d / -f 3 |  sed 's/^v//')" >> $GITHUB_OUTPUT
           echo "commit=${{ github.sha }}" >> $GITHUB_OUTPUT
           echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-  
+
   docker-image:
     needs: docker-configure
     uses: ./.github/workflows/docker-image.yaml
