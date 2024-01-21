@@ -45,7 +45,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_SECRET }}
-      
+
       - name: Docker Meta
         id: meta_falcoctl
         uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # v4.3.0
