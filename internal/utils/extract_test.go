@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -112,7 +113,7 @@ func TestExtractTarGz(t *testing.T) {
 	})
 
 	// Create dest folder
-	destDir := "./test/"
+	destDir := "./test"
 	err = os.MkdirAll(destDir, 0o750)
 	assert.NoError(t, err)
 	t.Cleanup(func() {
@@ -126,10 +127,11 @@ func TestExtractTarGz(t *testing.T) {
 		f.Close()
 	})
 
-	list, err := ExtractTarGz(f, destDir, 0)
+	list, err := ExtractTarGz(context.TODO(), f, destDir, 0)
 	assert.NoError(t, err)
 
 	// Final checks
+	assert.NotEmpty(t, list)
 
 	// All extracted files are ok
 	for _, f := range list {
@@ -138,8 +140,10 @@ func TestExtractTarGz(t *testing.T) {
 	}
 
 	// Extracted folder contains all source files (plus folders)
+	absDestDir, err := filepath.Abs(destDir)
+	assert.NoError(t, err)
 	for _, f := range files {
-		path := filepath.Join(destDir, f)
+		path := filepath.Join(absDestDir, f)
 		assert.Contains(t, list, path)
 	}
 }
@@ -168,7 +172,7 @@ func TestExtractTarGzStripComponents(t *testing.T) {
 	})
 
 	// Create dest folder
-	destdirStrip := "./test_strip/"
+	destdirStrip := "./test_strip"
 	err = os.MkdirAll(destdirStrip, 0o750)
 	assert.NoError(t, err)
 	t.Cleanup(func() {
@@ -182,10 +186,11 @@ func TestExtractTarGzStripComponents(t *testing.T) {
 		f.Close()
 	})
 	// NOTE that here we strip first component
-	list, err := ExtractTarGz(f, destdirStrip, 1)
+	list, err := ExtractTarGz(context.TODO(), f, destdirStrip, 1)
 	assert.NoError(t, err)
 
 	// Final checks
+	assert.NotEmpty(t, list)
 
 	// All extracted files are ok
 	for _, f := range list {
@@ -194,10 +199,12 @@ func TestExtractTarGzStripComponents(t *testing.T) {
 	}
 
 	// Extracted folder contains all source files (plus folders)
+	absDestDirStrip, err := filepath.Abs(destdirStrip)
+	assert.NoError(t, err)
 	for _, f := range files {
 		// We stripped first component (ie: srcDir)
 		ff := strings.TrimPrefix(f, srcDir)
-		path := filepath.Join(destdirStrip, ff)
+		path := filepath.Join(absDestDirStrip, ff)
 		assert.Contains(t, list, path)
 	}
 }
