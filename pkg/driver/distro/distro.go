@@ -319,7 +319,7 @@ func downloadKernelSrc(ctx context.Context,
 		return env, err
 	}
 
-	_, err = utils.ExtractTarGz(resp.Body, fullKernelDir, stripComponents)
+	_, err = utils.ExtractTarGz(ctx, resp.Body, fullKernelDir, stripComponents)
 	if err != nil {
 		return env, err
 	}
