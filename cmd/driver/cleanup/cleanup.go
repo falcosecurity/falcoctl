@@ -66,7 +66,7 @@ func (o *driverCleanupOptions) RunDriverCleanup(_ context.Context) error {
 	if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
 		// Only print formatted text if we are formatting to json
 		out := strings.ReplaceAll(buf.String(), "\n", ";")
-		o.Printer.Logger.Info("Driver build", o.Printer.Logger.Args("output", out))
+		o.Printer.Logger.Info("Driver cleanup", o.Printer.Logger.Args("output", out))
 	} else {
 		// Print much more readable output as-is
 		o.Printer.DefaultText.Print(buf.String())
