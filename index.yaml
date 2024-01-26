@@ -353,6 +353,30 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/master/plugins/k8saudit/rules
+- name: k8smeta
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/k8smeta
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Enriche Falco syscall flow with Kubernetes Metadata
+  home: https://github.com/falcosecurity/plugins/tree/master/plugins/k8smeta
+  keywords:
+    - kubernetes
+    - syscall
+    - extractor
+    - k8smeta
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/master/plugins/k8smeta
 - name: okta
   type: plugin
   registry: ghcr.io
