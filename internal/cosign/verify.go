@@ -42,6 +42,11 @@ import (
 	sigs "github.com/sigstore/cosign/v2/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
+	// Register the provider-specific plugins.
+	_ "github.com/sigstore/sigstore/pkg/signature/kms/aws"
+	_ "github.com/sigstore/sigstore/pkg/signature/kms/azure"
+	_ "github.com/sigstore/sigstore/pkg/signature/kms/gcp"
+	_ "github.com/sigstore/sigstore/pkg/signature/kms/hashivault"
 )
 
 // VerifyCommand verifies a signature on a supplied container image.
