@@ -31,7 +31,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	golang.org/x/crypto v0.18.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
-	google.golang.org/api v0.159.0
+	google.golang.org/api v0.161.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.1
