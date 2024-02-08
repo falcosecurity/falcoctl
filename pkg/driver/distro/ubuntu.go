@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,7 +59,8 @@ func (u *ubuntu) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.Kerne
 	// so that eg: we receive "26~22.04.1-Ubuntu",
 	// therefore we only need to drop "-Ubuntu" suffix
 	// Take eg: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
-	kr = u.generic.FixupKernel(kr)
-	kr.KernelVersion = strings.TrimSuffix(kr.KernelVersion, "-Ubuntu")
+	kv := strings.TrimLeft(kr.KernelVersion, "#")
+	kv = strings.Split(kv, " ")[0]
+	kr.KernelVersion = strings.TrimSuffix(kv, "-Ubuntu")
 	return kr
 }

@@ -44,6 +44,11 @@ func TestDistroGeneric(t *testing.T) {
 			kvInput:    "#231asfa #rf3f",
 			kvExpected: "231",
 		},
+		{
+			krInput:    "6.7.2-arch1-2",
+			kvInput:    "#231asfa234",
+			kvExpected: "231",
+		},
 	}
 
 	g := &generic{}
