@@ -36,6 +36,7 @@ import (
 type driverDownloadOptions struct {
 	InsecureDownload bool
 	HTTPTimeout      time.Duration
+	HTTPHeaders      string
 }
 
 type driverInstallOptions struct {
@@ -92,6 +93,11 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 			"(e.g. '#1 SMP PREEMPT_DYNAMIC Debian 6.1.38-2 (2023-07-27)')")
 	cmd.Flags().BoolVar(&o.InsecureDownload, "http-insecure", false, "Whether you want to allow insecure downloads or not")
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
+	cmd.Flags().StringVar(&o.HTTPHeaders, "http-headers",
+		"",
+		"Optional comma-separated list of headers for the http GET request\n"+
+			"(e.g. --http-headers=\"x-emc-namespace: default,Proxy-Authenticate: Basic\").\n"+
+			"Not necessary if default repo is used")
 	return cmd
 }
 
@@ -173,7 +179,8 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if !o.Printer.DisableStyling {
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to download the driver")
 		}
-		dest, err = driverdistro.Download(ctx, d, o.Printer.WithWriter(&buf), kr, o.Driver.Name, o.Driver.Type, o.Driver.Version, o.Driver.Repos)
+		dest, err = driverdistro.Download(ctx, d, o.Printer.WithWriter(&buf), kr, o.Driver.Name,
+			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
