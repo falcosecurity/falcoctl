@@ -52,10 +52,9 @@ func (g *generic) String() string {
 //nolint:gocritic // the method shall not be able to modify kr
 func (g *generic) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease {
 	matches := genericKernelVersionRegex.FindStringSubmatch(kr.KernelVersion)
-	if len(matches) == 0 {
-		return kr
+	if len(matches) == 2 {
+		kr.KernelVersion = matches[1]
 	}
-	kr.KernelVersion = matches[1]
 	return kr
 }
 
