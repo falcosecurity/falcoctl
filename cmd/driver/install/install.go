@@ -95,9 +95,8 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
 	cmd.Flags().StringVar(&o.HTTPHeaders, "http-headers",
 		"",
-		"Optional comma-separated list of headers for the http GET request\n"+
-			"(e.g. --http-headers=\"x-emc-namespace: default,Proxy-Authenticate: Basic\").\n"+
-			"Not necessary if default repo is used")
+		"Optional comma-separated list of headers for the http GET request "+
+			"(e.g. --http-headers='x-emc-namespace: default,Proxy-Authenticate: Basic'). Not necessary if default repo is used")
 	return cmd
 }
 
