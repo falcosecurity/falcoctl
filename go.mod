@@ -6,8 +6,8 @@ require (
 	cloud.google.com/go/storage v1.37.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/distribution/distribution/v3 v3.0.0-20230608105614-4501a6e06d3b
-	github.com/docker/cli v25.0.2+incompatible
-	github.com/docker/docker v25.0.2+incompatible
+	github.com/docker/cli v25.0.3+incompatible
+	github.com/docker/docker v25.0.3+incompatible
 	github.com/falcosecurity/driverkit v0.16.3
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -18,7 +18,7 @@ require (
 	github.com/onsi/gomega v1.31.1
 	github.com/opencontainers/image-spec v1.1.0-rc6
 	github.com/oras-project/oras-credentials-go v0.3.1
-	github.com/pterm/pterm v0.12.78
+	github.com/pterm/pterm v0.12.79
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sigstore/cosign/v2 v2.2.3
 	github.com/sigstore/sigstore v1.8.1
