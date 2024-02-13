@@ -138,7 +138,7 @@ var _ = Describe("Pusher", func() {
 						Expect(err).ToNot(HaveOccurred())
 						// Being the artifact of type plugin we expect that the retrieved descriptor is of type image index.
 						Expect(d.MediaType).To(Equal(v1.MediaTypeImageIndex))
-						Expect(d.Digest.String()).To(Equal(result.Digest))
+						Expect(d.Digest.String()).To(Equal(result.RootDigest))
 						Expect(index.Manifests).To(HaveLen(1))
 						Expect(fmt.Sprintf("%s/%s", index.Manifests[0].Platform.OS, index.Manifests[0].Platform.Architecture)).To(Equal(testPluginPlatform1))
 						// Check layer and config media types.
@@ -188,7 +188,7 @@ var _ = Describe("Pusher", func() {
 						Expect(err).ToNot(HaveOccurred())
 						// Being the artifact of type plugin we expect that the retrieved descriptor is of type image index.
 						Expect(d.MediaType).To(Equal(v1.MediaTypeImageIndex))
-						Expect(d.Digest.String()).To(Equal(result.Digest))
+						Expect(d.Digest.String()).To(Equal(result.RootDigest))
 						Expect(index.Manifests).To(HaveLen(3))
 						Expect(fmt.Sprintf("%s/%s", index.Manifests[0].Platform.OS, index.Manifests[0].Platform.Architecture)).To(Equal(testPluginPlatform1))
 						Expect(fmt.Sprintf("%s/%s", index.Manifests[1].Platform.OS, index.Manifests[1].Platform.Architecture)).To(Equal(testPluginPlatform2))
@@ -225,7 +225,7 @@ var _ = Describe("Pusher", func() {
 					Expect(err).ToNot(HaveOccurred())
 					// Being the artifact of type rulesfile we expect that the retrieved descriptor is of type manifest.
 					Expect(d.MediaType).To(Equal(v1.MediaTypeImageManifest))
-					Expect(d.Digest.String()).To(Equal(result.Digest))
+					Expect(d.Digest.String()).To(Equal(result.RootDigest))
 					// It must have only one layer since no config layer is configured.
 					Expect(manifest.Layers).To(HaveLen(1))
 					// It must have the rulesfile's layer mediatype.
@@ -276,7 +276,7 @@ var _ = Describe("Pusher", func() {
 					Expect(err).ToNot(HaveOccurred())
 					// Being the artifact of type rulesfile we expect that the retrieved descriptor is of type manifest.
 					Expect(d.MediaType).To(Equal(v1.MediaTypeImageManifest))
-					Expect(d.Digest.String()).To(Equal(result.Digest))
+					Expect(d.Digest.String()).To(Equal(result.RootDigest))
 					// It must have only one layer since no config layer is configured.
 					Expect(manifest.Layers).To(HaveLen(1))
 					// It must have the rulesfile's layer mediatype.
@@ -348,7 +348,7 @@ var _ = Describe("Pusher", func() {
 				// Being the artifact of type asset we expect that the retrieved descriptor is of type manifest.
 				Expect(d.MediaType).To(Equal(v1.MediaTypeImageManifest))
 				// Checking the digest is correct.
-				Expect(d.Digest.String()).To(Equal(result.Digest))
+				Expect(d.Digest.String()).To(Equal(result.RootDigest))
 				// It must have only one layer since no config layer is configured.
 				Expect(manifest.Layers).To(HaveLen(1))
 				// The layer has to be of type asset.
