@@ -203,7 +203,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	logger.Info("Artifact pushed", logger.Args("name", args[0], "type", res.Type, "digest", res.Digest))
+	logger.Info("Artifact pushed", logger.Args("name", args[0], "type", res.Type, "digest", res.RootDigest))
 
 	return nil
 }
