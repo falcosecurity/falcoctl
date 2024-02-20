@@ -25,8 +25,8 @@ jobs:
   docker-image:
     runs-on: ubuntu-22.04
     outputs:
-        image: ${{ steps.build-and-push.outputs.image }}
-        digest: ${{ steps.build-and-push.outputs.digest }}
+      image: ${{ steps.build-and-push.outputs.image }}
+      digest: ${{ steps.build-and-push.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -46,6 +46,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_SECRET }}
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::292999226676:role/github_actions-falcoctl-ecr
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          registry-type: public
+
       - name: Docker Meta
         id: meta_falcoctl
         uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
@@ -53,6 +65,7 @@ jobs:
           # list of Docker images to use as base name for tags
           images: |
             docker.io/falcosecurity/falcoctl
+            public.ecr.aws/falcosecurity/falcoctl
           tags: |
             type=ref,event=branch
             type=semver,pattern={{ version }}
