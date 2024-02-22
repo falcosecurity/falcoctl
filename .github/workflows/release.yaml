@@ -120,7 +120,7 @@ jobs:
       build_date: ${{ needs.docker-configure.outputs.build_date }}
       sign: true
 
-  provenance-for-images:
+  provenance-for-images-docker:
     needs: [docker-configure, docker-image]
     permissions:
       actions: read # for detecting the Github Actions environment.
@@ -136,3 +136,17 @@ jobs:
     secrets:
       registry-username: ${{ secrets.DOCKERHUB_USER }}
       registry-password: ${{ secrets.DOCKERHUB_SECRET }}
+
+  provenance-for-images-aws-ecr:
+    needs: [docker-configure, docker-image]
+    permissions:
+      actions: read # for detecting the Github Actions environment.
+      id-token: write # for creating OIDC tokens for signing.
+      packages: write # for uploading attestations.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
+    with:
+      image: public.ecr.aws/falcosecurity/falcoctl
+      # The image digest is used to prevent TOCTOU issues.
+      # This is an output of the docker/build-push-action
+      # See: https://github.com/slsa-framework/slsa-verifier#toctou-attacks
+      digest: ${{ needs.docker-image.outputs.digest }}
