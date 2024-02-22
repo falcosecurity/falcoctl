@@ -137,8 +137,28 @@ jobs:
       registry-username: ${{ secrets.DOCKERHUB_USER }}
       registry-password: ${{ secrets.DOCKERHUB_SECRET }}
 
+  login-to-amazon-ecr:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::292999226676:role/github_actions-falcoctl-ecr
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          registry-type: public
+          mask-password: 'false'
+    outputs:
+      registry: ${{ steps.login-ecr-public.outputs.registry }}
+      docker_username: ${{ steps.login-ecr-public.outputs.docker_username_public_ecr_aws }}
+      docker_password: ${{ steps.login-ecr-public.outputs.docker_password_public_ecr_aws }}
+
   provenance-for-images-aws-ecr:
-    needs: [docker-configure, docker-image]
+    needs: [docker-configure, docker-image, login-to-amazon-ecr]
     permissions:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
@@ -150,3 +170,6 @@ jobs:
       # This is an output of the docker/build-push-action
       # See: https://github.com/slsa-framework/slsa-verifier#toctou-attacks
       digest: ${{ needs.docker-image.outputs.digest }}
+    secrets:
+      registry-username: ${{ needs.login-to-amazon-ecr.outputs.docker_username }}
+      registry-password: ${{ needs.login-to-amazon-ecr.outputs.docker_password }}
