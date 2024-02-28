@@ -236,7 +236,7 @@ func (k *kmod) Build(ctx context.Context,
 			return koFile, nil
 		}
 		printer.DefaultText.Print(string(out))
-		dkmsLogFile := fmt.Sprintf("/var/lib/dkms/$%s/%s/build/make.log", driverName, driverVersion)
+		dkmsLogFile := fmt.Sprintf("/var/lib/dkms/%s/%s/build/make.log", driverName, driverVersion)
 		logs, err := os.ReadFile(filepath.Clean(dkmsLogFile))
 		if err != nil {
 			printer.Logger.Warn("Running dkms build failed, couldn't find dkms log", printer.Logger.Args("file", dkmsLogFile))
