@@ -17,7 +17,7 @@
 #
 
 # All rules files related to plugins should require at least engine version 10
-- required_engine_version: 10
+- required_engine_version: 0.10.0
 
 - required_plugin_versions:
   - name: cloudtrail

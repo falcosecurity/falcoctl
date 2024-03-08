@@ -32,7 +32,6 @@ import (
 	testutils "github.com/falcosecurity/falcoctl/pkg/test"
 )
 
-//nolint:lll,unused // no need to check for line length.
 var registryPushUsage = `Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
@@ -108,7 +107,6 @@ Global Flags:
       --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 `
 
-//nolint:unused // false positive
 var pushAssertFailedBehavior = func(usage, specificError string) {
 	It("check that fails and the usage is not printed", func() {
 		Expect(err).To(HaveOccurred())
@@ -117,14 +115,12 @@ var pushAssertFailedBehavior = func(usage, specificError string) {
 	})
 }
 
-//nolint:unused // false positive
 var randomRulesRepoName = func(registry, repo string) (string, string) {
 	rName := fmt.Sprintf("%s-%d", repo, rand.Int())
 	return rName, fmt.Sprintf("%s/%s", registry, rName)
 }
 
-//nolint:unused // false positive
-var registryPushTests = Describe("push", func() {
+var _ = Describe("push", func() {
 	var (
 		registryCmd = "registry"
 		pushCmd     = "push"
@@ -258,7 +254,7 @@ var registryPushTests = Describe("push", func() {
 		})
 	})
 
-	Context("success", func() {
+	Context("success with rules without deps and requirements", func() {
 		const (
 			rulesRepoBaseName   = "push-rulesfile"
 			pluginsRepoBaseName = "push-plugins"
@@ -556,4 +552,365 @@ var registryPushTests = Describe("push", func() {
 			})
 		})
 	})
+
+	Context("rulesfile deps and requirements", func() {
+		const (
+			rulesRepoBaseName   = "push-rulesfile"
+			pluginsRepoBaseName = "push-plugins"
+		)
+
+		var (
+			version = "1.1.1"
+			// registry/rulesRepoBaseName-randomInt
+			fullRepoName string
+			// rulesRepoBaseName-randomInt
+			repoName string
+			// It is set in the config layer.
+			artifactNameInConfigLayer = "test-rulesfile"
+			pushedTags                = []string{"tag1", "tag2", "latest"}
+
+			// Variables passed as arguments to the push command. Each test case updates them
+			// to point to the file on disk living in pkg/test/data.
+			rulesfile     string
+			rulesfileData *testutils.RulesfileArtifact
+		)
+
+		Context("user provided deps", func() {
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				rulesfile = rulesFileWithDepsAndReq
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--requires", req, "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			It("deps should be the ones provided by the user", func() {
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Dependencies[0].Name,
+					rulesfileData.Layer.Config.Dependencies[0].Version)).Should(Equal(dep1))
+				Expect(fmt.Sprintf("%s:%s|%s:%s", rulesfileData.Layer.Config.Dependencies[1].Name,
+					rulesfileData.Layer.Config.Dependencies[1].Version, rulesfileData.Layer.Config.Dependencies[1].Alternatives[0].Name,
+					rulesfileData.Layer.Config.Dependencies[1].Alternatives[0].Version)).Should(Equal(dep2))
+			})
+		})
+
+		Context("parsed from file deps", func() {
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				rulesfile = rulesFileWithDepsAndReq
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			It("deps should be same as in rulesfile", func() {
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Dependencies[0].Name,
+					rulesfileData.Layer.Config.Dependencies[0].Version)).Should(Equal("cloudtrail:0.2.3"))
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Dependencies[1].Name,
+					rulesfileData.Layer.Config.Dependencies[1].Version)).Should(Equal("json:0.2.2"))
+			})
+		})
+
+		Context("parsed from file deps with alternatives", func() {
+			var data = `
+- required_plugin_versions:
+  - name: k8saudit
+    version: 0.7.0
+    alternatives:
+      - name: k8saudit-eks
+        version: 0.4.0
+  - name: json
+    version: 0.7.0
+`
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				tmpDir := GinkgoT().TempDir()
+				rulesfile, err = testutils.WriteToTmpFile(data, tmpDir)
+				Expect(err).ToNot(HaveOccurred())
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			It("deps should be same as in rulesfile", func() {
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Dependencies[0].Name,
+					rulesfileData.Layer.Config.Dependencies[0].Version)).Should(Equal("k8saudit:0.7.0"))
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Dependencies[1].Name,
+					rulesfileData.Layer.Config.Dependencies[1].Version)).Should(Equal("json:0.7.0"))
+				Expect(fmt.Sprintf("%s:%s|%s:%s", rulesfileData.Layer.Config.Dependencies[0].Name,
+					rulesfileData.Layer.Config.Dependencies[0].Version, rulesfileData.Layer.Config.Dependencies[0].Alternatives[0].Name,
+					rulesfileData.Layer.Config.Dependencies[0].Alternatives[0].Version)).Should(Equal("k8saudit:0.7.0|k8saudit-eks:0.4.0"))
+			})
+		})
+
+		Context("no deps at all", func() {
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				rulesfile = rulesfileyaml
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			It("deps should be same as in rulesfile", func() {
+				Expect(rulesfileData.Layer.Config.Dependencies).Should(HaveLen(0))
+			})
+		})
+
+		Context("user provided requirement", func() {
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				rulesfile = rulesFileWithDepsAndReq
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--requires", req, "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			It("reqs should be the ones provided by the user", func() {
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Requirements[0].Name,
+					rulesfileData.Layer.Config.Requirements[0].Version)).Should(Equal(req))
+			})
+		})
+
+		Context("requirement parsed from file in semver format", func() {
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				rulesfile = rulesFileWithDepsAndReq
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			It("reqs should be the ones provided by the user", func() {
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Requirements[0].Name,
+					rulesfileData.Layer.Config.Requirements[0].Version)).Should(Equal("engine_version_semver:0.10.0"))
+			})
+		})
+
+		Context("requirement parsed from file in int format", func() {
+			var rulesfileContent = `
+- required_engine_version: 10
+`
+			JustBeforeEach(func() {
+				// This runs after the push command, so check the returned error before proceeding.
+				Expect(err).ShouldNot(HaveOccurred())
+				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				tmpDir := GinkgoT().TempDir()
+				rulesfile, err = testutils.WriteToTmpFile(rulesfileContent, tmpDir)
+				Expect(err).ToNot(HaveOccurred())
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			AfterEach(func() {
+				Expect(os.RemoveAll(filepath.Dir(rulesfile))).ToNot(HaveOccurred())
+			})
+
+			It("reqs should be the ones provided by the user", func() {
+				Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Requirements[0].Name,
+					rulesfileData.Layer.Config.Requirements[0].Version)).Should(Equal("engine_version_semver:0.10.0"))
+			})
+		})
+
+		Context("requirement parsed from file -- invalid format (float)", func() {
+			var rulesFile = `
+- required_engine_version: 10.0
+`
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				tmpDir := GinkgoT().TempDir()
+				rulesfile, err = testutils.WriteToTmpFile(rulesFile, tmpDir)
+				Expect(err).ToNot(HaveOccurred())
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			AfterEach(func() {
+				Expect(os.RemoveAll(filepath.Dir(rulesfile))).ToNot(HaveOccurred())
+			})
+
+			It("reqs should be the ones provided by the user", func() {
+				Expect(err).Should(HaveOccurred())
+				Expect(output).Should(gbytes.Say(regexp.QuoteMeta("required_engine_version must be an int or a string respecting " +
+					"the semver specification, got type float64")))
+			})
+		})
+
+		Context("requirement parsed from file -- invalid format (not semver)", func() {
+			var rulesFile = `
+- required_engine_version: 10.0notsemver
+`
+
+			JustAfterEach(func() {
+				// This variable could be changed by single tests.
+				// Make sure to set them at their default values.
+				artifactNameInConfigLayer = "test-rulesfile"
+				pushedTags = []string{"tag1", "tag2", "latest"}
+			})
+
+			BeforeEach(func() {
+				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
+				tmpDir := GinkgoT().TempDir()
+				rulesfile, err = testutils.WriteToTmpFile(rulesFile, tmpDir)
+				Expect(err).ToNot(HaveOccurred())
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--plain-http", "--annotation-source", anSource,
+					"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// We expect that latest tag is pushed, so set it in the pushed tags.
+				pushedTags = []string{"latest"}
+			})
+
+			AfterEach(func() {
+				Expect(os.RemoveAll(filepath.Dir(rulesfile))).ToNot(HaveOccurred())
+			})
+
+			It("reqs should be the ones provided by the user", func() {
+				Expect(err).Should(HaveOccurred())
+				Expect(output).Should(gbytes.Say(regexp.QuoteMeta("10.0notsemver must be in semver format: No Major.Minor.Patch elements found")))
+			})
+		})
+	})
+})
+
+var _ = Describe("rulesConfigLayer", func() {
+
 })

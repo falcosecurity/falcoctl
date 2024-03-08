@@ -1,0 +1,31 @@
+- rule: All Cloudtrail Events
+  desc: Match all cloudtrail events.
+  condition:
+    evt.num > 0
+  output: Some Cloudtrail Event (evtnum=%evt.num info=%evt.plugininfo ts=%evt.time.iso8601 id=%ct.id error=%ct.error)
+  priority: DEBUG
+  tags:
+    - cloud
+    - aws
+  source: aws_cloudtrail
+  enabled: false
+
+- rule: Console Login Through Assume Role
+  desc: Detect a console login through Assume Role.
+  condition:
+    ct.name="ConsoleLogin" and not ct.error exists
+    and ct.user.identitytype="AssumedRole"
+    and json.value[/responseElements/ConsoleLogin]="Success"
+  output:
+    Detected a console login through Assume Role
+    (principal=%ct.user.principalid,
+    assumedRole=%ct.user.arn,
+    requesting IP=%ct.srcip,
+    AWS region=%ct.region)
+  priority: WARNING
+  tags:
+    - cloud
+    - aws
+    - aws_console
+    - aws_iam
+  source: aws_cloudtrail

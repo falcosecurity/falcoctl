@@ -5,6 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.39.0
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/blang/semver/v4 v4.0.0
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/docker/cli v25.0.4+incompatible
 	github.com/docker/docker v25.0.4+incompatible
