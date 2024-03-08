@@ -36,3 +36,21 @@ func CreateEmptyFile(name string) (string, error) {
 
 	return configFile, nil
 }
+
+// WriteToTmpFile writes data to a temporary file in the specified path.
+func WriteToTmpFile(data, dirPath string) (string, error) {
+	tmpFile, err := os.CreateTemp(dirPath, "rulesfiles-test")
+	if err != nil {
+		return "", err
+	}
+	if _, err = tmpFile.WriteString(data); err != nil {
+		return "", err
+	}
+
+	// Get path.
+	info, err := tmpFile.Stat()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dirPath, info.Name()), tmpFile.Close()
+}
