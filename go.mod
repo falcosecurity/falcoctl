@@ -6,8 +6,8 @@ require (
 	cloud.google.com/go/storage v1.39.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
-	github.com/docker/cli v25.0.3+incompatible
-	github.com/docker/docker v25.0.3+incompatible
+	github.com/docker/cli v25.0.4+incompatible
+	github.com/docker/docker v25.0.4+incompatible
 	github.com/falcosecurity/driverkit v0.16.3
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
