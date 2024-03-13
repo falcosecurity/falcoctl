@@ -75,7 +75,7 @@ func (c *cos) customizeBuild(ctx context.Context,
 		return nil, err
 	}
 
-	currKernelDir := env[kernelDirEnv]
+	currKernelDir := env[drivertype.KernelDirEnv]
 
 	cosKernelDir := filepath.Join(currKernelDir, "usr", "src")
 	entries, err := os.ReadDir(cosKernelDir)
@@ -87,7 +87,7 @@ func (c *cos) customizeBuild(ctx context.Context,
 	}
 	cosKernelDir = filepath.Join(cosKernelDir, entries[0].Name())
 	// Override env key
-	env[kernelDirEnv] = cosKernelDir
+	env[drivertype.KernelDirEnv] = cosKernelDir
 
 	clangCompilerHeader := fmt.Sprintf("%s/include/linux/compiler-clang.h", cosKernelDir)
 	err = utils.ReplaceLineInFile(clangCompilerHeader, "#define randomized_struct_fields_start", "", 1)
