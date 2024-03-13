@@ -189,7 +189,7 @@ func (k *kmod) Build(ctx context.Context,
 	printer *output.Printer,
 	kr kernelrelease.KernelRelease,
 	driverName, driverVersion string,
-	_ map[string]string,
+	env map[string]string,
 ) (string, error) {
 	// Skip dkms on UEK hosts because it will always fail
 	if strings.Contains(kr.String(), "uek") {
@@ -223,8 +223,14 @@ func (k *kmod) Build(ctx context.Context,
 			printer.Logger.Warn("Could not fill /tmp/falco-dkms-make content.")
 			continue
 		}
-		dkmsCmdArgs := fmt.Sprintf(`dkms install --directive="MAKE='/tmp/falco-dkms-make'" -m %q -v %q -k %q --verbose`,
-			driverName, driverVersion, kr.String())
+		var dkmsCmdArgs string
+		if kernelDir, found := env[KernelDirEnv]; found {
+			dkmsCmdArgs = fmt.Sprintf(`dkms install --kernelsourcedir %q --directive="MAKE='/tmp/falco-dkms-make'" -m %q -v %q -k %q --verbose`,
+				kernelDir, driverName, driverVersion, kr.String())
+		} else {
+			dkmsCmdArgs = fmt.Sprintf(`dkms install --directive="MAKE='/tmp/falco-dkms-make'" -m %q -v %q -k %q --verbose`,
+				driverName, driverVersion, kr.String())
+		}
 
 		// Try the build through dkms
 		out, err = exec.CommandContext(ctx, "bash", "-c", dkmsCmdArgs).CombinedOutput() //nolint:gosec // false positive

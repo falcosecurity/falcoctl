@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/falcosecurity/driverkit/pkg/driverbuilder/builder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
@@ -39,7 +40,6 @@ import (
 )
 
 const (
-	kernelDirEnv            = "KERNELDIR"
 	kernelSrcDownloadFolder = "kernel-sources"
 	// UndeterminedDistro is the string used for the generic distro object returned when we cannot determine the distro.
 	UndeterminedDistro = "undetermined"
@@ -128,6 +128,46 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 	return distro, nil
 }
 
+//nolint:gocritic // the method shall not be able to modify kr
+func loadKernelHeadersFromDk(distro string, kr kernelrelease.KernelRelease) ([]string, error) {
+	// Try to load kernel headers from driverkit. Don't error out if unable to.
+	b, err := builder.Factory(builder.Type(distro))
+	if err != nil {
+		return nil, nil
+	}
+
+	// Load minimum urls for the builder
+	minimumURLs := 1
+	if bb, ok := b.(builder.MinimumURLsBuilder); ok {
+		minimumURLs = bb.MinimumURLs()
+	}
+
+	// Fetch URLs
+	kernelheaders, err := b.URLs(kr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check actually resolving URLs
+	kernelheaders, err = builder.GetResolvingURLs(kernelheaders)
+	if err != nil {
+		return nil, err
+	}
+	if len(kernelheaders) < minimumURLs {
+		return nil, fmt.Errorf("not enough headers packages found; expected %d, found %d", minimumURLs, len(kernelheaders))
+	}
+	return kernelheaders, nil
+}
+
+func downloadKernelHeaders(headers []string) (string, error) {
+	// TODO download all and mv everything under /tmp/kernel/usr/{lib,src}
+	// change driverkit?
+	for _, h := range headers {
+		fmt.Println(h)
+	}
+	return "", nil
+}
+
 func toURL(repo, driverVer, fileName, arch string) string {
 	return fmt.Sprintf("%s/%s/%s/%s", repo, url.QueryEscape(driverVer), arch, fileName)
 }
@@ -179,6 +219,20 @@ func Build(ctx context.Context,
 	if err != nil {
 		return "", err
 	}
+
+	// If customizeBuild did not set any KERNELDIR env variable,
+	// try to load kernel headers urls from driverkit.
+	if _, found := env[drivertype.KernelDirEnv]; !found {
+		headers, _ := loadKernelHeadersFromDk(d.String(), kr)
+		if headers != nil {
+			// We found the headers! Download them to `/tmp/kernel`.
+			path, err := downloadKernelHeaders(headers)
+			if err != nil {
+				env[drivertype.KernelDirEnv] = path
+			}
+		}
+	}
+
 	path, err := driverType.Build(ctx, printer, kr, driverName, driverVer, env)
 	if err != nil {
 		return "", err
@@ -216,10 +270,10 @@ func Download(ctx context.Context,
 	// Try to download from any specified repository,
 	// stopping at first successful http GET.
 	for _, repo := range repos {
-		url := toURL(repo, driverVer, driverFileName, kr.Architecture.ToNonDeb())
-		printer.Logger.Info("Trying to download a driver.", printer.Logger.Args("url", url))
+		driverURL := toURL(repo, driverVer, driverFileName, kr.Architecture.ToNonDeb())
+		printer.Logger.Info("Trying to download a driver.", printer.Logger.Args("url", driverURL))
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, driverURL, nil)
 		if err != nil {
 			printer.Logger.Warn("Error creating http request.", printer.Logger.Args("err", err))
 			continue
@@ -368,6 +422,6 @@ func downloadKernelSrc(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	env[kernelDirEnv] = fullKernelDir
+	env[drivertype.KernelDirEnv] = fullKernelDir
 	return env, nil
 }

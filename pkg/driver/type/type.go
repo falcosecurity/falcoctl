@@ -25,6 +25,9 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
+// KernelDirEnv is the env variable set to kernel headers extraction paths.
+const KernelDirEnv = "KERNELDIR"
+
 var driverTypes = map[string]DriverType{}
 
 // DriverType is the interface that wraps driver types.
