@@ -216,7 +216,7 @@ var _ = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, newReg, rulesfiletgz, "--config", configFile, "--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
 			pushAssertFailedBehavior(registryPushUsage, fmt.Sprintf("ERROR unable to create new repository with ref %s: "+
-				"invalid reference: invalid digest; invalid checksum digest format\n", newReg))
+				"invalid reference: invalid digest %q: invalid checksum digest format\n", newReg, "something"))
 		})
 
 		When("invalid requirement", func() {

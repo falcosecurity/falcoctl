@@ -297,7 +297,7 @@ var registryPullTests = Describe("pull", func() {
 				args = []string{registryCmd, pullCmd, newReg, "--plain-http", "--config", configFile}
 			})
 			pullAssertFailedBehavior(registryPullUsage, fmt.Sprintf("ERROR unable to create new repository with ref %s: "+
-				"invalid reference: invalid digest; invalid checksum digest format\n", newReg))
+				"invalid reference: invalid digest %q: invalid checksum digest format\n", newReg, "something"))
 		})
 
 		When("invalid platform", func() {
