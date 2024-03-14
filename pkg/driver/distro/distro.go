@@ -129,43 +129,23 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
-func loadKernelHeadersFromDk(distro string, kr kernelrelease.KernelRelease) ([]string, error) {
+func loadKernelHeadersFromDk(distro string, kr kernelrelease.KernelRelease) (string, func(), error) {
 	// Try to load kernel headers from driverkit. Don't error out if unable to.
 	b, err := builder.Factory(builder.Type(distro))
 	if err != nil {
-		return nil, nil
+		return "", nil, nil
 	}
 
-	// Load minimum urls for the builder
-	minimumURLs := 1
-	if bb, ok := b.(builder.MinimumURLsBuilder); ok {
-		minimumURLs = bb.MinimumURLs()
-	}
-
-	// Fetch URLs
-	kernelheaders, err := b.URLs(kr)
+	script, err := builder.KernelDownloadScript(b, nil, kr)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-
-	// Check actually resolving URLs
-	kernelheaders, err = builder.GetResolvingURLs(kernelheaders)
-	if err != nil {
-		return nil, err
-	}
-	if len(kernelheaders) < minimumURLs {
-		return nil, fmt.Errorf("not enough headers packages found; expected %d, found %d", minimumURLs, len(kernelheaders))
-	}
-	return kernelheaders, nil
-}
-
-func downloadKernelHeaders(headers []string) (string, error) {
-	// TODO download all and mv everything under /tmp/kernel/usr/{lib,src}
-	// change driverkit?
-	for _, h := range headers {
-		fmt.Println(h)
-	}
-	return "", nil
+	out, err := exec.Command("bash", "-c", script).Output() //nolint:gosec // false positive
+	path := strings.TrimSuffix(string(out), "\n")
+	return path, func() {
+		_ = os.RemoveAll("/tmp/kernel-download")
+		_ = os.RemoveAll(path)
+	}, err
 }
 
 func toURL(repo, driverVer, fileName, arch string) string {
@@ -220,16 +200,19 @@ func Build(ctx context.Context,
 		return "", err
 	}
 
+	if env == nil {
+		env = make(map[string]string)
+	}
+
 	// If customizeBuild did not set any KERNELDIR env variable,
 	// try to load kernel headers urls from driverkit.
 	if _, found := env[drivertype.KernelDirEnv]; !found {
-		headers, _ := loadKernelHeadersFromDk(d.String(), kr)
-		if headers != nil {
-			// We found the headers! Download them to `/tmp/kernel`.
-			path, err := downloadKernelHeaders(headers)
-			if err != nil {
-				env[drivertype.KernelDirEnv] = path
-			}
+		kernelHeadersPath, cleaner, err := loadKernelHeadersFromDk(d.String(), kr)
+		if cleaner != nil {
+			defer cleaner()
+		}
+		if err == nil {
+			env[drivertype.KernelDirEnv] = kernelHeadersPath
 		}
 	}
 
