@@ -38,14 +38,6 @@ const (
 	rmmodWaitTime = 5 * time.Second
 )
 
-type errMissingDep struct {
-	program string
-}
-
-func (e *errMissingDep) Error() string {
-	return fmt.Sprintf("This program requires %s.", e.program)
-}
-
 func init() {
 	driverTypes[TypeKmod] = &kmod{}
 }
@@ -61,18 +53,18 @@ func (k *kmod) String() string {
 // Then, using dkms, it tries to fetch all
 // dkms-installed versions of the module to clean them up.
 func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
-	_, err := exec.Command("bash", "-c", "hash lsmod").Output()
+	lsmod, err := exec.LookPath("lsmod")
 	if err != nil {
-		return &errMissingDep{program: "lsmod"}
+		return err
 	}
-	_, err = exec.Command("bash", "-c", "hash rmmod").Output()
+	rmmod, err := exec.LookPath("rmmod")
 	if err != nil {
-		return &errMissingDep{program: "rmmod"}
+		return err
 	}
 
 	kmodName := strings.ReplaceAll(driverName, "-", "_")
 	printer.Logger.Info("Check if kernel module is still loaded.")
-	lsmodCmdArgs := fmt.Sprintf(`lsmod | cut -d' ' -f1 | grep -qx %q`, kmodName)
+	lsmodCmdArgs := fmt.Sprintf(`%s | cut -d' ' -f1 | grep -qx %q`, lsmod, kmodName)
 	_, err = exec.Command("bash", "-c", lsmodCmdArgs).Output() //nolint:gosec // false positive
 	if err == nil {
 		unloaded := false
@@ -80,7 +72,7 @@ func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
 		for i := 0; i < maxRmmodWait; i++ {
 			printer.Logger.Info("Kernel module is still loaded.")
 			printer.Logger.Info("Trying to unload it with 'rmmod'.")
-			if _, err = exec.Command("rmmod", kmodName).Output(); err == nil { //nolint:gosec // false positive
+			if _, err = exec.Command(rmmod, kmodName).Output(); err == nil { //nolint:gosec // false positive
 				printer.Logger.Info("OK! Unloading module succeeded.")
 				unloaded = true
 				break
@@ -97,14 +89,14 @@ func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
 		printer.Logger.Info("OK! There is no module loaded.")
 	}
 
-	_, err = exec.Command("bash", "-c", "hash dkms").Output()
+	dkms, err := exec.LookPath("dkms")
 	if err != nil {
 		printer.Logger.Info("Skipping dkms remove (dkms not found).")
 		return nil
 	}
 
 	printer.Logger.Info("Check all versions of kernel module in dkms.")
-	dkmsLsCmdArgs := fmt.Sprintf(`dkms status -m %q | tr -d "," | tr -d ":" | tr "/" " " | cut -d' ' -f2`, kmodName)
+	dkmsLsCmdArgs := fmt.Sprintf(`%s status -m %q | tr -d "," | tr -d ":" | tr "/" " " | cut -d' ' -f2`, dkms, kmodName)
 	out, err := exec.Command("bash", "-c", dkmsLsCmdArgs).Output() //nolint:gosec // false positive
 	if err != nil {
 		printer.Logger.Warn("Listing kernel module versions failed.", printer.Logger.Args("reason", err))
@@ -118,7 +110,7 @@ func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
 		scanner := bufio.NewScanner(outBuffer)
 		for scanner.Scan() {
 			dVer := scanner.Text()
-			dkmsRmCmdArgs := fmt.Sprintf(`dkms remove -m %s -v %q --all`, kmodName, dVer)
+			dkmsRmCmdArgs := fmt.Sprintf(`%s remove -m %s -v %q --all`, dkms, kmodName, dVer)
 			_, err = exec.Command("bash", "-c", dkmsRmCmdArgs).Output() //nolint:gosec // false positive
 			if err == nil {
 				printer.Logger.Info("OK! Removing succeeded.", printer.Logger.Args("version", dVer))
