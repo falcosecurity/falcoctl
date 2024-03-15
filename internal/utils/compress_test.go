@@ -29,6 +29,7 @@ import (
 const (
 	filename1 = "file1"
 	filename2 = "file2"
+	tmpPrefix = "testCreateTarGzArchiveFile"
 )
 
 func TestCreateTarGzArchiveFile(t *testing.T) {
@@ -39,11 +40,11 @@ func TestCreateTarGzArchiveFile(t *testing.T) {
 	}
 	defer f1.Close()
 
-	tarball, err := CreateTarGzArchive(filepath.Join(dir, filename1))
+	tarball, err := CreateTarGzArchive(tmpPrefix, filepath.Join(dir, filename1))
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	defer os.Remove(tarball)
+	defer os.RemoveAll(filepath.Dir(tarball))
 
 	file, err := os.Open(tarball)
 	if err != nil {
@@ -82,11 +83,11 @@ func TestCreateTarGzArchiveDir(t *testing.T) {
 	}
 	defer f2.Close()
 
-	tarball, err := CreateTarGzArchive(dir)
+	tarball, err := CreateTarGzArchive(tmpPrefix, dir)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	defer os.Remove(tarball)
+	defer os.RemoveAll(filepath.Dir(tarball))
 
 	file, err := os.Open(tarball)
 	if err != nil {

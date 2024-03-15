@@ -170,7 +170,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 					return err
 				}
 			}
-			path, err := utils.CreateTarGzArchive(p)
+			path, err := utils.CreateTarGzArchive("", p)
 			if err != nil {
 				return err
 			}
@@ -218,6 +218,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 }
 
 const (
+	// depsKey is the key for deps in the rulesfiles.
 	depsKey = "required_plugin_versions"
 	// engineKey is the key in the rulesfiles.
 	engineKey = "required_engine_version"
@@ -243,10 +244,10 @@ func rulesConfigLayer(logger *pterm.Logger, filePath string, artifactOptions *op
 		return nil, fmt.Errorf("unable to unmarshal rulesfile %s: %w", filePath, err)
 	}
 
-	// Parse the plugin dependency.
+	// Parse the artifact dependencies.
 	// Check if the user has provided any.
 	if len(artifactOptions.Dependencies) != 0 {
-		logger.Info("Dependencies provided by user")
+		logger.Info("Dependencies provided by user", logger.Args("rulesfile", filePath))
 		if err = config.ParseDependencies(artifactOptions.Dependencies...); err != nil {
 			return nil, err
 		}
