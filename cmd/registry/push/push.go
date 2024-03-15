@@ -123,8 +123,8 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	ref := args[0]
 	paths := args[1:]
 	// When creating the tar.gz archives we need to remove them after we are done.
-	// We save the temporary dir where they live here.
-	var toBeDeleted string
+	// Holds the path for each temporary dir.
+	var toBeDeletedTmpDirs []string
 	logger := o.Printer.Logger
 
 	registry, err := utils.GetRegistryFromRef(ref)
@@ -144,10 +144,13 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 
 	logger.Info("Preparing to push artifact", o.Printer.Logger.Args("name", args[0], "type", o.ArtifactType))
 
-	// Make sure to remove temporary working dir.
+	// Make sure to remove temporary working dirs.
 	defer func() {
-		if err := os.RemoveAll(toBeDeleted); err != nil {
-			logger.Warn("Unable to remove temporary dir", logger.Args("name", toBeDeleted, "error", err.Error()))
+		for _, dir := range toBeDeletedTmpDirs {
+			logger.Debug("Removing temporary dir", logger.Args("name", dir))
+			if err := os.RemoveAll(dir); err != nil {
+				logger.Warn("Unable to remove temporary dir", logger.Args("name", dir, "error", err.Error()))
+			}
 		}
 	}()
 
@@ -172,9 +175,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 				return err
 			}
 			paths[i] = path
-			if toBeDeleted == "" {
-				toBeDeleted = filepath.Dir(path)
-			}
+			toBeDeletedTmpDirs = append(toBeDeletedTmpDirs, filepath.Dir(path))
 		}
 	}
 
