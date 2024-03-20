@@ -16,11 +16,13 @@
 package drivertype
 
 import (
-	"fmt"
-	"github.com/blang/semver"
+	// Needed for go:linkname to be able to access a private function from cilium/ebpf/features.
+	_ "unsafe"
+
+	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/features"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
-	"os/exec"
 
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -54,22 +56,31 @@ func (m *modernBpf) HasArtifacts() bool {
 	return false
 }
 
-//nolint:gocritic // the method shall not be able to modify kr
-func (m *modernBpf) Supported(kr kernelrelease.KernelRelease) bool {
-	bpftool, err := exec.LookPath("bpftool")
-	if err != nil {
-		// We should be pretty sure that modern bpf will work on kernels >= 5.8.0
-		return kr.GTE(semver.MustParse("5.8.0"))
-	}
-	// Test with bpftool that the kernel exposes the features we need.
-	// Note that this is not 100% guarantee to work in all cases since
-	// "program_type tracing" might pass even if the exactly program we need is not supported.
-	// TODO: test with https://github.com/cilium/ebpf
-	bpftoolCmd := fmt.Sprintf(`%s feature probe kernel | grep -q `+
-		`-e "map_type ringbuf is available" `+
-		`-e "program_type tracing is available"`, bpftool)
+// Get the private symbol `probeProgram` that will be used to test for
+// type Tracing, attachType AttachTraceRawTp program availability.
+//
+//go:linkname probeProgram github.com/cilium/ebpf/features.probeProgram
+func probeProgram(spec *ebpf.ProgramSpec) error
 
-	_, err = exec.Command("bash", "-c", bpftoolCmd).CombinedOutput()
+//nolint:gocritic // the method shall not be able to modify kr
+func (m *modernBpf) Supported(_ kernelrelease.KernelRelease) bool {
+	// We can't directly use this because it uses the wrong attachtype.
+	// err := features.HaveProgramType(ebpf.Tracing)
+	// Therefore, we need to manually build a feature test.
+	// Empty tracing program that just returns 0
+	progSpec := &ebpf.ProgramSpec{
+		Name:       "my_tracing_prog",
+		Type:       ebpf.Tracing,
+		AttachType: ebpf.AttachTraceRawTp,
+		AttachTo:   "sys_enter",
+		License:    "GPL",
+	}
+	err := probeProgram(progSpec)
+	if err != nil {
+		return false
+	}
+
+	err = features.HaveMapType(ebpf.RingBuf)
 	return err == nil
 }
 

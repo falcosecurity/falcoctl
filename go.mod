@@ -1,11 +1,14 @@
 module github.com/falcosecurity/falcoctl
 
-go 1.21
+go 1.21.0
+
+toolchain go1.22.1
 
 require (
 	cloud.google.com/go/storage v1.39.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
+	github.com/cilium/ebpf v0.13.2
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/docker/cli v25.0.4+incompatible
 	github.com/docker/docker v25.0.4+incompatible
