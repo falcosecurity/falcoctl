@@ -22,7 +22,10 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+
 	"github.com/falcosecurity/falcoctl/internal/config"
+	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 )
 
@@ -49,6 +52,8 @@ type Driver struct {
 	Repos    []string
 	Version  string
 	HostRoot string
+	Distro   driverdistro.Distro
+	Kr       kernelrelease.KernelRelease
 }
 
 // ToDriverConfig maps a Driver options to Driver config struct.
