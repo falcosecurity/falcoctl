@@ -69,19 +69,16 @@ func (m *modernBpf) Supported(_ kernelrelease.KernelRelease) bool {
 	// Therefore, we need to manually build a feature test.
 	// Empty tracing program that just returns 0
 	progSpec := &ebpf.ProgramSpec{
-		Name:       "my_tracing_prog",
 		Type:       ebpf.Tracing,
 		AttachType: ebpf.AttachTraceRawTp,
 		AttachTo:   "sys_enter",
-		License:    "GPL",
 	}
 	err := probeProgram(progSpec)
 	if err != nil {
 		return false
 	}
 
-	err = features.HaveMapType(ebpf.RingBuf)
-	return err == nil
+	return features.HaveMapType(ebpf.RingBuf) == nil
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
