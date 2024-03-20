@@ -53,5 +53,5 @@ func Parse(driverType string) (DriverType, error) {
 	if dType, ok := driverTypes[driverType]; ok {
 		return dType, nil
 	}
-	return nil, fmt.Errorf("wrong driver type specified: %s", driverType)
+	return nil, fmt.Errorf("unsupported driver type specified: %s", driverType)
 }
