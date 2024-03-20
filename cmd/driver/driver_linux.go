@@ -45,7 +45,11 @@ import (
 func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	driver := &options.Driver{}
 	driverTypesEnum := options.NewDriverTypes()
-	var driverTypesStr []string
+	var (
+		driverTypesStr      []string
+		driverKernelRelease string
+		driverKernelVersion string
+	)
 
 	cmd := &cobra.Command{
 		Use:                   "driver",
@@ -138,34 +142,35 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 			}
 
 			// Step 2: fetch system info (kernel release/version and distro)
-			info, err := driverkernel.FetchInfo("", "")
+			var err error
+			driver.Kr, err = driverkernel.FetchInfo(driverKernelRelease, driverKernelVersion)
 			if err != nil {
 				return err
 			}
 			opt.Printer.Logger.Debug("Fetched kernel info", opt.Printer.Logger.Args(
-				"arch", info.Architecture.ToNonDeb(),
-				"kernel release", info.String(),
-				"kernel version", info.KernelVersion))
+				"arch", driver.Kr.Architecture.ToNonDeb(),
+				"kernel release", driver.Kr.String(),
+				"kernel version", driver.Kr.KernelVersion))
 
-			d, err := driverdistro.Discover(info, driver.HostRoot)
+			driver.Distro, err = driverdistro.Discover(driver.Kr, driver.HostRoot)
 			if err != nil {
 				if !errors.Is(err, driverdistro.ErrUnsupported) {
 					return err
 				}
 				opt.Printer.Logger.Debug("Detected an unsupported target system; falling back at generic logic.")
 			}
-			opt.Printer.Logger.Debug("Discovered distro", opt.Printer.Logger.Args("target", d))
+			opt.Printer.Logger.Debug("Discovered distro", opt.Printer.Logger.Args("target", driver.Distro))
 
-			driver.Type = d.PreferredDriver(info, allowedDriverTypes)
+			driver.Type = driver.Distro.PreferredDriver(driver.Kr, allowedDriverTypes)
 			if driver.Type == nil {
 				return fmt.Errorf("no supported driver found for distro: %s, "+
 					"kernelrelease %s, "+
 					"kernelversion %s, "+
 					"arch %s",
-					d.String(),
-					info.String(),
-					info.KernelVersion,
-					info.Architecture.ToNonDeb())
+					driver.Distro.String(),
+					driver.Kr.String(),
+					driver.Kr.KernelVersion,
+					driver.Kr.Architecture.ToNonDeb())
 			}
 			opt.Printer.Logger.Debug("Detected supported driver", opt.Printer.Logger.Args("type", driver.Type.String()))
 
@@ -184,6 +189,16 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	cmd.PersistentFlags().StringSliceVar(&driver.Repos, "repo", config.DefaultDriver.Repos, "Driver repo to be used.")
 	cmd.PersistentFlags().StringVar(&driver.Name, "name", config.DefaultDriver.Name, "Driver name to be used.")
 	cmd.PersistentFlags().StringVar(&driver.HostRoot, "host-root", config.DefaultDriver.HostRoot, "Driver host root to be used.")
+	cmd.PersistentFlags().StringVar(&driverKernelRelease,
+		"kernelrelease",
+		"",
+		"Specify the kernel release for which to download/build the driver in the same format used by 'uname -r' "+
+			"(e.g. '6.1.0-10-cloud-amd64')")
+	cmd.PersistentFlags().StringVar(&driverKernelVersion,
+		"kernelversion",
+		"",
+		"Specify the kernel version for which to download/build the driver in the same format used by 'uname -v' "+
+			"(e.g. '#1 SMP PREEMPT_DYNAMIC Debian 6.1.38-2 (2023-07-27)')")
 
 	cmd.AddCommand(driverinstall.NewDriverInstallCmd(ctx, opt, driver))
 	cmd.AddCommand(driverconfig.NewDriverConfigCmd(ctx, opt, driver))

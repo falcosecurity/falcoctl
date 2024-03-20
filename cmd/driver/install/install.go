@@ -29,7 +29,6 @@ import (
 	"golang.org/x/net/context"
 
 	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
-	driverkernel "github.com/falcosecurity/falcoctl/pkg/driver/kernel"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -42,10 +41,8 @@ type driverDownloadOptions struct {
 type driverInstallOptions struct {
 	*options.Common
 	*options.Driver
-	Download            bool
-	Compile             bool
-	DriverKernelRelease string
-	DriverKernelVersion string
+	Download bool
+	Compile  bool
 	driverDownloadOptions
 }
 
@@ -81,16 +78,6 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 
 	cmd.Flags().BoolVar(&o.Download, "download", true, "Whether to enable download of prebuilt drivers")
 	cmd.Flags().BoolVar(&o.Compile, "compile", true, "Whether to enable local compilation of drivers")
-	cmd.Flags().StringVar(&o.DriverKernelRelease,
-		"kernelrelease",
-		"",
-		"Specify the kernel release for which to download/build the driver in the same format used by 'uname -r' "+
-			"(e.g. '6.1.0-10-cloud-amd64')")
-	cmd.Flags().StringVar(&o.DriverKernelVersion,
-		"kernelversion",
-		"",
-		"Specify the kernel version for which to download/build the driver in the same format used by 'uname -v' "+
-			"(e.g. '#1 SMP PREEMPT_DYNAMIC Debian 6.1.38-2 (2023-07-27)')")
 	cmd.Flags().BoolVar(&o.InsecureDownload, "http-insecure", false, "Whether you want to allow insecure downloads or not")
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
 	cmd.Flags().StringVar(&o.HTTPHeaders, "http-headers",
@@ -111,20 +98,16 @@ func setDefaultHTTPClientOpts(downloadOptions driverDownloadOptions) {
 
 // RunDriverInstall implements the driver install command.
 func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, error) {
-	kr, err := driverkernel.FetchInfo(o.DriverKernelRelease, o.DriverKernelVersion)
-	if err != nil {
-		return "", err
-	}
-
 	o.Printer.Logger.Info("Running falcoctl driver install", o.Printer.Logger.Args(
 		"driver version", o.Driver.Version,
 		"driver type", o.Driver.Type,
 		"driver name", o.Driver.Name,
 		"compile", o.Compile,
 		"download", o.Download,
-		"arch", kr.Architecture.ToNonDeb(),
-		"kernel release", kr.String(),
-		"kernel version", kr.KernelVersion))
+		"target", o.Distro.String(),
+		"arch", o.Kr.Architecture.ToNonDeb(),
+		"kernel release", o.Kr.String(),
+		"kernel version", o.Kr.KernelVersion))
 
 	if !o.Driver.Type.HasArtifacts() {
 		o.Printer.Logger.Info("No artifacts needed for the selected driver.")
@@ -136,17 +119,13 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		return "", nil
 	}
 
-	d, err := driverdistro.Discover(kr, o.Driver.HostRoot)
-	if err != nil {
-		if errors.Is(err, driverdistro.ErrUnsupported) && o.Compile {
-			o.Download = false
-			o.Printer.Logger.Info(
-				"Detected an unsupported target system, please get in touch with the Falco community. Trying to compile anyway.")
-		} else {
-			return "", fmt.Errorf("detected an unsupported target system, please get in touch with the Falco community")
-		}
+	if o.Distro.String() == driverdistro.UndeterminedDistro && o.Compile {
+		o.Download = false
+		o.Printer.Logger.Info(
+			"Detected an unsupported target system, please get in touch with the Falco community. Trying to compile anyway.")
+	} else {
+		return "", fmt.Errorf("detected an unsupported target system, please get in touch with the Falco community")
 	}
-	o.Printer.Logger.Info("Found distro", o.Printer.Logger.Args("target", d))
 
 	var (
 		dest string
@@ -156,7 +135,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 	if !o.Printer.DisableStyling {
 		o.Printer.Spinner, _ = o.Printer.Spinner.Start("Cleaning up existing drivers")
 	}
-	err = o.Driver.Type.Cleanup(o.Printer.WithWriter(&buf), o.Driver.Name)
+	err := o.Driver.Type.Cleanup(o.Printer.WithWriter(&buf), o.Driver.Name)
 	if o.Printer.Spinner != nil {
 		_ = o.Printer.Spinner.Stop()
 	}
@@ -178,7 +157,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if !o.Printer.DisableStyling {
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to download the driver")
 		}
-		dest, err = driverdistro.Download(ctx, d, o.Printer.WithWriter(&buf), kr, o.Driver.Name,
+		dest, err = driverdistro.Download(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name,
 			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
@@ -211,7 +190,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if !o.Printer.DisableStyling {
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to build the driver")
 		}
-		dest, err = driverdistro.Build(ctx, d, o.Printer.WithWriter(&buf), kr, o.Driver.Name, o.Driver.Type, o.Driver.Version)
+		dest, err = driverdistro.Build(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name, o.Driver.Type, o.Driver.Version)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}

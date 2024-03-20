@@ -16,14 +16,11 @@
 package driverprintenv
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 
-	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
-	driverkernel "github.com/falcosecurity/falcoctl/pkg/driver/kernel"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -45,7 +42,7 @@ func NewDriverPrintenvCmd(ctx context.Context, opt *options.Common, driver *opti
 		Short:                 "[Preview] Print env vars",
 		Long: `[Preview] Print variables used by driver as env vars.
 ** This command is in preview and under development. **`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return o.RunDriverPrintenv(ctx)
 		},
 	}
@@ -58,27 +55,12 @@ func (o *driverPrintenvOptions) RunDriverPrintenv(_ context.Context) error {
 	o.Printer.DefaultText.Printf("DRIVER_VERSION=%q\n", o.Driver.Version)
 	o.Printer.DefaultText.Printf("DRIVER_NAME=%q\n", o.Driver.Name)
 	o.Printer.DefaultText.Printf("HOST_ROOT=%q\n", o.Driver.HostRoot)
-
-	kr, err := driverkernel.FetchInfo("", "")
-	if err != nil {
-		return err
-	}
-
-	d, err := driverdistro.Discover(kr, o.Driver.HostRoot)
-	if err != nil {
-		if !errors.Is(err, driverdistro.ErrUnsupported) {
-			return err
-		}
-	}
-	o.Printer.DefaultText.Printf("TARGET_ID=%q\n", d.String())
-
-	o.Printer.DefaultText.Printf("ARCH=%q\n", kr.Architecture.ToNonDeb())
-	o.Printer.DefaultText.Printf("KERNEL_RELEASE=%q\n", kr.String())
-	o.Printer.DefaultText.Printf("KERNEL_VERSION=%q\n", kr.KernelVersion)
-
-	fixedKr := d.FixupKernel(kr)
+	o.Printer.DefaultText.Printf("TARGET_ID=%q\n", o.Distro.String())
+	o.Printer.DefaultText.Printf("ARCH=%q\n", o.Kr.Architecture.ToNonDeb())
+	o.Printer.DefaultText.Printf("KERNEL_RELEASE=%q\n", o.Kr.String())
+	o.Printer.DefaultText.Printf("KERNEL_VERSION=%q\n", o.Kr.KernelVersion)
+	fixedKr := o.Distro.FixupKernel(o.Kr)
 	o.Printer.DefaultText.Printf("FIXED_KERNEL_RELEASE=%q\n", fixedKr.String())
 	o.Printer.DefaultText.Printf("FIXED_KERNEL_VERSION=%q\n", fixedKr.KernelVersion)
-
 	return nil
 }

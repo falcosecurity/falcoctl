@@ -39,9 +39,10 @@ import (
 )
 
 const (
-	// DefaultFalcoRepo is the default repository provided by falcosecurity to download driver artifacts from.
 	kernelDirEnv            = "KERNELDIR"
 	kernelSrcDownloadFolder = "kernel-sources"
+	// UndeterminedDistro is the string used for the generic distro object returned when we cannot determine the distro.
+	UndeterminedDistro = "undetermined"
 )
 
 var (
@@ -93,7 +94,7 @@ func Discover(kr kernelrelease.KernelRelease, hostroot string) (Distro, error) {
 
 	// Return a generic distro to try the build
 	distro = &generic{}
-	if err = distro.init(kr, "undetermined", nil); err != nil {
+	if err = distro.init(kr, UndeterminedDistro, nil); err != nil {
 		return nil, err
 	}
 	return distro, ErrUnsupported
