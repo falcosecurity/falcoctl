@@ -112,3 +112,20 @@ func (c *cos) customizeBuild(ctx context.Context,
 	}
 	return env, nil
 }
+
+// PreferredDriver is reimplemented since COS does not support kmod
+//
+//nolint:gocritic // the method shall not be able to modify kr
+func (c *cos) PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes []drivertype.DriverType) drivertype.DriverType {
+	for _, allowedDrvType := range allowedDriverTypes {
+		if allowedDrvType.String() == drivertype.TypeKmod {
+			continue
+		default:
+			break
+		}
+		if allowedDrvType.Supported(kr) {
+			return allowedDrvType
+		}
+	}
+	return nil
+}
