@@ -39,18 +39,18 @@ Flags:
       --http-headers string     Optional comma-separated list of headers for the http GET request (e.g. --http-headers='x-emc-namespace: default,Proxy-Authenticate: Basic'). Not necessary if default repo is used
       --http-insecure           Whether you want to allow insecure downloads or not
       --http-timeout duration   Timeout for each http try (default 1m0s)
-      --kernelrelease string    Specify the kernel release for which to download/build the driver in the same format used by 'uname -r' (e.g. '6.1.0-10-cloud-amd64')
-      --kernelversion string    Specify the kernel version for which to download/build the driver in the same format used by 'uname -v' (e.g. '#1 SMP PREEMPT_DYNAMIC Debian 6.1.38-2 (2023-07-27)')
 
 Global Flags:
-      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --host-root string    Driver host root to be used. (default "/")
-      --log-format string   Set formatting for logs (color, text, json) (default "color")
-      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
-      --name string         Driver name to be used. (default "falco")
-      --repo strings        Driver repo to be used. (default [https://download.falco.org/driver])
-      --type string         Driver type to be used (auto, ebpf, kmod, modern_ebpf) (default "kmod")
-      --version string      Driver version to be used.
+      --config string          config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --host-root string       Driver host root to be used. (default "/")
+      --kernelrelease string   Specify the kernel release for which to download/build the driver in the same format used by 'uname -r' (e.g. '6.1.0-10-cloud-amd64')
+      --kernelversion string   Specify the kernel version for which to download/build the driver in the same format used by 'uname -v' (e.g. '#1 SMP PREEMPT_DYNAMIC Debian 6.1.38-2 (2023-07-27)')
+      --log-format string      Set formatting for logs (color, text, json) (default "color")
+      --log-level string       Set level for logs (info, warn, debug, trace) (default "info")
+      --name string            Driver name to be used. (default "falco")
+      --repo strings           Driver repo to be used. (default [https://download.falco.org/driver])
+      --type strings           Driver types allowed in descending priority order (ebpf, kmod, modern_ebpf) (default [modern_ebpf,ebpf,kmod])
+      --version string         Driver version to be used.
 `
 
 var addAssertFailedBehavior = func(specificError string) {
@@ -115,8 +115,7 @@ var _ = Describe("install", func() {
 			BeforeEach(func() {
 				args = []string{driverCmd, installCmd, "--config", configFile, "--type", "foo", "--version", "1.0.0+driver"}
 			})
-			addAssertFailedBehavior(`ERROR invalid argument "foo" for "--type" flag: invalid argument "foo",` +
-				` please provide one of (auto, ebpf, kmod, modern_ebpf)`)
+			addAssertFailedBehavior(`ERROR unsupported driver type specified: foo`)
 		})
 	})
 
