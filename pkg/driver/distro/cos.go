@@ -120,8 +120,6 @@ func (c *cos) PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes
 	for _, allowedDrvType := range allowedDriverTypes {
 		if allowedDrvType.String() == drivertype.TypeKmod {
 			continue
-		default:
-			break
 		}
 		if allowedDrvType.Supported(kr) {
 			return allowedDrvType

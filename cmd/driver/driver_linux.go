@@ -166,9 +166,9 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 					info.String(),
 					info.KernelVersion,
 					info.Architecture.ToNonDeb())
-			} else {
-				opt.Printer.Logger.Debug("Detected supported driver", opt.Printer.Logger.Args("type", driver.Type.String()))
 			}
+			opt.Printer.Logger.Debug("Detected supported driver", opt.Printer.Logger.Args("type", driver.Type.String()))
+
 			// If empty, try to load it automatically from /usr/src sub folders,
 			// using the most recent (ie: the one with greatest semver) driver version.
 			if driver.Version == "" {
@@ -178,7 +178,8 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringSliceVar(&driverTypesStr, "type", config.DefaultDriver.Type, "Driver types allowed in descending priority order "+driverTypesEnum.Allowed())
+	cmd.PersistentFlags().StringSliceVar(&driverTypesStr, "type", config.DefaultDriver.Type,
+		"Driver types allowed in descending priority order "+driverTypesEnum.Allowed())
 	cmd.PersistentFlags().StringVar(&driver.Version, "version", config.DefaultDriver.Version, "Driver version to be used.")
 	cmd.PersistentFlags().StringSliceVar(&driver.Repos, "repo", config.DefaultDriver.Repos, "Driver repo to be used.")
 	cmd.PersistentFlags().StringVar(&driver.Name, "name", config.DefaultDriver.Name, "Driver name to be used.")
