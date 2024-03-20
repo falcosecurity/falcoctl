@@ -36,7 +36,9 @@ func NewDriverTypes() *DriverTypes {
 	types := drivertype.GetTypes()
 	sort.Strings(types)
 	return &DriverTypes{
-		Enum: NewEnum(types, drivertype.TypeKmod),
+		// Default value is not used.
+		// This enum is only used to print allowed values.
+		Enum: NewEnum(types, drivertype.TypeModernBpf),
 	}
 }
 
@@ -52,7 +54,7 @@ type Driver struct {
 // ToDriverConfig maps a Driver options to Driver config struct.
 func (d *Driver) ToDriverConfig() *config.Driver {
 	return &config.Driver{
-		Type:     d.Type.String(),
+		Type:     []string{d.Type.String()},
 		Name:     d.Name,
 		Repos:    d.Repos,
 		Version:  d.Version,

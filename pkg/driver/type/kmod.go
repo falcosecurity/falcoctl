@@ -165,6 +165,11 @@ func (k *kmod) HasArtifacts() bool {
 	return true
 }
 
+//nolint:gocritic // the method shall not be able to modify kr
+func (k *kmod) Supported(kr kernelrelease.KernelRelease) bool {
+	return kr.SupportsModule()
+}
+
 func createDKMSMakeFile(gcc string) error {
 	file, err := os.OpenFile("/tmp/falco-dkms-make", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o777) //nolint:gosec // we need the file to be executable
 	if err != nil {

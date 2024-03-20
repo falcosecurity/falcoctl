@@ -44,7 +44,8 @@ import (
 // NewDriverCmd returns the driver command.
 func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	driver := &options.Driver{}
-	driverTypes := options.NewDriverTypes()
+	driverTypesEnum := options.NewDriverTypes()
+	var driverTypesStr []string
 
 	cmd := &cobra.Command{
 		Use:                   "driver",
@@ -115,43 +116,58 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag type")
 			} else if !f.Changed && viper.IsSet(config.DriverTypeKey) {
-				val := viper.Get(config.DriverTypeKey)
-				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+				val, err := config.DriverTypes()
+				if err != nil {
+					return err
+				}
+				if err := cmd.Flags().Set(f.Name, strings.Join(val, ",")); err != nil {
 					return fmt.Errorf("unable to overwrite \"type\" flag: %w", err)
 				}
 			}
 
-			if driverTypes.String() != drivertype.TypeAuto {
-				var err error
+			// Logic to discover correct driver to be used
+			// Step 1: build up allowed driver types
+			allowedDriverTypes := make([]drivertype.DriverType, 0)
+			for _, dTypeStr := range driverTypesStr {
 				// Ok driver type was enforced by the user
-				driver.Type, err = drivertype.Parse(driverTypes.String())
+				drvType, err := drivertype.Parse(dTypeStr)
 				if err != nil {
 					return err
 				}
+				allowedDriverTypes = append(allowedDriverTypes, drvType)
+			}
+
+			// Step 2: fetch system info (kernel release/version and distro)
+			info, err := driverkernel.FetchInfo("", "")
+			if err != nil {
+				return err
+			}
+			opt.Printer.Logger.Debug("Fetched kernel info", opt.Printer.Logger.Args(
+				"arch", info.Architecture.ToNonDeb(),
+				"kernel release", info.String(),
+				"kernel version", info.KernelVersion))
+
+			d, err := driverdistro.Discover(info, driver.HostRoot)
+			if err != nil {
+				if !errors.Is(err, driverdistro.ErrUnsupported) {
+					return err
+				}
+				opt.Printer.Logger.Debug("Detected an unsupported target system; falling back at generic logic.")
+			}
+			opt.Printer.Logger.Debug("Discovered distro", opt.Printer.Logger.Args("target", d))
+
+			driver.Type = d.PreferredDriver(info, allowedDriverTypes)
+			if driver.Type == nil {
+				return fmt.Errorf("no supported driver found for distro: %s, "+
+					"kernelrelease %s, "+
+					"kernelversion %s, "+
+					"arch %s",
+					d.String(),
+					info.String(),
+					info.KernelVersion,
+					info.Architecture.ToNonDeb())
 			} else {
-				// automatic logic
-				info, err := driverkernel.FetchInfo("", "")
-				if err != nil {
-					return err
-				}
-				opt.Printer.Logger.Debug("Fetched kernel info", opt.Printer.Logger.Args(
-					"arch", info.Architecture.ToNonDeb(),
-					"kernel release", info.String(),
-					"kernel version", info.KernelVersion))
-
-				d, err := driverdistro.Discover(info, driver.HostRoot)
-				if err != nil {
-					if !errors.Is(err, driverdistro.ErrUnsupported) {
-						return err
-					}
-					opt.Printer.Logger.Info("Detected an unsupported target system; falling back at generic logic.")
-				}
-				opt.Printer.Logger.Debug("Discovered distro", opt.Printer.Logger.Args("target", d))
-
-				driver.Type = d.PreferredDriver(info)
-				if driver.Type == nil {
-					return fmt.Errorf("automatic driver selection failed")
-				}
+				opt.Printer.Logger.Debug("Detected supported driver", opt.Printer.Logger.Args("type", driver.Type.String()))
 			}
 			// If empty, try to load it automatically from /usr/src sub folders,
 			// using the most recent (ie: the one with greatest semver) driver version.
@@ -162,7 +178,7 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().Var(driverTypes, "type", "Driver type to be used "+driverTypes.Allowed())
+	cmd.PersistentFlags().StringSliceVar(&driverTypesStr, "type", config.DefaultDriver.Type, "Driver types allowed in descending priority order "+driverTypesEnum.Allowed())
 	cmd.PersistentFlags().StringVar(&driver.Version, "version", config.DefaultDriver.Version, "Driver version to be used.")
 	cmd.PersistentFlags().StringSliceVar(&driver.Repos, "repo", config.DefaultDriver.Repos, "Driver repo to be used.")
 	cmd.PersistentFlags().StringVar(&driver.Name, "name", config.DefaultDriver.Name, "Driver name to be used.")

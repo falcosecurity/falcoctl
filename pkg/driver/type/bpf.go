@@ -74,6 +74,11 @@ func (b *bpf) HasArtifacts() bool {
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
+func (b *bpf) Supported(kr kernelrelease.KernelRelease) bool {
+	return kr.SupportsProbe()
+}
+
+//nolint:gocritic // the method shall not be able to modify kr
 func (b *bpf) Build(ctx context.Context,
 	printer *output.Printer,
 	_ kernelrelease.KernelRelease,

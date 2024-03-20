@@ -25,9 +25,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-// TypeAuto enables a smart automatic driver selection logic instead of using a fixed driver type.
-const TypeAuto = "auto"
-
 var driverTypes = map[string]DriverType{}
 
 // DriverType is the interface that wraps driver types.
@@ -39,6 +36,7 @@ type DriverType interface {
 	HasArtifacts() bool
 	Build(ctx context.Context, printer *output.Printer, kr kernelrelease.KernelRelease,
 		driverName, driverVersion string, env map[string]string) (string, error)
+	Supported(kr kernelrelease.KernelRelease) bool
 }
 
 // GetTypes return the list of supported driver types.
@@ -47,9 +45,6 @@ func GetTypes() []string {
 	for key := range driverTypes {
 		driverTypesSlice = append(driverTypesSlice, key)
 	}
-	// auto is a sentinel value to enable automatic driver selection logic,
-	// but it is not mapped to any DriverType
-	driverTypesSlice = append(driverTypesSlice, TypeAuto)
 	return driverTypesSlice
 }
 

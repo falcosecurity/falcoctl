@@ -60,7 +60,7 @@ type Distro interface {
 	FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease // private
 	customizeBuild(ctx context.Context, printer *output.Printer, driverType drivertype.DriverType,
 		kr kernelrelease.KernelRelease) (map[string]string, error)
-	PreferredDriver(kr kernelrelease.KernelRelease) drivertype.DriverType
+	PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes []drivertype.DriverType) drivertype.DriverType
 	fmt.Stringer
 }
 

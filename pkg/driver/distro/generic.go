@@ -18,7 +18,6 @@ package driverdistro
 import (
 	"regexp"
 
-	"github.com/blang/semver"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
@@ -68,16 +67,11 @@ func (g *generic) customizeBuild(_ context.Context,
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
-func (g *generic) PreferredDriver(kr kernelrelease.KernelRelease) drivertype.DriverType {
-	// Deadly simple default automatic selection
-	var dType drivertype.DriverType
-	switch {
-	case kr.GTE(semver.MustParse("5.8.0")):
-		dType, _ = drivertype.Parse(drivertype.TypeModernBpf)
-	case kr.SupportsProbe():
-		dType, _ = drivertype.Parse(drivertype.TypeBpf)
-	default:
-		dType, _ = drivertype.Parse(drivertype.TypeKmod)
+func (g *generic) PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes []drivertype.DriverType) drivertype.DriverType {
+	for _, allowedDrvType := range allowedDriverTypes {
+		if allowedDrvType.Supported(kr) {
+			return allowedDrvType
+		}
 	}
-	return dType
+	return nil
 }
