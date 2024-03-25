@@ -207,11 +207,13 @@ func Build(ctx context.Context,
 	// If customizeBuild did not set any KERNELDIR env variable,
 	// try to load kernel headers urls from driverkit.
 	if _, found := env[drivertype.KernelDirEnv]; !found {
+		printer.Logger.Debug("Trying to automatically fetch kernel headers.")
 		kernelHeadersPath, cleaner, err := loadKernelHeadersFromDk(d.String(), kr)
 		if cleaner != nil {
 			defer cleaner()
 		}
 		if err == nil {
+			printer.Logger.Debug("Downloaded and extracted kernel headers.", printer.Logger.Args("path", kernelHeadersPath))
 			env[drivertype.KernelDirEnv] = kernelHeadersPath
 		}
 	}
