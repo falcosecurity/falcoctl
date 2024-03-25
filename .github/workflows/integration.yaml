@@ -96,7 +96,7 @@ jobs:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
       packages: write # for uploading attestations.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.10.0
     with:
       image: docker.io/falcosecurity/falcoctl
       # The image digest is used to prevent TOCTOU issues.
@@ -138,7 +138,7 @@ jobs:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
       packages: write # for uploading attestations.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.10.0
     with:
       image: public.ecr.aws/falcosecurity/falcoctl
       # The image digest is used to prevent TOCTOU issues.
