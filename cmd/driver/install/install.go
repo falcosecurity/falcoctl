@@ -119,12 +119,14 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		return "", nil
 	}
 
-	if o.Distro.String() == driverdistro.UndeterminedDistro && o.Compile {
-		o.Download = false
-		o.Printer.Logger.Info(
-			"Detected an unsupported target system, please get in touch with the Falco community. Trying to compile anyway.")
-	} else {
-		return "", fmt.Errorf("detected an unsupported target system, please get in touch with the Falco community")
+	if o.Distro.String() == driverdistro.UndeterminedDistro {
+		if o.Compile {
+			o.Download = false
+			o.Printer.Logger.Info(
+				"Detected an unsupported target system, please get in touch with the Falco community. Trying to compile anyway.")
+		} else {
+			return "", fmt.Errorf("detected an unsupported target system, please get in touch with the Falco community")
+		}
 	}
 
 	var (
