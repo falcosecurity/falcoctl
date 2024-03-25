@@ -23,6 +23,13 @@ sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
 > NOTE: Make sure */usr/local/bin* is in your PATH environment variable.
 
 #### MacOS
+The easiest way to install on MacOS is via `Homebrew`:
+```bash
+brew install falcoctl
+```
+
+Alternatively, you can download directly from the source:
+
 ##### Intel
 ```bash
 LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
