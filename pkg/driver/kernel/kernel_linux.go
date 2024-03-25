@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,8 +40,11 @@ func FetchInfo(enforcedKR, enforcedKV string) (kernelrelease.KernelRelease, erro
 
 		kr = string(bytes.Trim(u.Release[:], "\x00"))
 		kv = string(bytes.Trim(u.Version[:], "\x00"))
-	} else {
+	}
+	if enforcedKR != "" {
 		kr = enforcedKR
+	}
+	if enforcedKV != "" {
 		kv = enforcedKV
 	}
 	kernelRel := kernelrelease.FromString(kr)
