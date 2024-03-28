@@ -54,11 +54,7 @@ func (u *ubuntu) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.Kerne
 	// from the following `uname -v` result
 	// `#26~22.04.1-Ubuntu SMP Mon Apr 24 01:58:15 UTC 2023`
 	// we obtain the kernelversion`26~22.04.1`.
-	// NOTE: driverkernel.FetchInfo() already trims leading "#"
-	// and everything starting from the first whitespace,
-	// so that eg: we receive "26~22.04.1-Ubuntu",
-	// therefore we only need to drop "-Ubuntu" suffix
-	// Take eg: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
+	// Another example: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
 	kv := strings.TrimLeft(kr.KernelVersion, "#")
 	kv = strings.Split(kv, " ")[0]
 	kr.KernelVersion = strings.TrimSuffix(kv, "-Ubuntu")

@@ -206,15 +206,17 @@ func Build(ctx context.Context,
 
 	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
 
-	// TODO shall we call fixupkernel here?
-	fixedKr := d.FixupKernel(kr)
 	ro := cmd.NewRootOptions()
-	ro.Architecture = fixedKr.Architecture.String()
+	ro.Architecture = kr.Architecture.String()
 	ro.DriverVersion = driverVer
+	// We pass just the fixed kernelversion down to driverkit.
+	// it is only used by ubuntu builder,
+	// all the other builders do not need any kernelversion info.
+	fixedKr := d.FixupKernel(kr)
 	ro.KernelVersion = fixedKr.KernelVersion
 	ro.ModuleDriverName = driverName
 	ro.ModuleDeviceName = driverName
-	ro.KernelRelease = fixedKr.String()
+	ro.KernelRelease = kr.String()
 	ro.Target = d.String()
 	ro.Output = driverType.ToOutput(destPath)
 
