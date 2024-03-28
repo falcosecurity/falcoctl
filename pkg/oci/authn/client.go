@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"time"
 
-	credentials "github.com/oras-project/oras-credentials-go"
 	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras-go/v2/registry/remote/credentials"
 )
 
 const (
