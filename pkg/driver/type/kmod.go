@@ -19,14 +19,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
-	"golang.org/x/net/context"
 
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -162,96 +160,8 @@ func (k *kmod) Supported(kr kernelrelease.KernelRelease) bool {
 	return kr.SupportsModule()
 }
 
-func createDKMSMakeFile(gcc string) error {
-	file, err := os.OpenFile("/tmp/falco-dkms-make", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o777) //nolint:gosec // we need the file to be executable
-	if err != nil {
-		return err
+func (k *kmod) ToOutput(destPath string) cmd.OutputOptions {
+	return cmd.OutputOptions{
+		Module: destPath,
 	}
-	defer file.Close()
-
-	_, err = fmt.Fprintln(file, "#!/usr/bin/env bash")
-	if err == nil {
-		_, err = fmt.Fprintln(file, `make CC=`+gcc+` $@`)
-	}
-	return err
-}
-
-//nolint:gocritic // the method shall not be able to modify kr
-func (k *kmod) Build(ctx context.Context,
-	printer *output.Printer,
-	kr kernelrelease.KernelRelease,
-	driverName, driverVersion string,
-	env map[string]string,
-) (string, error) {
-	// Skip dkms on UEK hosts because it will always fail
-	if strings.Contains(kr.String(), "uek") {
-		printer.Logger.Warn("Skipping because the dkms install always fail (on UEK hosts).")
-		return "", fmt.Errorf("unsupported on uek hosts")
-	}
-
-	out, err := exec.Command("which", "gcc").Output()
-	if err != nil {
-		return "", err
-	}
-	gccDir := filepath.Dir(string(out))
-
-	gccs, err := filepath.Glob(gccDir + "/gcc*")
-	if err != nil {
-		return "", err
-	}
-
-	for _, gcc := range gccs {
-		// Filter away gcc-{ar,nm,...}
-		// Only gcc compiler has `-print-search-dirs` option.
-		gccSearchArgs := fmt.Sprintf(`%s -print-search-dirs 2>&1 | grep "install:"`, gcc)
-		_, err = exec.Command("bash", "-c", gccSearchArgs).Output() //nolint:gosec // false positive
-		if err != nil {
-			continue
-		}
-
-		printer.Logger.Info("Trying to dkms install module.", printer.Logger.Args("gcc", gcc))
-		err = createDKMSMakeFile(gcc)
-		if err != nil {
-			printer.Logger.Warn("Could not fill /tmp/falco-dkms-make content.")
-			continue
-		}
-		var dkmsCmdArgs string
-		if kernelDir, found := env[KernelDirEnv]; found {
-			dkmsCmdArgs = fmt.Sprintf(`dkms install --kernelsourcedir %q --directive="MAKE='/tmp/falco-dkms-make'" -m %q -v %q -k %q --verbose`,
-				kernelDir, driverName, driverVersion, kr.String())
-		} else {
-			dkmsCmdArgs = fmt.Sprintf(`dkms install --directive="MAKE='/tmp/falco-dkms-make'" -m %q -v %q -k %q --verbose`,
-				driverName, driverVersion, kr.String())
-		}
-
-		// Try the build through dkms
-		out, err = exec.CommandContext(ctx, "bash", "-c", dkmsCmdArgs).CombinedOutput() //nolint:gosec // false positive
-		if err == nil {
-			koGlob := fmt.Sprintf("/var/lib/dkms/%s/%s/%s/%s/module/%s", driverName, driverVersion, kr.String(), kr.Architecture.ToNonDeb(), driverName)
-			var koFiles []string
-			koFiles, err = filepath.Glob(koGlob + ".*")
-			if err != nil || len(koFiles) == 0 {
-				printer.Logger.Warn("Module file not found.")
-				continue
-			}
-			koFile := koFiles[0]
-			printer.Logger.Info("Module installed in dkms.", printer.Logger.Args("file", koFile))
-			return koFile, nil
-		}
-		printer.DefaultText.Print(string(out))
-		dkmsLogFile := fmt.Sprintf("/var/lib/dkms/%s/%s/build/make.log", driverName, driverVersion)
-		logs, err := os.ReadFile(filepath.Clean(dkmsLogFile))
-		if err != nil {
-			printer.Logger.Warn("Running dkms build failed, couldn't find dkms log", printer.Logger.Args("file", dkmsLogFile))
-		} else {
-			printer.Logger.Warn("Running dkms build failed. Dumping dkms log.", printer.Logger.Args("file", dkmsLogFile))
-			logBuf := bytes.NewBuffer(logs)
-			scanner := bufio.NewScanner(logBuf)
-			for scanner.Scan() {
-				m := scanner.Text()
-				printer.DefaultText.Println(m)
-			}
-		}
-	}
-	return "", fmt.Errorf("failed to compile the module")
 }

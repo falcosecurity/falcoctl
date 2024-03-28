@@ -21,8 +21,8 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/features"
+	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
-	"golang.org/x/net/context"
 
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -81,7 +81,6 @@ func (m *modernBpf) Supported(_ kernelrelease.KernelRelease) bool {
 	return features.HaveMapType(ebpf.RingBuf) == nil
 }
 
-//nolint:gocritic // the method shall not be able to modify kr
-func (m *modernBpf) Build(_ context.Context, _ *output.Printer, _ kernelrelease.KernelRelease, _, _ string, _ map[string]string) (string, error) {
-	return "", nil
+func (m *modernBpf) ToOutput(_ string) cmd.OutputOptions {
+	return cmd.OutputOptions{}
 }
