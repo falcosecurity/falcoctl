@@ -19,12 +19,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/falcosecurity/driverkit/cmd"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 

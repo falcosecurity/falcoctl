@@ -20,9 +20,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"github.com/falcosecurity/driverkit/cmd"
-	"github.com/falcosecurity/driverkit/pkg/driverbuilder"
-	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,8 +29,11 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/falcosecurity/driverkit/cmd"
+	"github.com/falcosecurity/driverkit/pkg/driverbuilder"
 	"github.com/falcosecurity/driverkit/pkg/driverbuilder/builder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+	"golang.org/x/exp/slog"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
 
@@ -226,7 +226,7 @@ func Build(ctx context.Context,
 	}
 	h := slog.NewTextHandler(printer.Logger.Writer, &slog.HandlerOptions{
 		Level: programLevel,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
 				return slog.Attr{}
 			}

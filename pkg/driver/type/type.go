@@ -18,9 +18,10 @@ package drivertype
 
 import (
 	"fmt"
-	"github.com/falcosecurity/driverkit/cmd"
 
+	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
