@@ -31,8 +31,11 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/falcosecurity/driverkit/cmd"
+	"github.com/falcosecurity/driverkit/pkg/driverbuilder"
 	"github.com/falcosecurity/driverkit/pkg/driverbuilder/builder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+	"golang.org/x/exp/slog"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
 
@@ -201,10 +204,11 @@ func Build(ctx context.Context,
 	driverType drivertype.DriverType,
 	driverVer string,
 ) (string, error) {
+	printer.Logger.Info("Trying to compile the requested driver")
 	driverFileName := toFilename(d, &kr, driverName, driverType)
-	destination := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
-	if exist, _ := utils.FileExists(destination); exist {
-		return destination, ErrAlreadyPresent
+	destPath := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
+	if exist, _ := utils.FileExists(destPath); exist {
+		return destPath, ErrAlreadyPresent
 	}
 
 	env, err := d.customizeBuild(ctx, printer, driverType, kr)
@@ -212,42 +216,48 @@ func Build(ctx context.Context,
 		return "", err
 	}
 
-	if env == nil {
-		env = make(map[string]string)
+	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
+
+	ro := cmd.NewRootOptions()
+	ro.Architecture = kr.Architecture.String()
+	ro.DriverVersion = driverVer
+	// We pass just the fixed kernelversion down to driverkit.
+	// it is only used by ubuntu builder,
+	// all the other builders do not need any kernelversion info.
+	fixedKr := d.FixupKernel(kr)
+	ro.KernelVersion = fixedKr.KernelVersion
+	ro.ModuleDriverName = driverName
+	ro.ModuleDeviceName = driverName
+	ro.KernelRelease = kr.String()
+	ro.Target = d.String()
+	ro.Output = driverType.ToOutput(destPath)
+
+	// Setup slog logger (used by driverkit)
+	// to log on our logger level and writer.
+	programLevel := &slog.LevelVar{}
+	if err = programLevel.UnmarshalText([]byte(printer.Logger.Level.String())); err != nil {
+		programLevel = nil // uses default Info level
+	}
+	h := slog.NewTextHandler(printer.Logger.Writer, &slog.HandlerOptions{
+		Level: programLevel,
+		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		}})
+	slog.SetDefault(slog.New(h))
+
+	// This should never happen since both kmod and bpf implement ToOutput;
+	// the only case this can happen is if a Build is requested for modern-bpf driver type,
+	// But "install" cmd is smart enough to avoid that situation
+	// by using HasArtifacts() method.
+	if ro.Output.Module == "" && ro.Output.Probe == "" {
+		return "", errors.New("build on non-artifacts driver attempted")
 	}
 
-	// If customizeBuild did not set any KERNELDIR env variable,
-	// try to load kernel headers urls from driverkit.
-	if _, found := env[drivertype.KernelDirEnv]; !found {
-		printer.Logger.Debug("Trying to automatically fetch kernel headers.")
-		// KernelVersion needs to be fixed up; it is only used by driverkit Ubuntu builder
-		// and we must ensure that it is correctly set.
-		fixedKr := d.FixupKernel(kr)
-		kVerFixedKr := kr
-		kVerFixedKr.KernelVersion = fixedKr.KernelVersion
-		kernelHeadersPath, cleaner, err := loadKernelHeadersFromDk(d.String(), kVerFixedKr)
-		if cleaner != nil {
-			defer cleaner()
-		}
-		if err == nil {
-			printer.Logger.Debug("Downloaded and extracted kernel headers.", printer.Logger.Args("path", kernelHeadersPath))
-			env[drivertype.KernelDirEnv] = kernelHeadersPath
-		}
-	}
-
-	path, err := driverType.Build(ctx, printer, kr, driverName, driverVer, env)
-	if err != nil {
-		return "", err
-	}
-	// Copy the path to the expected location.
-	// NOTE: for kmod, this is not useful since the driver will
-	// be loaded directly by dkms.
-	printer.Logger.Info("Copying built driver to its destination.", printer.Logger.Args("src", path, "dst", destination))
-	f, err := os.Open(filepath.Clean(path))
-	if err != nil {
-		return "", err
-	}
-	return destination, copyDataToLocalPath(destination, f)
+	err = driverbuilder.NewLocalBuildProcessor(1000, true, true, srcPath, env).Start(ro.ToBuild())
+	return destPath, err
 }
 
 // Download will try to download drivers for a distro trying specified repos.

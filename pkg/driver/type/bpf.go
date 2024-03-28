@@ -18,15 +18,12 @@ package drivertype
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
-	"golang.org/x/net/context"
-	"k8s.io/utils/mount"
 
-	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
@@ -78,46 +75,8 @@ func (b *bpf) Supported(kr kernelrelease.KernelRelease) bool {
 	return kr.SupportsProbe()
 }
 
-//nolint:gocritic // the method shall not be able to modify kr
-func (b *bpf) Build(ctx context.Context,
-	printer *output.Printer,
-	_ kernelrelease.KernelRelease,
-	driverName, driverVersion string,
-	env map[string]string,
-) (string, error) {
-	// We don't fail if this fails; let's try to build a probe anyway.
-	_ = mountKernelDebug(printer)
-	srcPath := fmt.Sprintf("/usr/src/%s-%s/bpf", driverName, driverVersion)
-
-	makeCmdArgs := fmt.Sprintf(`make -C %q`, filepath.Clean(srcPath))
-	makeCmd := exec.CommandContext(ctx, "bash", "-c", makeCmdArgs) //nolint:gosec // false positive
-	// Append requested env variables to the command env
-	makeCmd.Env = os.Environ()
-	for key, val := range env {
-		makeCmd.Env = append(makeCmd.Env, fmt.Sprintf("%s=%s", key, val))
+func (b *bpf) ToOutput(destPath string) cmd.OutputOptions {
+	return cmd.OutputOptions{
+		Probe: destPath,
 	}
-	out, err := makeCmd.CombinedOutput()
-	if err != nil {
-		printer.DefaultText.Print(string(out))
-	}
-	outProbe := fmt.Sprintf("%s/probe.o", srcPath)
-	return outProbe, err
-}
-
-func mountKernelDebug(printer *output.Printer) error {
-	// Mount /sys/kernel/debug that is needed on old (pre 4.17) kernel releases,
-	// since these releases still did not support raw tracepoints.
-	// BPF_PROG_TYPE_RAW_TRACEPOINT was introduced in 4.17 indeed:
-	// https://github.com/torvalds/linux/commit/c4f6699dfcb8558d138fe838f741b2c10f416cf9
-	exists, _ := utils.FileExists("/sys/kernel/debug/tracing")
-	if exists {
-		return nil
-	}
-	printer.Logger.Info("Mounting debugfs for bpf driver.")
-	mounter := mount.New("/bin/mount")
-	err := mounter.Mount("debugfs", "/sys/kernel/debug", "debugfs", []string{"nodev"})
-	if err != nil {
-		printer.Logger.Warn("Failed to mount debugfs.", printer.Logger.Args("err", err))
-	}
-	return err
 }
