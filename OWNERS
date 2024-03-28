@@ -4,8 +4,8 @@ approvers:
   - maxgio92
   - fededp
   - cpanato
-reviewers:
   - alacuku
+reviewers:
   - loresuso
 emeritus_approvers:
   - kris-nova
