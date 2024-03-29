@@ -208,7 +208,12 @@ func Build(ctx context.Context,
 	// try to load kernel headers urls from driverkit.
 	if _, found := env[drivertype.KernelDirEnv]; !found {
 		printer.Logger.Debug("Trying to automatically fetch kernel headers.")
-		kernelHeadersPath, cleaner, err := loadKernelHeadersFromDk(d.String(), kr)
+		// KernelVersion needs to be fixed up; it is only used by driverkit Ubuntu builder
+		// and we must ensure that it is correctly set.
+		fixedKr := d.FixupKernel(kr)
+		kVerFixedKr := kr
+		kVerFixedKr.KernelVersion = fixedKr.KernelVersion
+		kernelHeadersPath, cleaner, err := loadKernelHeadersFromDk(d.String(), kVerFixedKr)
 		if cleaner != nil {
 			defer cleaner()
 		}
