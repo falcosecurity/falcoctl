@@ -17,6 +17,8 @@
 package driverdistro
 
 import (
+	"bufio"
+	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
@@ -140,8 +142,18 @@ func loadKernelHeadersFromDk(distro string, kr kernelrelease.KernelRelease) (str
 	if err != nil {
 		return "", nil, err
 	}
+	script += "\necho $KERNELDIR"
 	out, err := exec.Command("bash", "-c", script).Output() //nolint:gosec // false positive
-	path := strings.TrimSuffix(string(out), "\n")
+	var path string
+	if err == nil {
+		// Scan all stdout line by line and
+		// store last line as KERNELDIR path.
+		reader := bytes.NewReader(out)
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			path = scanner.Text()
+		}
+	}
 	return path, func() {
 		_ = os.RemoveAll("/tmp/kernel-download")
 		_ = os.RemoveAll(path)
