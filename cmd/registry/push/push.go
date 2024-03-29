@@ -76,7 +76,7 @@ type pushOptions struct {
 	*options.Registry
 }
 
-func (o pushOptions) validate() error {
+func (o *pushOptions) validate() error {
 	return o.Artifact.Validate()
 }
 
