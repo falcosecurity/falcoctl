@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/storage v1.40.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
-	github.com/cilium/ebpf v0.13.2
+	github.com/cilium/ebpf v0.14.0
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/docker/cli v26.0.0+incompatible
 	github.com/docker/docker v26.0.0+incompatible
