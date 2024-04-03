@@ -26,7 +26,7 @@ import (
 )
 
 //nolint:lll // no need to check for line length.
-var driverInstallHelp = `[Preview] Install previously configured driver, either downloading it or attempting a build.
+var driverInstallHelp = `Install previously configured driver, either downloading it or attempting a build.
 ** This command is in preview and under development. **
 
 Usage:

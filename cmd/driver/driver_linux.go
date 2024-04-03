@@ -54,8 +54,8 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                   "driver",
 		DisableFlagsInUseLine: true,
-		Short:                 "[Preview] Interact with falcosecurity driver",
-		Long: `[Preview] Interact with falcosecurity driver.
+		Short:                 "Interact with falcosecurity driver",
+		Long: `Interact with falcosecurity driver.
 ** This command is in preview and under development. **`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			opt.Initialize()

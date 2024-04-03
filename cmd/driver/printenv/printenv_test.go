@@ -29,7 +29,7 @@ import (
 )
 
 //nolint:lll // no need to check for line length.
-var driverPrintenvHelp = `[Preview] Print variables used by driver as env vars.
+var driverPrintenvHelp = `Print variables used by driver as env vars.
 ** This command is in preview and under development. **
 
 Usage:

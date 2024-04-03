@@ -41,8 +41,8 @@ func NewDriverCleanupCmd(ctx context.Context, opt *options.Common, driver *optio
 	cmd := &cobra.Command{
 		Use:                   "cleanup [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "[Preview] Cleanup a driver",
-		Long: `[Preview] Cleans a driver up, eg for kmod, by removing it from dkms.
+		Short:                 "Cleanup a driver",
+		Long: `Cleans a driver up, eg for kmod, by removing it from dkms.
 ** This command is in preview and under development. **`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunDriverCleanup(ctx)
