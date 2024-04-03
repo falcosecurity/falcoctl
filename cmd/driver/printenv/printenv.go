@@ -39,8 +39,8 @@ func NewDriverPrintenvCmd(ctx context.Context, opt *options.Common, driver *opti
 	cmd := &cobra.Command{
 		Use:                   "printenv [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "[Preview] Print env vars",
-		Long: `[Preview] Print variables used by driver as env vars.
+		Short:                 "Print env vars",
+		Long: `Print variables used by driver as env vars.
 ** This command is in preview and under development. **`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return o.RunDriverPrintenv(ctx)
