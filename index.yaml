@@ -325,7 +325,9 @@
     - aws
     - k8saudit-eks
   license: Apache-2.0
-  maintainers: []
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-eks
 - name: k8saudit-gke
@@ -349,9 +351,37 @@
     - gke
     - k8saudit-gke
   license: Apache-2.0
-  maintainers: []
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-gke
+- name: k8saudit-gke-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: falcosecurity/plugins/ruleset/k8saudit-gke
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Read Kubernetes Audit Events from GKE Clusters
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-gke
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+    - gke
+    - k8saudit-gke-rules
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-gke/rules
 - name: k8saudit-rules
   type: rulesfile
   registry: ghcr.io
