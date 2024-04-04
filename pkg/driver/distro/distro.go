@@ -17,8 +17,6 @@
 package driverdistro
 
 import (
-	"bufio"
-	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
@@ -33,7 +31,6 @@ import (
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/driverbuilder"
-	"github.com/falcosecurity/driverkit/pkg/driverbuilder/builder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/exp/slog"
 	"golang.org/x/net/context"
@@ -133,36 +130,6 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 	return distro, nil
 }
 
-//nolint:gocritic // the method shall not be able to modify kr
-func loadKernelHeadersFromDk(distro string, kr kernelrelease.KernelRelease) (string, func(), error) {
-	// Try to load kernel headers from driverkit. Don't error out if unable to.
-	b, err := builder.Factory(builder.Type(distro))
-	if err != nil {
-		return "", nil, nil
-	}
-
-	script, err := builder.KernelDownloadScript(b, nil, kr)
-	if err != nil {
-		return "", nil, err
-	}
-	script += "\necho $KERNELDIR"
-	out, err := exec.Command("bash", "-c", script).Output() //nolint:gosec // false positive
-	var path string
-	if err == nil {
-		// Scan all stdout line by line and
-		// store last line as KERNELDIR path.
-		reader := bytes.NewReader(out)
-		scanner := bufio.NewScanner(reader)
-		for scanner.Scan() {
-			path = scanner.Text()
-		}
-	}
-	return path, func() {
-		_ = os.RemoveAll("/tmp/kernel-download")
-		_ = os.RemoveAll(path)
-	}, err
-}
-
 func toURL(repo, driverVer, fileName, arch string) string {
 	return fmt.Sprintf("%s/%s/%s/%s", repo, url.QueryEscape(driverVer), arch, fileName)
 }
@@ -210,20 +177,42 @@ func Build(ctx context.Context,
 	if exist, _ := utils.FileExists(destPath); exist {
 		return destPath, ErrAlreadyPresent
 	}
+	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
 
 	env, err := d.customizeBuild(ctx, printer, driverType, kr)
 	if err != nil {
 		return "", err
 	}
 
-	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
+	ro, err := getDKRootOptions(d, kr, driverType, driverVer, driverName, destPath)
+	if err != nil {
+		return "", err
+	}
 
+	setupDKLogger(printer)
+
+	downloadHeaders := true
+	if _, ok := env[drivertype.KernelDirEnv]; ok {
+		downloadHeaders = false
+	}
+	err = driverbuilder.NewLocalBuildProcessor(1000, true, downloadHeaders, srcPath, env).Start(ro.ToBuild())
+	return destPath, err
+}
+
+//nolint:gocritic // the method shall not be able to modify kr
+func getDKRootOptions(d Distro,
+	kr kernelrelease.KernelRelease,
+	driverType drivertype.DriverType,
+	driverVer,
+	driverName,
+	destPath string,
+) (*cmd.RootOptions, error) {
 	ro := cmd.NewRootOptions()
 	ro.Architecture = kr.Architecture.String()
 	ro.DriverVersion = driverVer
 	// We pass just the fixed kernelversion down to driverkit.
 	// it is only used by ubuntu builder,
-	// all the other builders do not need any kernelversion info.
+	// all the other builders do not use the kernelversion field.
 	fixedKr := d.FixupKernel(kr)
 	ro.KernelVersion = fixedKr.KernelVersion
 	ro.ModuleDriverName = driverName
@@ -231,11 +220,21 @@ func Build(ctx context.Context,
 	ro.KernelRelease = kr.String()
 	ro.Target = d.String()
 	ro.Output = driverType.ToOutput(destPath)
+	// This should never happen since both kmod and bpf implement ToOutput;
+	// the only case this can happen is if a Build is requested for modern-bpf driver type,
+	// But "install" cmd is smart enough to avoid that situation
+	// by using HasArtifacts() method.
+	if ro.Output.Module == "" && ro.Output.Probe == "" {
+		return nil, errors.New("build on non-artifacts driver attempted")
+	}
+	return ro, nil
+}
 
+func setupDKLogger(printer *output.Printer) {
 	// Setup slog logger (used by driverkit)
 	// to log on our logger level and writer.
 	programLevel := &slog.LevelVar{}
-	if err = programLevel.UnmarshalText([]byte(printer.Logger.Level.String())); err != nil {
+	if err := programLevel.UnmarshalText([]byte(printer.Logger.Level.String())); err != nil {
 		programLevel = nil // uses default Info level
 	}
 	h := slog.NewTextHandler(printer.Logger.Writer, &slog.HandlerOptions{
@@ -247,17 +246,6 @@ func Build(ctx context.Context,
 			return a
 		}})
 	slog.SetDefault(slog.New(h))
-
-	// This should never happen since both kmod and bpf implement ToOutput;
-	// the only case this can happen is if a Build is requested for modern-bpf driver type,
-	// But "install" cmd is smart enough to avoid that situation
-	// by using HasArtifacts() method.
-	if ro.Output.Module == "" && ro.Output.Probe == "" {
-		return "", errors.New("build on non-artifacts driver attempted")
-	}
-
-	err = driverbuilder.NewLocalBuildProcessor(1000, true, true, srcPath, env).Start(ro.ToBuild())
-	return destPath, err
 }
 
 // Download will try to download drivers for a distro trying specified repos.
