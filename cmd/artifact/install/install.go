@@ -264,31 +264,33 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	logger.Info("Installing artifacts", logger.Args("refs", refs))
 
 	for _, ref := range refs {
-		ref, err = o.IndexCache.ResolveReference(ref)
+		resolvedRef, err := o.IndexCache.ResolveReference(ref)
 		if err != nil {
 			return err
 		}
 
-		logger.Info("Preparing to pull artifact", logger.Args("ref", ref))
+		if signatures[resolvedRef] == nil {
+			if sig := o.IndexCache.SignatureForIndexRef(ref); sig != nil {
+				signatures[resolvedRef] = sig
+			}
+		}
 
-		if err := puller.CheckAllowedType(ctx, ref, runtime.GOOS, runtime.GOARCH, o.allowedTypes.Types); err != nil {
+		logger.Info("Preparing to pull artifact", logger.Args("ref", resolvedRef))
+
+		if err := puller.CheckAllowedType(ctx, resolvedRef, runtime.GOOS, runtime.GOARCH, o.allowedTypes.Types); err != nil {
 			return err
 		}
 
 		// Install will always install artifact for the current OS and architecture
-		result, err := puller.Pull(ctx, ref, tmpDir, runtime.GOOS, runtime.GOARCH)
+		result, err := puller.Pull(ctx, resolvedRef, tmpDir, runtime.GOOS, runtime.GOARCH)
 		if err != nil {
 			return err
 		}
 
-		sig, ok := signatures[ref]
-		if !ok {
-			// try to get the signature from the index
-			sig = o.IndexCache.SignatureForIndexRef(ref)
-		}
+		sig := signatures[resolvedRef]
 
 		if sig != nil && !o.noVerify {
-			repo, err := utils.RepositoryFromRef(ref)
+			repo, err := utils.RepositoryFromRef(resolvedRef)
 			if err != nil {
 				return err
 			}
@@ -350,7 +352,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
-		logger.Info("Artifact successfully installed", logger.Args("name", ref, "type", result.Type, "digest", result.Digest, "directory", destDir))
+		logger.Info("Artifact successfully installed", logger.Args("name", resolvedRef, "type", result.Type, "digest", result.Digest, "directory", destDir))
 	}
 
 	return nil
