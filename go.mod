@@ -32,7 +32,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	golang.org/x/crypto v0.21.0
+	golang.org/x/crypto v0.22.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	google.golang.org/api v0.172.0
 	gopkg.in/ini.v1 v1.67.0
@@ -321,5 +321,5 @@ require (
 	golang.org/x/net v0.22.0
 	golang.org/x/oauth2 v0.18.0
 	golang.org/x/sys v0.19.0
-	golang.org/x/term v0.18.0
+	golang.org/x/term v0.19.0
 )
