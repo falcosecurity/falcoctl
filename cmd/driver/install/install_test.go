@@ -27,7 +27,6 @@ import (
 
 //nolint:lll // no need to check for line length.
 var driverInstallHelp = `Install previously configured driver, either downloading it or attempting a build.
-** This command is in preview and under development. **
 
 Usage:
   falcoctl driver install [flags]

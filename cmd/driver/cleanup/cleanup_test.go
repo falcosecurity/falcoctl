@@ -27,7 +27,6 @@ import (
 
 //nolint:lll // no need to check for line length.
 var driverCleanupHelp = `Cleans a driver up, eg for kmod, by removing it from dkms.
-** This command is in preview and under development. **
 
 Usage:
   falcoctl driver cleanup [flags]
