@@ -203,8 +203,9 @@ func init() {
 	IndexesDir = filepath.Join(FalcoctlPath, "indexes")
 	ClientCredentialsFile = filepath.Join(FalcoctlPath, "clientcredentials.json")
 	DefaultIndex = Index{
-		Name: "falcosecurity",
-		URL:  "https://falcosecurity.github.io/falcoctl/index.yaml",
+		Name:    "falcosecurity",
+		URL:     "https://falcosecurity.github.io/falcoctl/index.yaml",
+		Backend: "https",
 	}
 	DefaultDriver = Driver{
 		Type:     []string{drivertype.TypeModernBpf, drivertype.TypeBpf, drivertype.TypeKmod},
