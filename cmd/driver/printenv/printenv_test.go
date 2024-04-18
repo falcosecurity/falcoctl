@@ -46,7 +46,7 @@ Global Flags:
       --log-level string       Set level for logs (info, warn, debug, trace) (default "info")
       --name string            Driver name to be used. (default "falco")
       --repo strings           Driver repo to be used. (default [https://download.falco.org/driver])
-      --type strings           Driver types allowed in descending priority order (ebpf, kmod, modern_ebpf) (default [modern_ebpf,ebpf,kmod])
+      --type strings           Driver types allowed in descending priority order (ebpf, kmod, modern_ebpf) (default [modern_ebpf,kmod,ebpf])
       --version string         Driver version to be used.
 `
 

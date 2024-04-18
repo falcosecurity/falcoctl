@@ -208,7 +208,7 @@ func init() {
 		Backend: "https",
 	}
 	DefaultDriver = Driver{
-		Type:     []string{drivertype.TypeModernBpf, drivertype.TypeBpf, drivertype.TypeKmod},
+		Type:     []string{drivertype.TypeModernBpf, drivertype.TypeKmod, drivertype.TypeBpf},
 		Name:     "falco",
 		Repos:    []string{"https://download.falco.org/driver"},
 		Version:  "",
