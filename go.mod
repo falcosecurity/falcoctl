@@ -1,8 +1,7 @@
 module github.com/falcosecurity/falcoctl
 
 go 1.21.0
-
-toolchain go1.22.1
+toolchain go1.22.2
 
 require (
 	cloud.google.com/go/storage v1.40.0
@@ -37,7 +36,7 @@ require (
 	google.golang.org/api v0.175.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.29.3
+	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.29.3
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
 	oras.land/oras-go/v2 v2.5.0
