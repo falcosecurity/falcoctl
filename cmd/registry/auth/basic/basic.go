@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	credentials "github.com/oras-project/oras-credentials-go"
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2/registry/remote/credentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/basic"

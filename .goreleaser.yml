@@ -16,6 +16,8 @@ builds:
     ignore:
       - goos: darwin
         goarch: 386
+      - goos: windows
+        goarch: 386
 
     ldflags: |
       -X github.com/falcosecurity/falcoctl/cmd/version.buildDate={{ .Date }}

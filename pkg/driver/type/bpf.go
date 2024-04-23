@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,6 +74,11 @@ func (b *bpf) HasArtifacts() bool {
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
+func (b *bpf) Supported(kr kernelrelease.KernelRelease) bool {
+	return kr.SupportsProbe()
+}
+
+//nolint:gocritic // the method shall not be able to modify kr
 func (b *bpf) Build(ctx context.Context,
 	printer *output.Printer,
 	_ kernelrelease.KernelRelease,
@@ -87,6 +92,7 @@ func (b *bpf) Build(ctx context.Context,
 	makeCmdArgs := fmt.Sprintf(`make -C %q`, filepath.Clean(srcPath))
 	makeCmd := exec.CommandContext(ctx, "bash", "-c", makeCmdArgs) //nolint:gosec // false positive
 	// Append requested env variables to the command env
+	makeCmd.Env = os.Environ()
 	for key, val := range env {
 		makeCmd.Env = append(makeCmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}

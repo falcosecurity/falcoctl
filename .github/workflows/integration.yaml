@@ -28,12 +28,12 @@ jobs:
             goos: darwin
     steps:
       - name: Checkout commit
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
         with:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: '1.21'
           check-latest: true
@@ -52,14 +52,14 @@ jobs:
           tar -czvf falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz falcoctl LICENSE
 
       - name: Upload falcoctl artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.2
         with:
           name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
           path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
           retention-days: 1
 
       - name: Upload falcoctl archives
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.2
         with:
           name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
           path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
@@ -85,20 +85,84 @@ jobs:
     needs: docker-configure
     uses: ./.github/workflows/docker-image.yaml
     secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
     with:
       release: ${{ needs.docker-configure.outputs.release }}
       commit: ${{ needs.docker-configure.outputs.commit }}
       build_date: ${{ needs.docker-configure.outputs.build_date }}
+      sign: true
+
+  provenance-for-images-docker:
+    if: ${{ github.event_name == 'push' }}
+    needs: [docker-configure, docker-image]
+    permissions:
+      actions: read # for detecting the Github Actions environment.
+      id-token: write # for creating OIDC tokens for signing.
+      packages: write # for uploading attestations.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.10.0
+    with:
+      image: docker.io/falcosecurity/falcoctl
+      # The image digest is used to prevent TOCTOU issues.
+      # This is an output of the docker/build-push-action
+      # See: https://github.com/slsa-framework/slsa-verifier#toctou-attacks
+      digest: ${{ needs.docker-image.outputs.digest }}
+    secrets:
+      registry-username: ${{ secrets.DOCKERHUB_USER }}
+      registry-password: ${{ secrets.DOCKERHUB_SECRET }}
+
+  login-to-amazon-ecr:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::292999226676:role/github_actions-falcoctl-ecr
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          registry-type: public
+          mask-password: 'false'
+    outputs:
+      registry: ${{ steps.login-ecr-public.outputs.registry }}
+      docker_username: ${{ steps.login-ecr-public.outputs.docker_username_public_ecr_aws }}
+      docker_password: ${{ steps.login-ecr-public.outputs.docker_password_public_ecr_aws }}
+
+  provenance-for-images-aws-ecr:
+    if: ${{ github.event_name == 'push' }}
+    needs: [docker-configure, docker-image, login-to-amazon-ecr]
+    permissions:
+      actions: read # for detecting the Github Actions environment.
+      id-token: write # for creating OIDC tokens for signing.
+      packages: write # for uploading attestations.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.10.0
+    with:
+      image: public.ecr.aws/falcosecurity/falcoctl
+      # The image digest is used to prevent TOCTOU issues.
+      # This is an output of the docker/build-push-action
+      # See: https://github.com/slsa-framework/slsa-verifier#toctou-attacks
+      digest: ${{ needs.docker-image.outputs.digest }}
+    secrets:
+      registry-username: ${{ needs.login-to-amazon-ecr.outputs.docker_username }}
+      registry-password: ${{ needs.login-to-amazon-ecr.outputs.docker_password }}
 
   test:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout commit
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
 
       - name: Setup Go
-        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version: '1.21'
           check-latest: true

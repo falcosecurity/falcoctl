@@ -15,16 +15,15 @@
 
 //go:build !linux
 
-package driver
+package driverkernel
 
 import (
-	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
+	"errors"
 
-	commonoptions "github.com/falcosecurity/falcoctl/pkg/options"
+	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 )
 
-// NewDriverCmd returns an empty driver command since it is not supported on non linuxes
-func NewDriverCmd(ctx context.Context, opt *commonoptions.Common) *cobra.Command {
-	return &cobra.Command{}
+// FetchInfo returns information about currently running kernel.
+func FetchInfo(_, _ string) (kernelrelease.KernelRelease, error) {
+	return kernelrelease.KernelRelease{}, errors.New("unsupported")
 }

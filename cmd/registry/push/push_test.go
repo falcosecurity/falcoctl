@@ -18,21 +18,15 @@ package push_test
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/falcosecurity/falcoctl/cmd"
-	"github.com/falcosecurity/falcoctl/internal/utils"
-	testutils "github.com/falcosecurity/falcoctl/pkg/test"
 )
 
-//nolint:lll,unused // no need to check for line length.
 var registryPushUsage = `Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
@@ -108,7 +102,6 @@ Global Flags:
       --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 `
 
-//nolint:unused // false positive
 var pushAssertFailedBehavior = func(usage, specificError string) {
 	It("check that fails and the usage is not printed", func() {
 		Expect(err).To(HaveOccurred())
@@ -117,25 +110,15 @@ var pushAssertFailedBehavior = func(usage, specificError string) {
 	})
 }
 
-//nolint:unused // false positive
 var randomRulesRepoName = func(registry, repo string) (string, string) {
 	rName := fmt.Sprintf("%s-%d", repo, rand.Int())
 	return rName, fmt.Sprintf("%s/%s", registry, rName)
 }
 
-//nolint:unused // false positive
-var registryPushTests = Describe("push", func() {
+var _ = Describe("push", func() {
 	var (
 		registryCmd = "registry"
 		pushCmd     = "push"
-	)
-
-	const (
-		// Used as flags for all the test cases.
-		dep1     = "myplugin:1.2.3"
-		dep2     = "myplugin1:1.2.3|otherplugin:3.2.1"
-		req      = "engine_version:15"
-		anSource = "myrepo.com/rules.git"
 	)
 
 	// Each test gets its own root command and runs it.
@@ -220,7 +203,7 @@ var registryPushTests = Describe("push", func() {
 				args = []string{registryCmd, pushCmd, newReg, rulesfiletgz, "--config", configFile, "--type", "rulesfile", "--version", "1.1.1", "--plain-http"}
 			})
 			pushAssertFailedBehavior(registryPushUsage, fmt.Sprintf("ERROR unable to create new repository with ref %s: "+
-				"invalid reference: invalid digest; invalid checksum digest format\n", newReg))
+				"invalid reference: invalid digest %q: invalid checksum digest format\n", newReg, "something"))
 		})
 
 		When("invalid requirement", func() {
@@ -255,305 +238,6 @@ var registryPushTests = Describe("push", func() {
 			})
 			pushAssertFailedBehavior(registryPushUsage, "ERROR invalid argument \"wrongType\" for \"--type\" "+
 				"flag: must be one of \"rulesfile\", \"plugin\", \"asset")
-		})
-	})
-
-	Context("success", func() {
-		const (
-			rulesRepoBaseName   = "push-rulesfile"
-			pluginsRepoBaseName = "push-plugins"
-		)
-
-		var (
-			version = "1.1.1"
-			// registry/rulesRepoBaseName-randomInt
-			fullRepoName string
-			// rulesRepoBaseName-randomInt
-			repoName string
-			// It is set in the config layer.
-			artifactNameInConfigLayer = "test-rulesfile"
-			pushedTags                = []string{"tag1", "tag2", "latest"}
-
-			// Variables passed as arguments to the push command. Each test case updates them
-			// to point to the file on disk living in pkg/test/data.
-			rulesfile string
-			plugin    string
-			pluginRaw string
-
-			// Plugin's platforms.
-			platformARM64 = "linux/arm64"
-			platformAMD64 = "linux/amd64"
-
-			// Data fetched from registry and used for assertions.
-			pluginData    *testutils.PluginArtifact
-			rulesfileData *testutils.RulesfileArtifact
-		)
-
-		// We keep it inside the success context since need the variables of this context.
-		var AssertSuccesBehaviour = func(dependencies, requirements, annotation bool) {
-			It("should succeed", func() {
-				// We do not check the error here since we are checking it before
-				// pulling the artifact.
-				By("checking no error in output")
-				Expect(output).ShouldNot(gbytes.Say("ERROR"))
-				Expect(output).ShouldNot(gbytes.Say("Unable to remove temporary dir"))
-
-				By("checking descriptor")
-				Expect(rulesfileData.Descriptor.MediaType).Should(Equal(v1.MediaTypeImageManifest))
-				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(rulesfileData.Descriptor.Digest.String())))
-
-				By("checking manifest")
-				Expect(rulesfileData.Layer.Manifest.Layers).Should(HaveLen(1))
-				if annotation {
-					Expect(rulesfileData.Layer.Manifest.Annotations).Should(HaveKeyWithValue("org.opencontainers.image.source", anSource))
-				} else {
-					Expect(rulesfileData.Layer.Manifest.Annotations).ShouldNot(HaveKeyWithValue("org.opencontainers.image.source", anSource))
-				}
-
-				By("checking config layer")
-				Expect(rulesfileData.Layer.Config.Version).Should(Equal(version))
-				Expect(rulesfileData.Layer.Config.Name).Should(Equal(artifactNameInConfigLayer))
-				if dependencies {
-					Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Dependencies[0].Name,
-						rulesfileData.Layer.Config.Dependencies[0].Version)).Should(Equal(dep1))
-					Expect(fmt.Sprintf("%s:%s|%s:%s", rulesfileData.Layer.Config.Dependencies[1].Name,
-						rulesfileData.Layer.Config.Dependencies[1].Version, rulesfileData.Layer.Config.Dependencies[1].Alternatives[0].Name,
-						rulesfileData.Layer.Config.Dependencies[1].Alternatives[0].Version)).Should(Equal(dep2))
-				} else {
-					Expect(rulesfileData.Layer.Config.Dependencies).Should(HaveLen(0))
-				}
-				if requirements {
-					Expect(fmt.Sprintf("%s:%s", rulesfileData.Layer.Config.Requirements[0].Name,
-						rulesfileData.Layer.Config.Requirements[0].Version)).Should(Equal(req))
-				} else {
-					Expect(rulesfileData.Layer.Config.Requirements).Should(HaveLen(0))
-				}
-
-				By("checking tags")
-				Expect(rulesfileData.Tags).Should(HaveLen(len(pushedTags)))
-				Expect(rulesfileData.Tags).Should(ContainElements(pushedTags))
-			})
-		}
-
-		// Here we are testing all the success cases for the push command. The artifact type used here is of type
-		// rulesfile. Keep in mind that here we are testing also the common flags that could be used by the plugin
-		// artifacts. So we are testing that common logic only once, and are doing it here.
-		commonFlagsAndRulesfileSpecificFlags := Context("rulesfiles and common flags", func() {
-			JustBeforeEach(func() {
-				// This runs after the push command, so check the returned error before proceeding.
-				Expect(err).ShouldNot(HaveOccurred())
-				rulesfileData, err = testutils.FetchRulesfileFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
-				Expect(err).ShouldNot(HaveOccurred())
-			})
-
-			JustAfterEach(func() {
-				// This variable could be changed by single tests.
-				// Make sure to set them at their default values.
-				artifactNameInConfigLayer = "test-rulesfile"
-				pushedTags = []string{"tag1", "tag2", "latest"}
-			})
-
-			BeforeEach(func() {
-				repoName, fullRepoName = randomRulesRepoName(registry, rulesRepoBaseName)
-			})
-			When("with full flags and args", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--requires", req, "--annotation-source", anSource,
-						"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
-				})
-				AssertSuccesBehaviour(true, true, true)
-			})
-
-			When("no --name flag provided", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--requires", req, "--annotation-source", anSource,
-						"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2]}
-					// Set name to the expected one.
-					artifactNameInConfigLayer = repoName
-				})
-				AssertSuccesBehaviour(true, true, true)
-			})
-
-			When("no --annotation-source provided", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--requires", req,
-						"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
-				})
-				AssertSuccesBehaviour(true, true, false)
-			})
-
-			When("no --tags provided", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--requires", req, "--annotation-source", anSource,
-						"--name", artifactNameInConfigLayer}
-					// We expect that latest tag is pushed, so set it in the pushed tags.
-					pushedTags = []string{"latest"}
-				})
-				AssertSuccesBehaviour(true, true, true)
-			})
-
-			When("no --depends-on flag provided", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http", "--requires", req, "--annotation-source", anSource,
-						"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
-				})
-				AssertSuccesBehaviour(false, true, true)
-			})
-
-			When("no --requires flag provided", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--annotation-source", anSource,
-						"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
-				})
-				AssertSuccesBehaviour(true, false, true)
-			})
-
-			When("only required flags", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-						"--plain-http"}
-					// Set name to the expected one.
-					artifactNameInConfigLayer = repoName
-					// We expect that latest tag is pushed, so set it in the pushed tags.
-					pushedTags = []string{"latest"}
-				})
-				AssertSuccesBehaviour(false, false, false)
-			})
-		})
-
-		Context("rulesfile", func() {
-			Context("tar.gz format", func() {
-				rulesfile = rulesfiletgz
-				var _ = commonFlagsAndRulesfileSpecificFlags
-			})
-
-			Context("raw format", func() {
-				rulesfile = rulesfileyaml
-
-				// Push a raw rulesfiles using all the flags combinations.
-				var _ = commonFlagsAndRulesfileSpecificFlags
-
-				Context("filesystem cleanup", func() {
-					// Push a raw rulesfile.
-					BeforeEach(func() {
-						// Some values such as fullRepoName is the last one set by the other tests or the default one.
-						// Anyway we do not really care since the tar.gz is created before.
-						args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
-							"--plain-http"}
-					})
-
-					It("temp dir should not exist", func() {
-						Expect(err).ShouldNot(HaveOccurred())
-						entries, err := os.ReadDir("/tmp")
-						Expect(err).ShouldNot(HaveOccurred())
-						for _, e := range entries {
-							if e.IsDir() {
-								matched, err := filepath.Match(utils.TmpDirPrefix+"*", regexp.QuoteMeta(e.Name()))
-								Expect(err).ShouldNot(HaveOccurred())
-								Expect(matched).ShouldNot(BeTrue())
-							}
-						}
-					})
-				})
-
-			})
-		})
-
-		// We keep it inside the success context since need the variables of this context.
-		var AssertSuccessBehaviourPlugins = func(dependencies, requirements, annotation bool) {
-			It("should succeed", func() {
-				// We do not check the error here since we are checking it before
-				// pulling the artifact.
-				By("checking no error in output")
-				Expect(output).ShouldNot(gbytes.Say("ERROR"))
-				Expect(output).ShouldNot(gbytes.Say("Unable to remove temporary dir"))
-
-				By("checking descriptor")
-				Expect(pluginData.Descriptor.MediaType).Should(Equal(v1.MediaTypeImageIndex))
-				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(pluginData.Descriptor.Digest.String())))
-
-				By("checking index")
-				Expect(pluginData.Index.Manifests).Should(HaveLen(2))
-
-				if annotation {
-					Expect(pluginData.Index.Annotations).Should(HaveKeyWithValue("org.opencontainers.image.source", anSource))
-				} else {
-					Expect(pluginData.Descriptor.Annotations).ShouldNot(HaveKeyWithValue("org.opencontainers.image.source", anSource))
-				}
-
-				By("checking platforms")
-				Expect(pluginData.Platforms).Should(HaveKey(platformARM64))
-				Expect(pluginData.Platforms).Should(HaveKey(platformAMD64))
-
-				By("checking config layer")
-				for _, p := range pluginData.Platforms {
-					Expect(p.Config.Version).Should(Equal(version))
-					Expect(p.Config.Name).Should(Equal(artifactNameInConfigLayer))
-					if dependencies {
-						Expect(fmt.Sprintf("%s:%s", p.Config.Dependencies[0].Name, p.Config.Dependencies[0].Version)).Should(Equal(dep1))
-						Expect(fmt.Sprintf("%s:%s|%s:%s", p.Config.Dependencies[1].Name, p.Config.Dependencies[1].Version,
-							p.Config.Dependencies[1].Alternatives[0].Name, p.Config.Dependencies[1].Alternatives[0].Version)).Should(Equal(dep2))
-					} else {
-						Expect(p.Config.Dependencies).Should(HaveLen(0))
-					}
-					if requirements {
-						Expect(fmt.Sprintf("%s:%s", p.Config.Requirements[0].Name, p.Config.Requirements[0].Version)).Should(Equal(req))
-					} else {
-						Expect(p.Config.Requirements).Should(HaveLen(0))
-					}
-
-				}
-
-				By("checking tags")
-				Expect(pluginData.Tags).Should(HaveLen(len(pushedTags)))
-				Expect(pluginData.Tags).Should(ContainElements(pushedTags))
-			})
-		}
-
-		// Here we are testing the success cases for the push command using a plugin artifact and its related flags.
-		// Other flags related to the plugin artifacts are tested in the rulesfile artifact section.
-		PluginsSpecificFlags := Context("plugins specific flags", func() {
-			JustBeforeEach(func() {
-				// This runs after the push command, so check the returned error before proceeding.
-				Expect(err).ShouldNot(HaveOccurred())
-				pluginData, err = testutils.FetchPluginFromRegistry(ctx, repoName, pushedTags[0], orasRegistry)
-				Expect(err).ShouldNot(HaveOccurred())
-			})
-
-			JustAfterEach(func() {
-				// This variable could be changed by single tests.
-				// Make sure to set them at their default values.
-				artifactNameInConfigLayer = "test-plugin"
-				pushedTags = []string{"tag1", "tag2", "latest"}
-			})
-
-			BeforeEach(func() {
-				repoName, fullRepoName = randomRulesRepoName(registry, pluginsRepoBaseName)
-			})
-			When("with full flags and args", func() {
-				BeforeEach(func() {
-					args = []string{registryCmd, pushCmd, fullRepoName, plugin, pluginRaw, "--type", "plugin", "--platform",
-						platformAMD64, "--platform", platformARM64, "--version", version, "--config", configFile,
-						"--plain-http", "--depends-on", dep1, "--depends-on", dep2, "--requires", req, "--annotation-source", anSource,
-						"--tag", pushedTags[0], "--tag", pushedTags[1], "--tag", pushedTags[2], "--name", artifactNameInConfigLayer}
-				})
-				AssertSuccessBehaviourPlugins(true, true, true)
-			})
-		})
-
-		Context("plugin", func() {
-			Context("tar.gz + raw format format", func() {
-				plugin = plugintgz
-				// We do not really care what the file is.
-				pluginRaw = rulesfileyaml
-				var _ = PluginsSpecificFlags
-			})
 		})
 	})
 })

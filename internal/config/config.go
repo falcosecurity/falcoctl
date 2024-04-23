@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ type Install struct {
 
 // Driver represents the internal driver configuration (with Type string).
 type Driver struct {
-	Type     string   `mapstructure:"type"`
+	Type     []string `mapstructure:"type"`
 	Name     string   `mapstructure:"name"`
 	Repos    []string `mapstructure:"repos"`
 	Version  string   `mapstructure:"version"`
@@ -203,11 +203,12 @@ func init() {
 	IndexesDir = filepath.Join(FalcoctlPath, "indexes")
 	ClientCredentialsFile = filepath.Join(FalcoctlPath, "clientcredentials.json")
 	DefaultIndex = Index{
-		Name: "falcosecurity",
-		URL:  "https://falcosecurity.github.io/falcoctl/index.yaml",
+		Name:    "falcosecurity",
+		URL:     "https://falcosecurity.github.io/falcoctl/index.yaml",
+		Backend: "https",
 	}
 	DefaultDriver = Driver{
-		Type:     drivertype.TypeKmod,
+		Type:     []string{drivertype.TypeModernBpf, drivertype.TypeKmod, drivertype.TypeBpf},
 		Name:     "falco",
 		Repos:    []string{"https://download.falco.org/driver"},
 		Version:  "",
@@ -554,7 +555,20 @@ func Installer() (Install, error) {
 	}, nil
 }
 
-// DriverRepos retrieves the driver section of the config file.
+// DriverTypes retrieves the driver types of the config file.
+func DriverTypes() ([]string, error) {
+	// manage driver.Type as ";" separated list.
+	types := viper.GetStringSlice(DriverTypeKey)
+	if len(types) == 1 { // in this case it might come from the env
+		if !SemicolonSeparatedRegexp.MatchString(types[0]) {
+			return types, fmt.Errorf("env variable not correctly set, should match %q, got %q", SemicolonSeparatedRegexp.String(), types[0])
+		}
+		types = strings.Split(types[0], ";")
+	}
+	return types, nil
+}
+
+// DriverRepos retrieves the driver repos of the config file.
 func DriverRepos() ([]string, error) {
 	// manage driver.Repos as ";" separated list.
 	repos := viper.GetStringSlice(DriverReposKey)

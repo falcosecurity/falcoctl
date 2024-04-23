@@ -50,7 +50,7 @@ func TestDiscoverDistro(t *testing.T) {
 				return nil
 			},
 			postFn:         func() {},
-			distroExpected: nil,
+			distroExpected: &generic{},
 			errExpected:    true,
 		},
 		{
@@ -63,8 +63,8 @@ func TestDiscoverDistro(t *testing.T) {
 			postFn: func() {
 				_ = os.Remove(osReleaseFile)
 			},
-			distroExpected: nil,
-			errExpected:    false,
+			distroExpected: &generic{},
+			errExpected:    true,
 		},
 		{
 			// os-release ID "foo" mapped to generic
@@ -206,9 +206,8 @@ func TestDiscoverDistro(t *testing.T) {
 		d, err := Discover(kr, localHostRoot)
 		if tCase.errExpected {
 			assert.Error(t, err)
-		} else {
-			assert.IsType(t, tCase.distroExpected, d)
 		}
+		assert.IsType(t, tCase.distroExpected, d)
 		tCase.postFn()
 	}
 }

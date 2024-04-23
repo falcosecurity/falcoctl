@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 package driverdistro
 
 import (
-	"strings"
+	"regexp"
 
-	"github.com/blang/semver"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
@@ -26,6 +25,14 @@ import (
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
+
+// Parse start of string as "#NUMBER":
+// eg1: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" -> "1".
+// eg2: #1-photon -> "1"
+// Old falco-driver-loader method did:
+// echo "${DRIVER_KERNEL_VERSION}" | sed 's/#\([[:digit:]]\+\).*/\1/'
+// The regex does the same thing.
+var genericKernelVersionRegex = regexp.MustCompile(`#(\d+).*`)
 
 type generic struct {
 	targetID string
@@ -43,10 +50,10 @@ func (g *generic) String() string {
 
 //nolint:gocritic // the method shall not be able to modify kr
 func (g *generic) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease {
-	// Take eg: "#1 SMP PREEMPT_DYNAMIC Tue, 10 Oct 2023 21:10:21 +0000" and return "1".
-	kv := strings.TrimLeft(kr.KernelVersion, "#")
-	kv = strings.Split(kv, " ")[0]
-	kr.KernelVersion = kv
+	matches := genericKernelVersionRegex.FindStringSubmatch(kr.KernelVersion)
+	if len(matches) == 2 {
+		kr.KernelVersion = matches[1]
+	}
 	return kr
 }
 
@@ -60,16 +67,11 @@ func (g *generic) customizeBuild(_ context.Context,
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
-func (g *generic) PreferredDriver(kr kernelrelease.KernelRelease) drivertype.DriverType {
-	// Deadly simple default automatic selection
-	var dType drivertype.DriverType
-	switch {
-	case kr.GTE(semver.MustParse("5.8.0")):
-		dType, _ = drivertype.Parse(drivertype.TypeModernBpf)
-	case kr.SupportsProbe():
-		dType, _ = drivertype.Parse(drivertype.TypeBpf)
-	default:
-		dType, _ = drivertype.Parse(drivertype.TypeKmod)
+func (g *generic) PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes []drivertype.DriverType) drivertype.DriverType {
+	for _, allowedDrvType := range allowedDriverTypes {
+		if allowedDrvType.Supported(kr) {
+			return allowedDrvType
+		}
 	}
-	return dType
+	return nil
 }

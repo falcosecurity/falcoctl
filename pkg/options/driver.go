@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+
 	"github.com/falcosecurity/falcoctl/internal/config"
+	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 )
 
@@ -36,7 +39,9 @@ func NewDriverTypes() *DriverTypes {
 	types := drivertype.GetTypes()
 	sort.Strings(types)
 	return &DriverTypes{
-		Enum: NewEnum(types, drivertype.TypeKmod),
+		// Default value is not used.
+		// This enum is only used to print allowed values.
+		Enum: NewEnum(types, drivertype.TypeModernBpf),
 	}
 }
 
@@ -47,12 +52,14 @@ type Driver struct {
 	Repos    []string
 	Version  string
 	HostRoot string
+	Distro   driverdistro.Distro
+	Kr       kernelrelease.KernelRelease
 }
 
 // ToDriverConfig maps a Driver options to Driver config struct.
 func (d *Driver) ToDriverConfig() *config.Driver {
 	return &config.Driver{
-		Type:     d.Type.String(),
+		Type:     []string{d.Type.String()},
 		Name:     d.Name,
 		Repos:    d.Repos,
 		Version:  d.Version,

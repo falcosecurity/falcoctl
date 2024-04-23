@@ -99,7 +99,7 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 			return err
 		}
 
-		joinedTags := strings.Join(tags, ", ")
+		joinedTags := strings.Join(filterOutSigTags(tags), ", ")
 		data = append(data, []string{ref, joinedTags})
 	}
 
@@ -109,4 +109,15 @@ func (o *artifactInfoOptions) RunArtifactInfo(ctx context.Context, args []string
 	}
 
 	return nil
+}
+
+func filterOutSigTags(tags []string) []string {
+	// Iterate the slice in reverse to avoid index shifting when deleting
+	for i := len(tags) - 1; i >= 0; i-- {
+		if strings.HasSuffix(tags[i], ".sig") {
+			// Remove the element at index i by slicing the slice
+			tags = append(tags[:i], tags[i+1:]...)
+		}
+	}
+	return tags
 }

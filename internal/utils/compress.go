@@ -28,13 +28,16 @@ import (
 
 // TmpDirPrefix prefix used for the temporary directory where the tar.gz archives live before pushing
 // to the OCI registry.
-const TmpDirPrefix = "falcoctl-registry-push"
+const TmpDirPrefix = "falcoctl-registry-push-"
 
 // CreateTarGzArchive compresses and saves in a tar archive the passed file.
-func CreateTarGzArchive(path string) (file string, err error) {
+func CreateTarGzArchive(dir, path string) (file string, err error) {
 	cleanedPath := filepath.Clean(path)
+	if dir == "" {
+		dir = TmpDirPrefix
+	}
 	// Create output file.
-	tmpDir, err := os.MkdirTemp("", TmpDirPrefix)
+	tmpDir, err := os.MkdirTemp("", dir)
 	if err != nil {
 		return "", err
 	}

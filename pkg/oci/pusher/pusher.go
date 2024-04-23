@@ -203,7 +203,8 @@ func (p *Pusher) Push(ctx context.Context, artifactType oci.ArtifactType,
 	}
 
 	return &oci.RegistryResult{
-		Digest: string(rootDesc.Digest),
+		RootDigest: string(rootDesc.Digest),
+		Type:       artifactType,
 	}, nil
 }
 

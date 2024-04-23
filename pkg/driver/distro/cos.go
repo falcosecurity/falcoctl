@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package driverdistro
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/blang/semver"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
@@ -74,9 +75,9 @@ func (c *cos) customizeBuild(ctx context.Context,
 		return nil, err
 	}
 
-	currKernelDir := env[kernelDirEnv]
+	currKernelDir := env[drivertype.KernelDirEnv]
 
-	cosKernelDir := currKernelDir + "usr/src/"
+	cosKernelDir := filepath.Join(currKernelDir, "usr", "src")
 	entries, err := os.ReadDir(cosKernelDir)
 	if err != nil {
 		return nil, err
@@ -84,9 +85,9 @@ func (c *cos) customizeBuild(ctx context.Context,
 	if len(entries) == 0 {
 		return nil, fmt.Errorf("no COS kernel src found")
 	}
-	cosKernelDir = entries[0].Name()
+	cosKernelDir = filepath.Join(cosKernelDir, entries[0].Name())
 	// Override env key
-	env[kernelDirEnv] = cosKernelDir
+	env[drivertype.KernelDirEnv] = cosKernelDir
 
 	clangCompilerHeader := fmt.Sprintf("%s/include/linux/compiler-clang.h", cosKernelDir)
 	err = utils.ReplaceLineInFile(clangCompilerHeader, "#define randomized_struct_fields_start", "", 1)
@@ -110,4 +111,19 @@ func (c *cos) customizeBuild(ctx context.Context,
 		env[kbuildExtraCppFlagsEnv] = enableCos73Workaround
 	}
 	return env, nil
+}
+
+// PreferredDriver is reimplemented since COS does not support kmod
+//
+//nolint:gocritic // the method shall not be able to modify kr
+func (c *cos) PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes []drivertype.DriverType) drivertype.DriverType {
+	for _, allowedDrvType := range allowedDriverTypes {
+		if allowedDrvType.String() == drivertype.TypeKmod {
+			continue
+		}
+		if allowedDrvType.Supported(kr) {
+			return allowedDrvType
+		}
+	}
+	return nil
 }

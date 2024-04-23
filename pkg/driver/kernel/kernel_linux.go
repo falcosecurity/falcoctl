@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+//go:build linux
 
 // Package driverkernel implements the kernel info fetching helpers.
 package driverkernel
@@ -38,8 +40,11 @@ func FetchInfo(enforcedKR, enforcedKV string) (kernelrelease.KernelRelease, erro
 
 		kr = string(bytes.Trim(u.Release[:], "\x00"))
 		kv = string(bytes.Trim(u.Version[:], "\x00"))
-	} else {
+	}
+	if enforcedKR != "" {
 		kr = enforcedKR
+	}
+	if enforcedKV != "" {
 		kv = enforcedKV
 	}
 	kernelRel := kernelrelease.FromString(kr)

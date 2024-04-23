@@ -41,9 +41,8 @@ func NewDriverCleanupCmd(ctx context.Context, opt *options.Common, driver *optio
 	cmd := &cobra.Command{
 		Use:                   "cleanup [flags]",
 		DisableFlagsInUseLine: true,
-		Short:                 "[Preview] Cleanup a driver",
-		Long: `[Preview] Cleans a driver up, eg for kmod, by removing it from dkms.
-** This command is in preview and under development. **`,
+		Short:                 "Cleanup a driver",
+		Long:                  `Cleans a driver up, eg for kmod, by removing it from dkms.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.RunDriverCleanup(ctx)
 		},
@@ -66,7 +65,7 @@ func (o *driverCleanupOptions) RunDriverCleanup(_ context.Context) error {
 	if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
 		// Only print formatted text if we are formatting to json
 		out := strings.ReplaceAll(buf.String(), "\n", ";")
-		o.Printer.Logger.Info("Driver build", o.Printer.Logger.Args("output", out))
+		o.Printer.Logger.Info("Driver cleanup", o.Printer.Logger.Args("output", out))
 	} else {
 		// Print much more readable output as-is
 		o.Printer.DefaultText.Print(buf.String())

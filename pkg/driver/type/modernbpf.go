@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,11 @@
 package drivertype
 
 import (
+	// Needed for go:linkname to be able to access a private function from cilium/ebpf/features.
+	_ "unsafe"
+
+	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/features"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 
@@ -49,6 +54,31 @@ func (m *modernBpf) Extension() string {
 
 func (m *modernBpf) HasArtifacts() bool {
 	return false
+}
+
+// Get the private symbol `probeProgram` that will be used to test for
+// type Tracing, attachType AttachTraceRawTp program availability.
+//
+//go:linkname probeProgram github.com/cilium/ebpf/features.probeProgram
+func probeProgram(spec *ebpf.ProgramSpec) error
+
+//nolint:gocritic // the method shall not be able to modify kr
+func (m *modernBpf) Supported(_ kernelrelease.KernelRelease) bool {
+	// We can't directly use this because it uses the wrong attachtype.
+	// err := features.HaveProgramType(ebpf.Tracing)
+	// Therefore, we need to manually build a feature test.
+	// Empty tracing program that just returns 0
+	progSpec := &ebpf.ProgramSpec{
+		Type:       ebpf.Tracing,
+		AttachType: ebpf.AttachTraceRawTp,
+		AttachTo:   "sys_enter",
+	}
+	err := probeProgram(progSpec)
+	if err != nil {
+		return false
+	}
+
+	return features.HaveMapType(ebpf.RingBuf) == nil
 }
 
 //nolint:gocritic // the method shall not be able to modify kr

@@ -63,6 +63,8 @@ type CosignSignature struct {
 	CertificateIdentity         string `yaml:"certificate-identity"`
 	CertificateIdentityRegexp   string `yaml:"certificate-identity-regexp"`
 	CertificateGithubWorkflow   string `yaml:"certificate-github-workflow"`
+	KeyRef                      string `yaml:"key"`
+	IgnoreTlog                  bool   `yaml:"ignore-tlog"`
 }
 
 // Signature represents all the metadata necessary to perform signature verification.

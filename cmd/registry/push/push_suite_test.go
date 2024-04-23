@@ -37,14 +37,13 @@ import (
 	testutils "github.com/falcosecurity/falcoctl/pkg/test"
 )
 
-//nolint:unused // false positive
 const (
-	rulesfiletgz  = "../../../pkg/test/data/rules.tar.gz"
-	rulesfileyaml = "../../../pkg/test/data/rules.yaml"
-	plugintgz     = "../../../pkg/test/data/plugin.tar.gz"
+	rulesfiletgz            = "../../../pkg/test/data/rules.tar.gz"
+	rulesfileyaml           = "../../../pkg/test/data/rulesWithoutReqAndDeps.yaml"
+	rulesFileWithDepsAndReq = "../../../pkg/test/data/rules.yaml"
+	plugintgz               = "../../../pkg/test/data/plugin.tar.gz"
 )
 
-//nolint:unused // false positive
 var (
 	registry     string
 	ctx          = context.Background()
@@ -102,7 +101,6 @@ var _ = AfterSuite(func() {
 	Expect(os.RemoveAll(configDir)).Should(Succeed())
 })
 
-//nolint:unused // false positive
 func executeRoot(args []string) error {
 	rootCmd.SetArgs(args)
 	rootCmd.SetOut(output)

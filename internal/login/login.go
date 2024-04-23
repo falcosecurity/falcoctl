@@ -18,9 +18,9 @@ package login
 import (
 	"context"
 
-	credentials "github.com/oras-project/oras-credentials-go"
 	"golang.org/x/oauth2/clientcredentials"
 	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras-go/v2/registry/remote/credentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/basic"

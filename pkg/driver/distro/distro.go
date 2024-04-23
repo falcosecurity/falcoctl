@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package driverdistro
 
 import (
-	"archive/tar"
+	"bufio"
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -29,6 +31,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/homedir"
+	"github.com/falcosecurity/driverkit/pkg/driverbuilder/builder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
@@ -39,9 +42,9 @@ import (
 )
 
 const (
-	// DefaultFalcoRepo is the default repository provided by falcosecurity to download driver artifacts from.
-	kernelDirEnv            = "KERNELDIR"
 	kernelSrcDownloadFolder = "kernel-sources"
+	// UndeterminedDistro is the string used for the generic distro object returned when we cannot determine the distro.
+	UndeterminedDistro = "undetermined"
 )
 
 var (
@@ -60,7 +63,7 @@ type Distro interface {
 	FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.KernelRelease // private
 	customizeBuild(ctx context.Context, printer *output.Printer, driverType drivertype.DriverType,
 		kr kernelrelease.KernelRelease) (map[string]string, error)
-	PreferredDriver(kr kernelrelease.KernelRelease) drivertype.DriverType
+	PreferredDriver(kr kernelrelease.KernelRelease, allowedDriverTypes []drivertype.DriverType) drivertype.DriverType
 	fmt.Stringer
 }
 
@@ -93,7 +96,7 @@ func Discover(kr kernelrelease.KernelRelease, hostroot string) (Distro, error) {
 
 	// Return a generic distro to try the build
 	distro = &generic{}
-	if err = distro.init(kr, "undetermined", nil); err != nil {
+	if err = distro.init(kr, UndeterminedDistro, nil); err != nil {
 		return nil, err
 	}
 	return distro, ErrUnsupported
@@ -106,7 +109,7 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 	}
 	idKey, err := cfg.Section("").GetKey("ID")
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	id := strings.ToLower(idKey.String())
 
@@ -125,6 +128,36 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 		return nil, err
 	}
 	return distro, nil
+}
+
+//nolint:gocritic // the method shall not be able to modify kr
+func loadKernelHeadersFromDk(distro string, kr kernelrelease.KernelRelease) (string, func(), error) {
+	// Try to load kernel headers from driverkit. Don't error out if unable to.
+	b, err := builder.Factory(builder.Type(distro))
+	if err != nil {
+		return "", nil, nil
+	}
+
+	script, err := builder.KernelDownloadScript(b, nil, kr)
+	if err != nil {
+		return "", nil, err
+	}
+	script += "\necho $KERNELDIR"
+	out, err := exec.Command("bash", "-c", script).Output() //nolint:gosec // false positive
+	var path string
+	if err == nil {
+		// Scan all stdout line by line and
+		// store last line as KERNELDIR path.
+		reader := bytes.NewReader(out)
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			path = scanner.Text()
+		}
+	}
+	return path, func() {
+		_ = os.RemoveAll("/tmp/kernel-download")
+		_ = os.RemoveAll(path)
+	}, err
 }
 
 func toURL(repo, driverVer, fileName, arch string) string {
@@ -178,6 +211,30 @@ func Build(ctx context.Context,
 	if err != nil {
 		return "", err
 	}
+
+	if env == nil {
+		env = make(map[string]string)
+	}
+
+	// If customizeBuild did not set any KERNELDIR env variable,
+	// try to load kernel headers urls from driverkit.
+	if _, found := env[drivertype.KernelDirEnv]; !found {
+		printer.Logger.Debug("Trying to automatically fetch kernel headers.")
+		// KernelVersion needs to be fixed up; it is only used by driverkit Ubuntu builder
+		// and we must ensure that it is correctly set.
+		fixedKr := d.FixupKernel(kr)
+		kVerFixedKr := kr
+		kVerFixedKr.KernelVersion = fixedKr.KernelVersion
+		kernelHeadersPath, cleaner, err := loadKernelHeadersFromDk(d.String(), kVerFixedKr)
+		if cleaner != nil {
+			defer cleaner()
+		}
+		if err == nil {
+			printer.Logger.Debug("Downloaded and extracted kernel headers.", printer.Logger.Args("path", kernelHeadersPath))
+			env[drivertype.KernelDirEnv] = kernelHeadersPath
+		}
+	}
+
 	path, err := driverType.Build(ctx, printer, kr, driverName, driverVer, env)
 	if err != nil {
 		return "", err
@@ -203,6 +260,7 @@ func Download(ctx context.Context,
 	driverName string,
 	driverType drivertype.DriverType,
 	driverVer string, repos []string,
+	httpHeaders string,
 ) (string, error) {
 	driverFileName := toFilename(d, &kr, driverName, driverType)
 	// Skip if existent
@@ -214,13 +272,24 @@ func Download(ctx context.Context,
 	// Try to download from any specified repository,
 	// stopping at first successful http GET.
 	for _, repo := range repos {
-		url := toURL(repo, driverVer, driverFileName, kr.Architecture.ToNonDeb())
-		printer.Logger.Info("Trying to download a driver.", printer.Logger.Args("url", url))
+		driverURL := toURL(repo, driverVer, driverFileName, kr.Architecture.ToNonDeb())
+		printer.Logger.Info("Trying to download a driver.", printer.Logger.Args("url", driverURL))
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, driverURL, nil)
 		if err != nil {
 			printer.Logger.Warn("Error creating http request.", printer.Logger.Args("err", err))
 			continue
+		}
+		if httpHeaders != "" {
+			header := http.Header{}
+			for _, h := range strings.Split(httpHeaders, ",") {
+				key, value := func() (string, string) {
+					x := strings.Split(h, ":")
+					return x[0], x[1]
+				}()
+				header.Add(key, value)
+			}
+			req.Header = header
 		}
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != 200 {
@@ -319,7 +388,7 @@ func downloadKernelSrc(ctx context.Context,
 		return env, err
 	}
 
-	_, err = utils.ExtractTarGz(resp.Body, fullKernelDir, stripComponents)
+	_, err = utils.ExtractTarGz(ctx, resp.Body, fullKernelDir, stripComponents)
 	if err != nil {
 		return env, err
 	}
@@ -336,12 +405,17 @@ func downloadKernelSrc(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	var src io.Reader
+	var src io.ReadCloser
 	if strings.HasSuffix(kernelConfigPath, ".gz") {
-		src = tar.NewReader(f)
+		src, err = gzip.NewReader(f)
+		if err != nil {
+			return env, err
+		}
 	} else {
 		src = f
 	}
+	defer src.Close()
+
 	fStat, err := f.Stat()
 	if err != nil {
 		return nil, err
@@ -350,6 +424,6 @@ func downloadKernelSrc(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	env[kernelDirEnv] = fullKernelDir
+	env[drivertype.KernelDirEnv] = fullKernelDir
 	return env, nil
 }

@@ -22,7 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/blang/semver/v4"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
@@ -73,7 +76,7 @@ type pushOptions struct {
 	*options.Registry
 }
 
-func (o pushOptions) validate() error {
+func (o *pushOptions) validate() error {
 	return o.Artifact.Validate()
 }
 
@@ -120,8 +123,8 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	ref := args[0]
 	paths := args[1:]
 	// When creating the tar.gz archives we need to remove them after we are done.
-	// We save the temporary dir where they live here.
-	var toBeDeleted string
+	// Holds the path for each temporary dir.
+	var toBeDeletedTmpDirs []string
 	logger := o.Printer.Logger
 
 	registry, err := utils.GetRegistryFromRef(ref)
@@ -141,12 +144,20 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 
 	logger.Info("Preparing to push artifact", o.Printer.Logger.Args("name", args[0], "type", o.ArtifactType))
 
-	// Make sure to remove temporary working dir.
+	// Make sure to remove temporary working dirs.
 	defer func() {
-		if err := os.RemoveAll(toBeDeleted); err != nil {
-			logger.Warn("Unable to remove temporary dir", logger.Args("name", toBeDeleted, "error", err.Error()))
+		for _, dir := range toBeDeletedTmpDirs {
+			logger.Debug("Removing temporary dir", logger.Args("name", dir))
+			if err := os.RemoveAll(dir); err != nil {
+				logger.Warn("Unable to remove temporary dir", logger.Args("name", dir, "error", err.Error()))
+			}
 		}
 	}()
+
+	config := &oci.ArtifactConfig{
+		Name:    o.Name,
+		Version: o.Version,
+	}
 
 	for i, p := range paths {
 		if err = utils.IsTarGz(filepath.Clean(p)); err != nil && !errors.Is(err, utils.ErrNotTarGz) {
@@ -154,22 +165,20 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 		} else if err == nil {
 			continue
 		} else {
-			path, err := utils.CreateTarGzArchive(p)
+			if o.ArtifactType == oci.Rulesfile {
+				if config, err = rulesConfigLayer(o.Printer.Logger, p, o.Artifact); err != nil {
+					return err
+				}
+			}
+			path, err := utils.CreateTarGzArchive("", p)
 			if err != nil {
 				return err
 			}
 			paths[i] = path
-			if toBeDeleted == "" {
-				toBeDeleted = filepath.Dir(path)
-			}
+			toBeDeletedTmpDirs = append(toBeDeletedTmpDirs, filepath.Dir(path))
 		}
 	}
 
-	// Setup OCI artifact configuration
-	config := oci.ArtifactConfig{
-		Name:    o.Name,
-		Version: o.Version,
-	}
 	if config.Name == "" {
 		// extract artifact name from ref, if not provided by the user
 		if config.Name, err = utils.NameFromRef(ref); err != nil {
@@ -186,7 +195,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	opts := ocipusher.Options{
 		ocipusher.WithTags(o.Tags...),
 		ocipusher.WithAnnotationSource(o.AnnotationSource),
-		ocipusher.WithArtifactConfig(config),
+		ocipusher.WithArtifactConfig(*config),
 	}
 
 	switch o.ArtifactType {
@@ -203,7 +212,120 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 		return err
 	}
 
-	logger.Info("Artifact pushed", logger.Args("name", args[0], "type", res.Type, "digest", res.Digest))
+	logger.Info("Artifact pushed", logger.Args("name", args[0], "type", res.Type, "digest", res.RootDigest))
 
 	return nil
+}
+
+const (
+	// depsKey is the key for deps in the rulesfiles.
+	depsKey = "required_plugin_versions"
+	// engineKey is the key in the rulesfiles.
+	engineKey = "required_engine_version"
+	// engineRequirementKey is used as name for the engine requirement in the config layer for the rulesfile artifacts.
+	engineRequirementKey = "engine_version_semver"
+)
+
+func rulesConfigLayer(logger *pterm.Logger, filePath string, artifactOptions *options.Artifact) (*oci.ArtifactConfig, error) {
+	var data []map[string]interface{}
+
+	// Setup OCI artifact configuration
+	config := oci.ArtifactConfig{
+		Name:    artifactOptions.Name,
+		Version: artifactOptions.Version,
+	}
+
+	yamlFile, err := os.ReadFile(filepath.Clean(filePath))
+	if err != nil {
+		return nil, fmt.Errorf("unable to open rulesfile %s: %w", filePath, err)
+	}
+
+	if err := yaml.Unmarshal(yamlFile, &data); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal rulesfile %s: %w", filePath, err)
+	}
+
+	// Parse the artifact dependencies.
+	// Check if the user has provided any.
+	if len(artifactOptions.Dependencies) != 0 {
+		logger.Info("Dependencies provided by user", logger.Args("rulesfile", filePath))
+		if err = config.ParseDependencies(artifactOptions.Dependencies...); err != nil {
+			return nil, err
+		}
+	} else {
+		// If no user provided then try to parse them from the rulesfile.
+		var found bool
+		logger.Info("Parsing dependencies from: ", logger.Args("rulesfile", filePath))
+		var requiredPluginVersionsEntry interface{}
+		var ok bool
+		for _, entry := range data {
+			if requiredPluginVersionsEntry, ok = entry[depsKey]; !ok {
+				continue
+			}
+
+			var deps []oci.ArtifactDependency
+			byteData, err := yaml.Marshal(requiredPluginVersionsEntry)
+			if err != nil {
+				return nil, fmt.Errorf("unable to parse dependencies from rulesfile: %w", err)
+			}
+			err = yaml.Unmarshal(byteData, &deps)
+			if err != nil {
+				return nil, fmt.Errorf("unable to parse dependencies from rulesfile: %w", err)
+			}
+			logger.Info("Dependencies correctly parsed from rulesfile")
+			// Set the deps.
+			config.Dependencies = deps
+			found = true
+			break
+		}
+		if !found {
+			logger.Warn("No dependencies were provided by the user and none were found in the rulesfile.")
+		}
+	}
+
+	// Parse the requirements.
+	// Check if the user has provided any.
+	if len(artifactOptions.Requirements) != 0 {
+		logger.Info("Requirements provided by user")
+		if err = config.ParseRequirements(artifactOptions.Requirements...); err != nil {
+			return nil, err
+		}
+	} else {
+		var found bool
+		var engineVersion string
+		logger.Info("Parsing requirements from: ", logger.Args("rulesfile", filePath))
+		// If no user provided requirements then try to parse them from the rulesfile.
+		for _, entry := range data {
+			if requiredEngineVersionEntry, ok := entry[engineKey]; ok {
+				// Check if the version is an int. This is for backward compatibility. The engine version used to be an
+				// int but internally used by falco as a semver minor version.
+				// 15 -> 0.15.0
+				if engVersionInt, ok := requiredEngineVersionEntry.(int); ok {
+					engineVersion = fmt.Sprintf("0.%d.0", engVersionInt)
+				} else {
+					engineVersion, ok = requiredEngineVersionEntry.(string)
+					if !ok {
+						return nil, fmt.Errorf("%s must be an int or a string respecting the semver specification, got type %T", engineKey, requiredEngineVersionEntry)
+					}
+
+					// Check if it is in semver format.
+					if _, err := semver.Parse(engineVersion); err != nil {
+						return nil, fmt.Errorf("%s must be in semver format: %w", engineVersion, err)
+					}
+				}
+
+				// Set the requirements.
+				config.Requirements = []oci.ArtifactRequirement{{
+					Name:    engineRequirementKey,
+					Version: engineVersion,
+				}}
+				found = true
+				break
+			}
+		}
+		if !found {
+			logger.Warn("No requirements were provided by the user and none were found in the rulesfile.")
+		}
+	}
+
+	return &config, nil
 }

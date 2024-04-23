@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd"
 )
 
-var driverConfigHelp = `[Preview] Configure a driver for future usages with other driver subcommands.
+//nolint:lll // no need to check for line length.
+var driverConfigHelp = `Configure a driver for future usages with other driver subcommands.
 It will also update local Falco configuration or k8s configmap depending on the environment where it is running, to let Falco use chosen driver.
 Only supports deployments of Falco that use a driver engine, ie: one between kmod, ebpf and modern-ebpf.
 If engine.kind key is set to a non-driver driven engine, Falco configuration won't be touched.
-** This command is in preview and under development. **
 
 Usage:
   falcoctl driver config [flags]
@@ -41,14 +41,16 @@ Flags:
       --update-falco        Whether to update Falco config/configmap. (default true)
 
 Global Flags:
-      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --host-root string    Driver host root to be used. (default "/")
-      --log-format string   Set formatting for logs (color, text, json) (default "color")
-      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
-      --name string         Driver name to be used. (default "falco")
-      --repo strings        Driver repo to be used. (default [https://download.falco.org/driver])
-      --type string         Driver type to be used (auto, ebpf, kmod, modern_ebpf) (default "kmod")
-      --version string      Driver version to be used.
+      --config string          config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --host-root string       Driver host root to be used. (default "/")
+      --kernelrelease string   Specify the kernel release for which to download/build the driver in the same format used by 'uname -r' (e.g. '6.1.0-10-cloud-amd64')
+      --kernelversion string   Specify the kernel version for which to download/build the driver in the same format used by 'uname -v' (e.g. '#1 SMP PREEMPT_DYNAMIC Debian 6.1.38-2 (2023-07-27)')
+      --log-format string      Set formatting for logs (color, text, json) (default "color")
+      --log-level string       Set level for logs (info, warn, debug, trace) (default "info")
+      --name string            Driver name to be used. (default "falco")
+      --repo strings           Driver repo to be used. (default [https://download.falco.org/driver])
+      --type strings           Driver types allowed in descending priority order (ebpf, kmod, modern_ebpf) (default [modern_ebpf,kmod,ebpf])
+      --version string         Driver version to be used.
 `
 
 var addAssertFailedBehavior = func(specificError string) {
@@ -99,8 +101,7 @@ var _ = Describe("config", func() {
 			BeforeEach(func() {
 				args = []string{driverCmd, configCmd, "--config", configFile, "--type", "foo"}
 			})
-			addAssertFailedBehavior(`ERROR invalid argument "foo" for "--type" flag: invalid argument "foo",` +
-				` please provide one of (auto, ebpf, kmod, modern_ebpf)`)
+			addAssertFailedBehavior(`ERROR unsupported driver type specified: foo`)
 		})
 	})
 })

@@ -43,6 +43,8 @@ func Verify(ctx context.Context, ref string, signature *index.Signature) error {
 			CertOidcIssuer:       signature.Cosign.CertificateOidcIssuer,
 			CertOidcIssuerRegexp: signature.Cosign.CertificateOidcIssuerRegexp,
 		},
+		KeyRef:     signature.Cosign.KeyRef,
+		IgnoreTlog: signature.Cosign.IgnoreTlog,
 	}
 	return v.DoVerify(ctx, []string{ref})
 }

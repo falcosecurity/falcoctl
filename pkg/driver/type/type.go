@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-// TypeAuto enables a smart automatic driver selection logic instead of using a fixed driver type.
-const TypeAuto = "auto"
+// KernelDirEnv is the env variable set to kernel headers extraction paths.
+const KernelDirEnv = "KERNELDIR"
 
 var driverTypes = map[string]DriverType{}
 
@@ -39,6 +39,7 @@ type DriverType interface {
 	HasArtifacts() bool
 	Build(ctx context.Context, printer *output.Printer, kr kernelrelease.KernelRelease,
 		driverName, driverVersion string, env map[string]string) (string, error)
+	Supported(kr kernelrelease.KernelRelease) bool
 }
 
 // GetTypes return the list of supported driver types.
@@ -47,9 +48,6 @@ func GetTypes() []string {
 	for key := range driverTypes {
 		driverTypesSlice = append(driverTypesSlice, key)
 	}
-	// auto is a sentinel value to enable automatic driver selection logic,
-	// but it is not mapped to any DriverType
-	driverTypesSlice = append(driverTypesSlice, TypeAuto)
 	return driverTypesSlice
 }
 
@@ -58,5 +56,5 @@ func Parse(driverType string) (DriverType, error) {
 	if dType, ok := driverTypes[driverType]; ok {
 		return dType, nil
 	}
-	return nil, fmt.Errorf("wrong driver type specified: %s", driverType)
+	return nil, fmt.Errorf("unsupported driver type specified: %s", driverType)
 }

@@ -19,9 +19,9 @@ import (
 	"context"
 	"fmt"
 
-	credentials "github.com/oras-project/oras-credentials-go"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras-go/v2/registry/remote/credentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
