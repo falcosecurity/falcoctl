@@ -109,7 +109,7 @@ func getOSReleaseDistro(kr *kernelrelease.KernelRelease) (Distro, error) {
 	}
 	idKey, err := cfg.Section("").GetKey("ID")
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	id := strings.ToLower(idKey.String())
 
