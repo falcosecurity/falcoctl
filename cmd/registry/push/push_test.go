@@ -31,6 +31,7 @@ var registryPushUsage = `Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
 Flags:
+      --add-floating-tags          add the floating tags for the major and minor versions
       --annotation-source string   set annotation source for the artifact
   -d, --depends-on stringArray     set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
   -h, --help                       help for push
@@ -65,6 +66,10 @@ Example - Push artifact "myplugin.tar.gz" of type "plugin" for multiple platform
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile":
 	falcoctl registry push --type rulesfile --version "0.1.2" localhost:5000/myrulesfile:latest myrulesfile.tar.gz
 
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with floating tags for the major and minor versions (0 and 0.1):
+	falcoctl registry push --type rulesfile --version "0.1.2" localhost:5000/myrulesfile:latest myrulesfile.tar.gz \
+	        --add-floating-tags
+
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" to an insecure registry:
 	falcoctl registry push --type rulesfile --version "0.1.2" --plain-http localhost:5000/myrulesfile:latest myrulesfile.tar.gz
 
@@ -85,6 +90,7 @@ Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
 Flags:
+      --add-floating-tags          add the floating tags for the major and minor versions
       --annotation-source string   set annotation source for the artifact
   -d, --depends-on stringArray     set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
   -h, --help                       help for push
@@ -188,6 +194,22 @@ var _ = Describe("push", func() {
 			})
 			pushAssertFailedBehavior(registryPushUsage, "ERROR unable to connect to remote "+
 				"registry \"noregistry\": Get \"http://noregistry/v2/\": dial tcp: lookup noregistry")
+		})
+
+		When("wrong semver for --version flag with --add-floating-tags", func() {
+			BeforeEach(func() {
+				args = []string{registryCmd, pushCmd, rulesRepo, rulesfiletgz, "--config", configFile, "--type", "rulesfile",
+					"--version", "notSemVer", "--add-floating-tags", "--plain-http"}
+			})
+			pushAssertFailedBehavior(registryPushUsage, "ERROR expected semver for the flag \"--version\": No Major.Minor.Patch elements found")
+		})
+
+		When("invalid character in semver for --version flag with --add-floating-tags", func() {
+			BeforeEach(func() {
+				args = []string{registryCmd, pushCmd, rulesRepo, rulesfiletgz, "--config", configFile, "--type", "rulesfile",
+					"--version", "1.1.a", "--add-floating-tags", "--plain-http"}
+			})
+			pushAssertFailedBehavior(registryPushUsage, "ERROR expected semver for the flag \"--version\": Invalid character(s) found in patch number \"a\"")
 		})
 
 		When("missing repository", func() {

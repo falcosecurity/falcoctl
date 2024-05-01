@@ -342,6 +342,7 @@ $ falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/clou
 ```
 The type denotes the **artifact** type in this case *plugins*. The `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0` is the unique reference that points to the **artifact**.
 Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulesfile**. Based on **artifact type** the commands accepts different flags:
+* `--add-floating-tags`: add the floating tags for the major and minor versions
 * `--annotation-source`: set annotation source for the artifact;
 * `--depends-on`: set an artifact dependency (can be specified multiple times). Example: `--depends-on my-plugin:1.2.3`
 * `--tag`: additional artifact tag. Can be repeated multiple time 

@@ -35,6 +35,7 @@ type Artifact struct {
 	Dependencies     []string
 	Requirements     []string
 	Tags             []string
+	AutoFloatingTags bool
 	AnnotationSource string
 }
 
@@ -63,6 +64,9 @@ func (art *Artifact) AddFlags(cmd *cobra.Command) error {
 	case "push":
 		cmd.Flags().StringArrayVarP(&art.Tags, "tag", "t", nil,
 			"additional artifact tag. Can be repeated multiple times")
+
+		cmd.Flags().BoolVar(&art.AutoFloatingTags, "add-floating-tags", false,
+			"add the floating tags for the major and minor versions")
 
 		cmd.Flags().Var(&art.ArtifactType, "type",
 			`type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"`)
