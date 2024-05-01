@@ -350,6 +350,21 @@ var _ = Describe("pushing rulesfiles", func() {
 				map[string]string{})
 		})
 
+		When("with add-floating-tags and the required flags", func() {
+			BeforeEach(func() {
+				rulesfile = rulesfileyaml
+				args = []string{registryCmd, pushCmd, fullRepoName, rulesfile, "--config", configFile, "--type", "rulesfile", "--version", version,
+					"--add-floating-tags", "--plain-http"}
+				// Set name to the expected one.
+				artifactNameInConfigLayer = repoName
+				// The semver tags are expected to be set.
+				pushedTags = []string{"1.1.1", "1.1", "1"}
+			})
+			AssertSuccesBehaviour([]oci.ArtifactDependency{},
+				[]oci.ArtifactRequirement{},
+				map[string]string{})
+		})
+
 		When("with full flags and args but in tar.gz format", func() {
 			BeforeEach(func() {
 				rulesfile = rulesfiletgz

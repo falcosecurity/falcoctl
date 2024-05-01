@@ -52,6 +52,10 @@ Example - Push artifact "myplugin.tar.gz" of type "plugin" for multiple platform
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile":
 	falcoctl registry push --type rulesfile --version "0.1.2" localhost:5000/myrulesfile:latest myrulesfile.tar.gz
 
+Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" with floating tags for the major and minor versions (0 and 0.1):
+	falcoctl registry push --type rulesfile --version "0.1.2" localhost:5000/myrulesfile:latest myrulesfile.tar.gz \
+	        --add-floating-tags
+
 Example - Push artifact "myrulesfile.tar.gz" of type "rulesfile" to an insecure registry:
 	falcoctl registry push --type rulesfile --version "0.1.2" --plain-http localhost:5000/myrulesfile:latest myrulesfile.tar.gz
 
@@ -190,6 +194,14 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 	}
 	if err := config.ParseRequirements(o.Requirements...); err != nil {
 		return err
+	}
+
+	if o.AutoFloatingTags {
+		v, err := semver.Parse(o.Version)
+		if err != nil {
+			return fmt.Errorf("expected semver for the flag \"--version\": %w", err)
+		}
+		o.Tags = append(o.Tags, o.Version, fmt.Sprintf("%v", v.Major), fmt.Sprintf("%v.%v", v.Major, v.Minor))
 	}
 
 	opts := ocipusher.Options{
