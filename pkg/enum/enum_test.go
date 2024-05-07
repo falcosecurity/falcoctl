@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package options
+package enum
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -41,7 +41,7 @@ var _ = Describe("Enum", func() {
 		})
 
 		It("should set the default values", func() {
-			Expect(enum.value).Should(Equal(defValue))
+			Expect(enum.Value).Should(Equal(defValue))
 		})
 
 		It("should set the allowed values", func() {
@@ -64,9 +64,9 @@ var _ = Describe("Enum", func() {
 				val = newVal
 			})
 
-			It("Should set the correct val", func() {
+			It("Should set the correct value", func() {
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(enum.value).Should(Equal(newVal))
+				Expect(enum.Value).Should(Equal(newVal))
 			})
 		})
 

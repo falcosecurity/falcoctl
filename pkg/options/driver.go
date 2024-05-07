@@ -27,11 +27,12 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/config"
 	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
+	"github.com/falcosecurity/falcoctl/pkg/enum"
 )
 
 // DriverTypes data structure for driver types.
 type DriverTypes struct {
-	*Enum
+	*enum.Enum
 }
 
 // NewDriverTypes returns a new Enum configured for the driver types.
@@ -41,7 +42,7 @@ func NewDriverTypes() *DriverTypes {
 	return &DriverTypes{
 		// Default value is not used.
 		// This enum is only used to print allowed values.
-		Enum: NewEnum(types, drivertype.TypeModernBpf),
+		Enum: enum.NewEnum(types, drivertype.TypeModernBpf),
 	}
 }
 

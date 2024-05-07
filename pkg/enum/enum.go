@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package options
+package enum
 
 import (
 	"fmt"
@@ -26,21 +26,21 @@ import (
 // can have a limited set of values.
 type Enum struct {
 	allowed []string
-	value   string
+	Value   string
 }
 
 // NewEnum returns an enum struct. The firs argument is a set of values allowed for the flag.
-// The second argument is the default value of the flag.
+// The second argument is the default Value of the flag.
 func NewEnum(allowed []string, d string) *Enum {
 	return &Enum{
 		allowed: allowed,
-		value:   d,
+		Value:   d,
 	}
 }
 
-// String returns the value.
+// String returns the Value.
 func (e *Enum) String() string {
-	return e.value
+	return e.Value
 }
 
 // Allowed returns the list of allowed values enclosed in parenthesis.
@@ -48,12 +48,12 @@ func (e *Enum) Allowed() string {
 	return fmt.Sprintf("(%s)", strings.Join(e.allowed, ", "))
 }
 
-// Set the value for the flag.
+// Set the Value for the flag.
 func (e *Enum) Set(p string) error {
 	if !slices.Contains(e.allowed, p) {
 		return fmt.Errorf("invalid argument %q, please provide one of (%s)", p, strings.Join(e.allowed, ", "))
 	}
-	e.value = p
+	e.Value = p
 	return nil
 }
 

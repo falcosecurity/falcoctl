@@ -13,10 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package options
+package output
 
 import (
 	"github.com/pterm/pterm"
+
+	"github.com/falcosecurity/falcoctl/pkg/enum"
 )
 
 const (
@@ -34,20 +36,20 @@ var logLevels = []string{LogLevelInfo, LogLevelWarn, LogLevelDebug, LogLevelTrac
 
 // LogLevel data structure for log-level flag.
 type LogLevel struct {
-	*Enum
+	*enum.Enum
 }
 
 // NewLogLevel returns a new Enum configured for the log level flag.
 func NewLogLevel() *LogLevel {
 	return &LogLevel{
-		Enum: NewEnum(logLevels, LogLevelInfo),
+		Enum: enum.NewEnum(logLevels, LogLevelInfo),
 	}
 }
 
 // ToPtermLogLevel converts the current log level to pterm.LogLevel.
 func (ll *LogLevel) ToPtermLogLevel() pterm.LogLevel {
 	var level pterm.LogLevel
-	switch ll.value {
+	switch ll.Value {
 	case LogLevelInfo:
 		level = pterm.LogLevelInfo
 	case LogLevelWarn:

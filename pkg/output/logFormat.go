@@ -13,10 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package options
+package output
 
 import (
 	"github.com/pterm/pterm"
+
+	"github.com/falcosecurity/falcoctl/pkg/enum"
 )
 
 const (
@@ -32,13 +34,13 @@ var logFormats = []string{LogFormatColor, LogFormatText, LogFormatJSON}
 
 // LogFormat data structure for log-format flag.
 type LogFormat struct {
-	*Enum
+	*enum.Enum
 }
 
 // NewLogFormat returns a new Enum configured for the log formats flag.
 func NewLogFormat() *LogFormat {
 	return &LogFormat{
-		Enum: NewEnum(logFormats, LogFormatColor),
+		Enum: enum.NewEnum(logFormats, LogFormatColor),
 	}
 }
 
@@ -46,8 +48,9 @@ func NewLogFormat() *LogFormat {
 func (lg *LogFormat) ToPtermFormatter() pterm.LogFormatter {
 	var formatter pterm.LogFormatter
 
-	switch lg.value {
+	switch lg.Value {
 	case LogFormatColor:
+		pterm.EnableColor()
 		formatter = pterm.LogFormatterColorful
 	case LogFormatText:
 		pterm.DisableColor()
