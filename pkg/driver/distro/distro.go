@@ -32,7 +32,6 @@ import (
 	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/driverbuilder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
-	"golang.org/x/exp/slog"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
 
@@ -189,13 +188,14 @@ func Build(ctx context.Context,
 		return "", err
 	}
 
-	setupDKLogger(printer)
-
+	// Disable automatic kernel headers fetching
+	// if customizeBuild already retrieved kernel headers for us
+	// (and has set the KernelDirEnv key)
 	downloadHeaders := true
 	if _, ok := env[drivertype.KernelDirEnv]; ok {
 		downloadHeaders = false
 	}
-	err = driverbuilder.NewLocalBuildProcessor(1000, true, downloadHeaders, srcPath, env).Start(ro.ToBuild())
+	err = driverbuilder.NewLocalBuildProcessor(true, downloadHeaders, srcPath, env, 1000).Start(ro.ToBuild(printer))
 	return destPath, err
 }
 
@@ -207,7 +207,10 @@ func getDKRootOptions(d Distro,
 	driverName,
 	destPath string,
 ) (*cmd.RootOptions, error) {
-	ro := cmd.NewRootOptions()
+	ro, err := cmd.NewRootOptions()
+	if err != nil {
+		return nil, err
+	}
 	ro.Architecture = kr.Architecture.String()
 	ro.DriverVersion = driverVer
 	// We pass just the fixed kernelversion down to driverkit.
@@ -224,28 +227,10 @@ func getDKRootOptions(d Distro,
 	// the only case this can happen is if a Build is requested for modern-bpf driver type,
 	// But "install" cmd is smart enough to avoid that situation
 	// by using HasArtifacts() method.
-	if ro.Output.Module == "" && ro.Output.Probe == "" {
+	if !ro.Output.HasOutputs() {
 		return nil, errors.New("build on non-artifacts driver attempted")
 	}
 	return ro, nil
-}
-
-func setupDKLogger(printer *output.Printer) {
-	// Setup slog logger (used by driverkit)
-	// to log on our logger level and writer.
-	programLevel := &slog.LevelVar{}
-	if err := programLevel.UnmarshalText([]byte(printer.Logger.Level.String())); err != nil {
-		programLevel = nil // uses default Info level
-	}
-	h := slog.NewTextHandler(printer.Logger.Writer, &slog.HandlerOptions{
-		Level: programLevel,
-		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				return slog.Attr{}
-			}
-			return a
-		}})
-	slog.SetDefault(slog.New(h))
 }
 
 // Download will try to download drivers for a distro trying specified repos.
