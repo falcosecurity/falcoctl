@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package options
+package output
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -32,8 +32,8 @@ var _ = Describe("LogLevel", func() {
 	Context("NewLogLevel Func", func() {
 		It("should return a new LogLevel", func() {
 			Expect(logLevel).ShouldNot(BeNil())
-			Expect(logLevel.value).Should(Equal(LogLevelInfo))
-			Expect(logLevel.allowed).Should(Equal(logLevels))
+			Expect(logLevel.Value).Should(Equal(LogLevelInfo))
+			Expect(logLevel.Allowed()).Should(Equal("(info, warn, debug, trace)"))
 		})
 	})
 

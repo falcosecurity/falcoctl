@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package options
+package output
 
 import (
 	"github.com/gookit/color"
@@ -33,8 +33,8 @@ var _ = Describe("LogFormat", func() {
 	Context("NewLogFormat Func", func() {
 		It("should return a new logFormatter", func() {
 			Expect(logFormatter).ShouldNot(BeNil())
-			Expect(logFormatter.value).Should(Equal(LogFormatColor))
-			Expect(logFormatter.allowed).Should(Equal(logFormats))
+			Expect(logFormatter.Value).Should(Equal(LogFormatColor))
+			Expect(logFormatter.Allowed()).Should(Equal("(color, text, json)"))
 		})
 	})
 

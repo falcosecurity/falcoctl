@@ -46,15 +46,15 @@ type Common struct {
 	// IndexCache caches the entries for the configured indexes.
 	IndexCache *cache.Cache
 
-	logLevel  *LogLevel
-	logFormat *LogFormat
+	logLevel  *output.LogLevel
+	logFormat *output.LogFormat
 }
 
 // NewOptions returns a new Common struct.
 func NewOptions() *Common {
 	return &Common{
-		logLevel:  NewLogLevel(),
-		logFormat: NewLogFormat(),
+		logLevel:  output.NewLogLevel(),
+		logFormat: output.NewLogFormat(),
 	}
 }
 
