@@ -195,7 +195,7 @@ func Build(ctx context.Context,
 	if _, ok := env[drivertype.KernelDirEnv]; ok {
 		downloadHeaders = false
 	}
-	err = driverbuilder.NewLocalBuildProcessor(true, downloadHeaders, srcPath, env, 1000).Start(ro.ToBuild(printer))
+	err = driverbuilder.NewLocalBuildProcessor(true, downloadHeaders, true, srcPath, env, 1000).Start(ro.ToBuild(printer))
 	return destPath, err
 }
 
