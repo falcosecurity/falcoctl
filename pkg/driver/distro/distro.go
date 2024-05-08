@@ -187,6 +187,10 @@ func Build(ctx context.Context,
 		return "", err
 	}
 
+	if env == nil {
+		env = make(map[string]string)
+	}
+
 	// Disable automatic kernel headers fetching
 	// if customizeBuild already retrieved kernel headers for us
 	// (and has set the KernelDirEnv key)
