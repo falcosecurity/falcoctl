@@ -176,7 +176,6 @@ func Build(ctx context.Context,
 	if exist, _ := utils.FileExists(destPath); exist {
 		return destPath, ErrAlreadyPresent
 	}
-	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
 
 	env, err := d.customizeBuild(ctx, printer, driverType, kr)
 	if err != nil {
@@ -195,6 +194,7 @@ func Build(ctx context.Context,
 	if _, ok := env[drivertype.KernelDirEnv]; ok {
 		downloadHeaders = false
 	}
+	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
 	err = driverbuilder.NewLocalBuildProcessor(true, downloadHeaders, true, srcPath, env, 1000).Start(ro.ToBuild(printer))
 	return destPath, err
 }
