@@ -205,7 +205,6 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		}
 		buf.Reset()
 		if err == nil {
-			o.Printer.Logger.Info("Driver built.", o.Printer.Logger.Args("path", dest))
 			return dest, nil
 		}
 		if errors.Is(err, driverdistro.ErrAlreadyPresent) {
