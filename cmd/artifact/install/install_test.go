@@ -45,6 +45,7 @@ Flags:
                                                 --allowed-types=rulesfile --allowed-types=plugin
   -h, --help                              help for install
       --plain-http                        allows interacting with remote registry via plain http requests
+      --platform string                   os and architecture of the artifact in OS/ARCH format (default "linux/amd64")
       --plugins-dir string                directory where to install plugins. (default "/usr/share/falco/plugins")
       --resolve-deps                      whether this command should resolve dependencies or not (default true)
       --rulesfiles-dir string             directory where to install rules. (default "/etc/falco")
@@ -73,11 +74,11 @@ separated by a semicolon ';'. Other arguments, if passed through environment var
 with "FALCOCTL_" and be followed by the hierarchical keys used in the configuration file separated by
 an underscore "_".
 
-A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
+A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"),
 optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).
 
-When providing just the name of the artifact, the command will search for the artifacts in 
-the configured index files, and if found, it will use the registry and repository specified 
+When providing just the name of the artifact, the command will search for the artifacts in
+the configured index files, and if found, it will use the registry and repository specified
 in the indexes.
 
 Example - Install "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
@@ -218,7 +219,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(result).ToNot(BeNil())
 				ref = registry + repoAndTag
 				Expect(err).To(BeNil())
-				args = []string{artifactCmd, installCmd, ref, "--plain-http",
+				args = []string{artifactCmd, installCmd, ref, "--plain-http", "--platform", testPluginPlatform1,
 					"--config", configFilePath, "--allowed-types", "rulesfile"}
 			})
 
@@ -310,7 +311,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(result).ToNot(BeNil())
 				ref = registry + repoAndTag
 				Expect(err).To(BeNil())
-				args = []string{artifactCmd, installCmd, ref, "--plain-http",
+				args = []string{artifactCmd, installCmd, ref, "--plain-http", "--platform", testPluginPlatform1,
 					"--config", configFilePath, "--plugins-dir", destDir}
 			})
 
@@ -348,7 +349,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(result).ToNot(BeNil())
 				ref = registry + repoAndTag
 				Expect(err).To(BeNil())
-				args = []string{artifactCmd, installCmd, ref, "--plain-http",
+				args = []string{artifactCmd, installCmd, ref, "--plain-http", "--platform", testPluginPlatform1,
 					"--config", configFilePath, "--plugins-dir", destDir}
 			})
 
@@ -432,6 +433,28 @@ var artifactInstallTests = Describe("install", func() {
 				expectedError := fmt.Sprintf("ERROR cannot use directory %q "+
 					"as install destination: %s doesn't exists", destDir, destDir)
 				Expect(err).To(HaveOccurred())
+				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(artifactInstallUsage)))
+				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(expectedError)))
+			})
+		})
+
+		When("not --platform is not of the correct format", func() {
+			BeforeEach(func() {
+				destDir = GinkgoT().TempDir()
+				err = os.Remove(destDir)
+				Expect(err).To(BeNil())
+				baseDir := GinkgoT().TempDir()
+				configFilePath := baseDir + "/config.yaml"
+				content := []byte(correctIndexConfig)
+				err := os.WriteFile(configFilePath, content, 0o644)
+				Expect(err).To(BeNil())
+
+				ref = registry + repoAndTag
+				args = []string{artifactCmd, installCmd, ref, "--config", configFile, "--platform", "this/is/invalid"}
+			})
+
+			It("check that fails and the usage is not printed", func() {
+				expectedError := `ERROR invalid "platform": must be in the format OS/Arch`
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(artifactInstallUsage)))
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(expectedError)))
 			})
