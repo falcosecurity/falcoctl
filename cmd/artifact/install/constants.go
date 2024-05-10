@@ -19,6 +19,9 @@ const (
 	// FlagAllowedTypes is the name of the flag to specify allowed artifact types.
 	FlagAllowedTypes = "allowed-types"
 
+	// FlagPlatform is the name of the flag to override the platform.
+	FlagPlatform = "platform"
+
 	// FlagResolveDeps is the name of the flag to enable artifact dependencies resolution.
 	FlagResolveDeps = "resolve-deps"
 

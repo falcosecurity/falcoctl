@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -51,11 +52,11 @@ separated by a semicolon ';'. Other arguments, if passed through environment var
 with "FALCOCTL_" and be followed by the hierarchical keys used in the configuration file separated by
 an underscore "_".
 
-A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"), 
+A reference is either a simple name or a fully qualified reference ("<registry>/<repository>"),
 optionally followed by ":<tag>" (":latest" is assumed by default when no tag is given).
 
-When providing just the name of the artifact, the command will search for the artifacts in 
-the configured index files, and if found, it will use the registry and repository specified 
+When providing just the name of the artifact, the command will search for the artifacts in
+the configured index files, and if found, it will use the registry and repository specified
 in the indexes.
 
 Example - Install "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
@@ -74,6 +75,9 @@ type artifactInstallOptions struct {
 	*options.Registry
 	*options.Directory
 	allowedTypes oci.ArtifactTypeSlice
+	platform     string // Raw string from command line
+	platformArch string // Architecture portion of parsed platform string
+	platformOS   string // OS portion of parsed platform string
 	resolveDeps  bool
 	noVerify     bool
 }
@@ -165,6 +169,15 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comm
 				}
 			}
 
+			// Parse "platform" into OS and Arch
+			if len(o.platform) > 0 {
+				parts := strings.Split(o.platform, "/")
+				if len(parts) != 2 {
+					return fmt.Errorf("invalid %q: must be in the format OS/Arch", FlagPlatform)
+				}
+				o.platformOS, o.platformArch = parts[0], parts[1]
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -177,9 +190,11 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comm
 	cmd.Flags().Var(&o.allowedTypes, FlagAllowedTypes,
 		fmt.Sprintf(`list of artifact types that can be installed. If not specified or configured, all types are allowed.
 It accepts comma separated values or it can be repeated multiple times.
-Examples: 
+Examples:
 	--%s="rulesfile,plugin"
 	--%s=rulesfile --%s=plugin`, FlagAllowedTypes, FlagAllowedTypes, FlagAllowedTypes))
+	cmd.Flags().StringVar(&o.platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		"os and architecture of the artifact in OS/ARCH format")
 	cmd.Flags().BoolVar(&o.resolveDeps, FlagResolveDeps, true,
 		"whether this command should resolve dependencies or not")
 	cmd.Flags().BoolVar(&o.noVerify, FlagNoVerify, false,
@@ -225,7 +240,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return nil, err
 		}
 
-		artifactConfig, err := puller.ArtifactConfig(ctx, ref, runtime.GOOS, runtime.GOARCH)
+		artifactConfig, err := puller.ArtifactConfig(ctx, ref, o.platformOS, o.platformArch)
 		if err != nil {
 			return nil, err
 		}
@@ -277,12 +292,12 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 		logger.Info("Preparing to pull artifact", logger.Args("ref", resolvedRef))
 
-		if err := puller.CheckAllowedType(ctx, resolvedRef, runtime.GOOS, runtime.GOARCH, o.allowedTypes.Types); err != nil {
+		if err := puller.CheckAllowedType(ctx, resolvedRef, o.platformOS, o.platformArch, o.allowedTypes.Types); err != nil {
 			return err
 		}
 
 		// Install will always install artifact for the current OS and architecture
-		result, err := puller.Pull(ctx, resolvedRef, tmpDir, runtime.GOOS, runtime.GOARCH)
+		result, err := puller.Pull(ctx, resolvedRef, tmpDir, o.platformOS, o.platformArch)
 		if err != nil {
 			return err
 		}
