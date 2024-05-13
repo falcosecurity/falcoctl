@@ -216,6 +216,7 @@ Indices for *falcoctl* can be retrieved from various storage backends. The suppo
 | http  | http://    | Can be used to retrieve indices via simple HTTP GET requests.                                 |
 | https | https://   | Convenience alias for the HTTP backend.                                                       |
 | gcs   | gs://      | For indices stored as Google Cloud Storage objects. Supports application default credentials. |
+| file  | file://    | For indices stored on the local file system.                                                  |
 
 
 #### falcoctl index add
