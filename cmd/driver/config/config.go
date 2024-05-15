@@ -16,7 +16,6 @@
 package driverconfig
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -28,7 +27,6 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -40,8 +38,7 @@ import (
 )
 
 const (
-	configMapEngineKindKey = "engine.kind"
-	longConfig             = `Configure a driver for future usages with other driver subcommands.
+	longConfig = `Configure a driver for future usages with other driver subcommands.
 It will also update local Falco configuration or k8s configmap depending on the environment where it is running, to let Falco use chosen driver.
 Only supports deployments of Falco that use a driver engine, ie: one between kmod, ebpf and modern-ebpf.
 If engine.kind key is set to a non-driver driven engine, Falco configuration won't be touched.
@@ -169,7 +166,7 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 	}
 
 	configMapList, err := cl.CoreV1().ConfigMaps(o.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "app.kubernetes.io/instance: falco",
+		LabelSelector: "app.kubernetes.io/instance=falco",
 	})
 	if err != nil {
 		return err
@@ -178,29 +175,70 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 		return errors.New(`no configmaps matching "app.kubernetes.io/instance: falco" label were found`)
 	}
 
-	type patchDriverTypeValue struct {
-		Op    string `json:"op"`
-		Path  string `json:"path"`
-		Value string `json:"value"`
+	type falcoEngineCfg struct {
+		Kind string `yaml:"kind"`
 	}
-	payload := []patchDriverTypeValue{{
-		Op:    "replace",
-		Path:  "/data/" + configMapEngineKindKey,
-		Value: driverType.String(),
-	}}
-	plBytes, _ := json.Marshal(payload)
 
-	for i := 0; i < configMapList.Size(); i++ {
-		configMap := configMapList.Items[i]
-		currEngineKind := configMap.Data[configMapEngineKindKey]
-		if err = checkFalcoRunsWithDrivers(currEngineKind); err != nil {
+	type falcoCfg struct {
+		Engine falcoEngineCfg `yaml:"engine"`
+	}
+
+	for i := 0; i < len(configMapList.Items); i++ {
+		configMap := &configMapList.Items[i]
+		// Check that this is a Falco config map
+		falcoYaml, present := configMap.Data["falco.yaml"]
+		if !present {
+			o.Printer.Logger.Debug("Skip non Falco-related config map",
+				o.Printer.Logger.Args("configMap", configMap.Name))
+			continue
+		}
+
+		// Check that Falco is configured to run with a driver
+		var falcoConfig falcoCfg
+		err = yaml.Unmarshal([]byte(falcoYaml), &falcoConfig)
+		if err != nil {
+			o.Printer.Logger.Warn("Failed to unmarshal falco.yaml config map",
+				o.Printer.Logger.Args("configMap", configMap.Name, "reason", err))
+			continue
+		}
+		if err = checkFalcoRunsWithDrivers(falcoConfig.Engine.Kind); err != nil {
 			o.Printer.Logger.Warn("Avoid updating Falco configMap",
 				o.Printer.Logger.Args("configMap", configMap.Name, "reason", err))
 			continue
 		}
-		// Patch the configMap
-		if _, err = cl.CoreV1().ConfigMaps(configMap.Namespace).Patch(
-			ctx, configMap.Name, types.JSONPatchType, plBytes, metav1.PatchOptions{}); err != nil {
+
+		// Update the configMap.
+		// Multiple steps:
+		// * unmarshal the `falco.yaml` as map[string]interface
+		// * update `engine.kind` value
+		// * save back the marshaled map to the `falco.yaml` configmap
+		// * update the configmap
+		var falcoCfgData map[string]interface{}
+		err = yaml.Unmarshal([]byte(falcoYaml), &falcoCfgData)
+		if err != nil {
+			o.Printer.Logger.Warn("Failed to unmarshal falco.yaml config map",
+				o.Printer.Logger.Args("configMap", configMap.Name))
+			continue
+		}
+		falcoCfgEngine, ok := falcoCfgData["engine"].(map[string]interface{})
+		if !ok {
+			o.Printer.Logger.Warn("Error fetching engine configMap data",
+				o.Printer.Logger.Args("configMap", configMap.Name))
+			continue
+		}
+		falcoCfgEngine["kind"] = driverType.String()
+		falcoCfgData["engine"] = falcoCfgEngine
+		falcoCfgBytes, err := yaml.Marshal(falcoCfgData)
+		if err != nil {
+			o.Printer.Logger.Warn("Error generating update for configMap data",
+				o.Printer.Logger.Args("configMap", configMap.Name))
+			continue
+		}
+		configMap.Data["falco.yaml"] = string(falcoCfgBytes)
+		o.Printer.Logger.Info("Updating configmap",
+			o.Printer.Logger.Args("configMap", configMap.Name))
+		if _, err = cl.CoreV1().ConfigMaps(configMap.Namespace).Update(
+			ctx, configMap, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
