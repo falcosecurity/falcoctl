@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -235,10 +236,16 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 			continue
 		}
 		configMap.Data["falco.yaml"] = string(falcoCfgBytes)
-		o.Printer.Logger.Info("Updating configmap",
-			o.Printer.Logger.Args("configMap", configMap.Name))
-		if _, err = cl.CoreV1().ConfigMaps(configMap.Namespace).Update(
-			ctx, configMap, metav1.UpdateOptions{}); err != nil {
+		attempt := 0
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			o.Printer.Logger.Info("Updating configmap",
+				o.Printer.Logger.Args("configMap", configMap.Name, "attempt", attempt))
+			_, err := cl.CoreV1().ConfigMaps(configMap.Namespace).Update(
+				ctx, configMap, metav1.UpdateOptions{})
+			attempt++
+			return err
+		})
+		if err != nil {
 			return err
 		}
 	}
