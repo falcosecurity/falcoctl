@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +68,22 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 		DisableFlagsInUseLine: true,
 		Short:                 "Configure a driver",
 		Long:                  longConfig,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Override "namespace" flag with viper config if not set by user.
+			f := cmd.Flags().Lookup("namespace")
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag namespace")
+			} else if !f.Changed && viper.IsSet(config.DriverNamespaceKey) {
+				val := viper.Get(config.DriverNamespaceKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite \"namespace\" flag: %w", err)
+				}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println(viper.AllKeys())
 			return o.RunDriverConfig(ctx)
 		},
 	}
@@ -75,6 +91,7 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 	cmd.Flags().BoolVar(&o.Update, "update-falco", true, "Whether to update Falco config/configmap.")
 	cmd.Flags().StringVar(&o.Namespace, "namespace", "", "Kubernetes namespace.")
 	cmd.Flags().StringVar(&o.KubeConfig, "kubeconfig", "", "Kubernetes config.")
+
 	return cmd
 }
 
@@ -195,7 +212,10 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 func (o *driverConfigOptions) commit(ctx context.Context, driverType drivertype.DriverType) error {
 	if o.Namespace != "" {
 		// Ok we are on k8s
+		o.Printer.Logger.Debug("Committing driver config to k8s configmap",
+			o.Printer.Logger.Args("namespace", o.Namespace))
 		return o.replaceDriverTypeInK8SConfigMap(ctx, driverType)
 	}
+	o.Printer.Logger.Debug("Committing driver config to local Falco config")
 	return o.replaceDriverTypeInFalcoConfig(driverType)
 }
