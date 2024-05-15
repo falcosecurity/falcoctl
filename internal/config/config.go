@@ -136,7 +136,9 @@ const (
 	// DriverNameKey is the Viper key for the driver name.
 	DriverNameKey = "driver.name"
 	// DriverHostRootKey is the Viper key for the driver host root.
-	DriverHostRootKey   = "driver.hostRoot"
+	DriverHostRootKey = "driver.hostRoot"
+	// DriverNamespaceKey is the Viper key for the driver config namespace flag.
+	DriverNamespaceKey  = "driver.config.namespace"
 	falcoHostRootEnvKey = "HOST_ROOT"
 )
 
