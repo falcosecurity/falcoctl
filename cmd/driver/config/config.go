@@ -54,6 +54,13 @@ type driverConfigOptions struct {
 	KubeConfig string
 }
 
+type engineCfg struct {
+	Kind string `yaml:"kind"`
+}
+type falcoCfg struct {
+	Engine engineCfg `yaml:"engine"`
+}
+
 // NewDriverConfigCmd configures a driver and stores it in config.
 func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *options.Driver) *cobra.Command {
 	o := driverConfigOptions{
@@ -81,7 +88,6 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println(viper.AllKeys())
 			return o.RunDriverConfig(ctx)
 		},
 	}
@@ -89,7 +95,6 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 	cmd.Flags().BoolVar(&o.Update, "update-falco", true, "Whether to update Falco config/configmap.")
 	cmd.Flags().StringVar(&o.Namespace, "namespace", "", "Kubernetes namespace.")
 	cmd.Flags().StringVar(&o.KubeConfig, "kubeconfig", "", "Kubernetes config.")
-
 	return cmd
 }
 
@@ -107,6 +112,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context) error {
 			return err
 		}
 	}
+	o.Printer.Logger.Info("Storing falcoctl driver config")
 	return config.StoreDriver(o.Driver.ToDriverConfig(), o.ConfigFile)
 }
 
@@ -123,12 +129,6 @@ func checkFalcoRunsWithDrivers(engineKind string) error {
 
 func (o *driverConfigOptions) replaceDriverTypeInFalcoConfig(driverType drivertype.DriverType) error {
 	falcoCfgFile := filepath.Clean(filepath.Join(string(os.PathSeparator), "etc", "falco", "falco.yaml"))
-	type engineCfg struct {
-		Kind string `yaml:"kind"`
-	}
-	type falcoCfg struct {
-		Engine engineCfg `yaml:"engine"`
-	}
 	yamlFile, err := os.ReadFile(filepath.Clean(falcoCfgFile))
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (o *driverConfigOptions) replaceDriverTypeInFalcoConfig(driverType driverty
 		return err
 	}
 	if err = checkFalcoRunsWithDrivers(cfg.Engine.Kind); err != nil {
-		o.Printer.Logger.Warn("Avoid updating Falco configuration",
+		o.Printer.Logger.Warn("Avoid updating",
 			o.Printer.Logger.Args("config", falcoCfgFile, "reason", err))
 		return nil
 	}
@@ -173,17 +173,10 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 		return err
 	}
 	if configMapList.Size() == 0 {
-		return errors.New(`no configmaps matching "app.kubernetes.io/instance: falco" label were found`)
+		return errors.New(`no configmaps matching "app.kubernetes.io/instance=falco" label were found`)
 	}
 
-	type falcoEngineCfg struct {
-		Kind string `yaml:"kind"`
-	}
-
-	type falcoCfg struct {
-		Engine falcoEngineCfg `yaml:"engine"`
-	}
-
+	updated := false
 	for i := 0; i < len(configMapList.Items); i++ {
 		configMap := &configMapList.Items[i]
 		// Check that this is a Falco config map
@@ -198,12 +191,12 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 		var falcoConfig falcoCfg
 		err = yaml.Unmarshal([]byte(falcoYaml), &falcoConfig)
 		if err != nil {
-			o.Printer.Logger.Warn("Failed to unmarshal falco.yaml config map",
-				o.Printer.Logger.Args("configMap", configMap.Name, "reason", err))
+			o.Printer.Logger.Warn("Failed to unmarshal falco.yaml to falcoCfg struct",
+				o.Printer.Logger.Args("configMap", configMap.Name, "err", err))
 			continue
 		}
 		if err = checkFalcoRunsWithDrivers(falcoConfig.Engine.Kind); err != nil {
-			o.Printer.Logger.Warn("Avoid updating Falco configMap",
+			o.Printer.Logger.Warn("Avoid updating",
 				o.Printer.Logger.Args("configMap", configMap.Name, "reason", err))
 			continue
 		}
@@ -217,13 +210,13 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 		var falcoCfgData map[string]interface{}
 		err = yaml.Unmarshal([]byte(falcoYaml), &falcoCfgData)
 		if err != nil {
-			o.Printer.Logger.Warn("Failed to unmarshal falco.yaml config map",
-				o.Printer.Logger.Args("configMap", configMap.Name))
+			o.Printer.Logger.Warn("Failed to unmarshal falco.yaml to map[string]interface{}",
+				o.Printer.Logger.Args("configMap", configMap.Name, "err", err))
 			continue
 		}
 		falcoCfgEngine, ok := falcoCfgData["engine"].(map[string]interface{})
 		if !ok {
-			o.Printer.Logger.Warn("Error fetching engine configMap data",
+			o.Printer.Logger.Warn("Error fetching engine config",
 				o.Printer.Logger.Args("configMap", configMap.Name))
 			continue
 		}
@@ -231,14 +224,14 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 		falcoCfgData["engine"] = falcoCfgEngine
 		falcoCfgBytes, err := yaml.Marshal(falcoCfgData)
 		if err != nil {
-			o.Printer.Logger.Warn("Error generating update for configMap data",
-				o.Printer.Logger.Args("configMap", configMap.Name))
+			o.Printer.Logger.Warn("Error generating update data",
+				o.Printer.Logger.Args("configMap", configMap.Name, "err", err))
 			continue
 		}
 		configMap.Data["falco.yaml"] = string(falcoCfgBytes)
 		attempt := 0
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			o.Printer.Logger.Info("Updating configmap",
+			o.Printer.Logger.Debug("Updating",
 				o.Printer.Logger.Args("configMap", configMap.Name, "attempt", attempt))
 			_, err := cl.CoreV1().ConfigMaps(configMap.Namespace).Update(
 				ctx, configMap, metav1.UpdateOptions{})
@@ -248,6 +241,11 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 		if err != nil {
 			return err
 		}
+		updated = true
+	}
+
+	if !updated {
+		return errors.New("could not update any configmap")
 	}
 	return nil
 }
@@ -257,10 +255,10 @@ func (o *driverConfigOptions) replaceDriverTypeInK8SConfigMap(ctx context.Contex
 func (o *driverConfigOptions) commit(ctx context.Context, driverType drivertype.DriverType) error {
 	if o.Namespace != "" {
 		// Ok we are on k8s
-		o.Printer.Logger.Debug("Committing driver config to k8s configmap",
+		o.Printer.Logger.Info("Committing driver config to k8s configmap",
 			o.Printer.Logger.Args("namespace", o.Namespace))
 		return o.replaceDriverTypeInK8SConfigMap(ctx, driverType)
 	}
-	o.Printer.Logger.Debug("Committing driver config to local Falco config")
+	o.Printer.Logger.Info("Committing driver config to local Falco config")
 	return o.replaceDriverTypeInFalcoConfig(driverType)
 }
