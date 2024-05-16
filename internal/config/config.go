@@ -138,8 +138,10 @@ const (
 	// DriverHostRootKey is the Viper key for the driver host root.
 	DriverHostRootKey = "driver.hostRoot"
 	// DriverNamespaceKey is the Viper key for the driver config namespace flag.
-	DriverNamespaceKey  = "driver.config.namespace"
-	falcoHostRootEnvKey = "HOST_ROOT"
+	DriverNamespaceKey = "driver.config.namespace"
+	// DriverUpdateFalcoKey is the Viper key for the driver config update-falco flag.
+	DriverUpdateFalcoKey = "driver.config.update-falco"
+	falcoHostRootEnvKey  = "HOST_ROOT"
 )
 
 // Index represents a configured index.
