@@ -85,6 +85,18 @@ func NewDriverConfigCmd(ctx context.Context, opt *options.Common, driver *option
 					return fmt.Errorf("unable to overwrite \"namespace\" flag: %w", err)
 				}
 			}
+
+			// Override "update-falco" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("update-falco")
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag update-falco")
+			} else if !f.Changed && viper.IsSet(config.DriverUpdateFalcoKey) {
+				val := viper.Get(config.DriverUpdateFalcoKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite \"update-falco\" flag: %w", err)
+				}
+			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
