@@ -168,6 +168,28 @@ func TestDiscoverDistro(t *testing.T) {
 			errExpected:    false,
 		},
 		{
+			// os-release ID "ol" maps to oracle
+			krInput: "5.10.0-2047.510.5.5.el7uek.x86_64",
+			preFn: func() error {
+				type brCfg struct {
+					OsID string `ini:"ID"`
+				}
+				f := ini.Empty()
+				err := f.ReflectFrom(&brCfg{
+					OsID: "ol",
+				})
+				if err != nil {
+					return err
+				}
+				return f.SaveTo(osReleaseFile)
+			},
+			postFn: func() {
+				_ = os.Remove(osReleaseFile)
+			},
+			distroExpected: &ol{},
+			errExpected:    false,
+		},
+		{
 			// No os-release  but "centos-release" file present maps to centos
 			krInput: "5.10.0",
 			preFn: func() error {
