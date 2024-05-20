@@ -10,8 +10,8 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cilium/ebpf v0.15.0
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
-	github.com/docker/cli v26.1.2+incompatible
-	github.com/docker/docker v26.1.2+incompatible
+	github.com/docker/cli v26.1.3+incompatible
+	github.com/docker/docker v26.1.3+incompatible
 	github.com/falcosecurity/driverkit v0.19.2
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -37,8 +37,8 @@ require (
 	google.golang.org/api v0.180.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.30.0
-	k8s.io/client-go v0.30.0
+	k8s.io/apimachinery v0.30.1
+	k8s.io/client-go v0.30.1
 	oras.land/oras-go/v2 v2.5.0
 )
 
@@ -332,7 +332,7 @@ require (
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.30.0 // indirect
+	k8s.io/api v0.30.1 // indirect
 	k8s.io/cli-runtime v0.30.0 // indirect
 	k8s.io/component-base v0.30.0 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
