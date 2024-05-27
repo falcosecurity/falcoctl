@@ -21,11 +21,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"golang.org/x/mod/semver"
 	"golang.org/x/net/context"
 
 	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
@@ -41,8 +47,9 @@ type driverDownloadOptions struct {
 type driverInstallOptions struct {
 	*options.Common
 	*options.Driver
-	Download bool
-	Compile  bool
+	Download   bool
+	Compile    bool
+	Compatible bool
 	driverDownloadOptions
 }
 
@@ -77,6 +84,8 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 
 	cmd.Flags().BoolVar(&o.Download, "download", true, "Whether to enable download of prebuilt drivers")
 	cmd.Flags().BoolVar(&o.Compile, "compile", true, "Whether to enable local compilation of drivers")
+	cmd.Flags().BoolVar(&o.Compatible, "compatible", false, "Whether to enable download of latest "+
+		"compatible driver version instead of the configured one")
 	cmd.Flags().BoolVar(&o.InsecureDownload, "http-insecure", false, "Whether you want to allow insecure downloads or not")
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
 	cmd.Flags().StringVar(&o.HTTPHeaders, "http-headers",
@@ -155,11 +164,75 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 
 	if o.Download {
 		setDefaultHTTPClientOpts(o.driverDownloadOptions)
+
+		// Overridden with highest compatible driver version if
+		// --compatible is used.
+		currDrvVer := o.Driver.Version
+		if o.Compatible {
+			o.Printer.Logger.Debug("Loading compatible driver version from S3")
+
+			bucket := "falco-distribution"
+			region := "eu-west-1"
+
+			// The session the S3 client will use
+			sess, err := session.NewSession(&aws.Config{
+				Region:      aws.String(region),
+				Credentials: credentials.AnonymousCredentials,
+			})
+			if err != nil {
+				o.Printer.Logger.Warn("Failed to create S3 session to load compatible driver versions",
+					o.Printer.Logger.Args("err", err))
+			} else {
+				svc := s3.New(sess)
+				res, err := svc.ListObjectsV2WithContext(ctx, &s3.ListObjectsV2Input{
+					Bucket:    aws.String(bucket),
+					Prefix:    aws.String("driver/"),
+					Delimiter: aws.String("/"),
+				})
+				if err != nil {
+					o.Printer.Logger.Warn("Failed to load compatible driver versions from S3",
+						o.Printer.Logger.Args("bucket", bucket, "region", region, "err", err))
+				} else {
+					// Step 1: load all driver versions
+					driverVersions := make([]string, 0)
+					for _, object := range res.CommonPrefixes {
+						if object.Prefix == nil {
+							continue
+						}
+						key := filepath.Base(*object.Prefix)
+						// Workaround golang semver package that wants
+						// `v` at start position of any semver string.
+						if semver.IsValid("v" + key) {
+							driverVersions = append(driverVersions, key)
+						}
+					}
+
+					// Step 2: sort driver versions
+					semver.Sort(driverVersions)
+
+					// Step 3: find the highest driver version compatible with configured one
+					for _, dVer := range driverVersions {
+						if semver.Compare(dVer, currDrvVer) > 0 &&
+							semver.Major(dVer) == semver.Major(currDrvVer) {
+							currDrvVer = dVer
+						}
+					}
+				}
+			}
+
+			if currDrvVer != o.Driver.Version {
+				o.Printer.Logger.Info("Using compatible driver version",
+					o.Printer.Logger.Args("version", currDrvVer))
+			} else {
+				o.Printer.Logger.Debug("No compatible driver version found, fallback at configured one")
+			}
+		}
+
 		if !o.Printer.DisableStyling {
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to download the driver")
 		}
 		dest, err = driverdistro.Download(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name,
-			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders)
+			o.Driver.Type, currDrvVer, o.Driver.Repos, o.HTTPHeaders)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
