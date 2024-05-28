@@ -171,6 +171,10 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if o.Compatible {
 			o.Printer.Logger.Debug("Loading compatible driver version from S3")
 
+			if !semver.IsValid("v" + currDrvVer) {
+				o.Printer.Logger.Debug("Running a development driver version. Cannot determine compatible versions.")
+			}
+
 			bucket := "falco-distribution"
 			region := "eu-west-1"
 
@@ -212,8 +216,8 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 
 					// Step 3: find the highest driver version compatible with configured one
 					for _, dVer := range driverVersions {
-						if semver.Compare(dVer, currDrvVer) > 0 &&
-							semver.Major(dVer) == semver.Major(currDrvVer) {
+						if semver.Compare("v"+dVer, "v"+currDrvVer) > 0 &&
+							semver.Major("v"+dVer) == semver.Major("v"+currDrvVer) {
 							currDrvVer = dVer
 						}
 					}
