@@ -32,6 +32,7 @@ Usage:
   falcoctl driver install [flags]
 
 Flags:
+      --compatible              Whether to enable download of latest compatible driver version instead of the configured one
       --compile                 Whether to enable local compilation of drivers (default true)
       --download                Whether to enable download of prebuilt drivers (default true)
   -h, --help                    help for install

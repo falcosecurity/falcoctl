@@ -225,7 +225,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			}
 
 			if currDrvVer != o.Driver.Version {
-				o.Printer.Logger.Info("Using compatible driver version",
+				o.Printer.Logger.Info("Using compatible driver",
 					o.Printer.Logger.Args("version", currDrvVer))
 			} else {
 				o.Printer.Logger.Debug("No compatible driver version found, fallback at configured one")
