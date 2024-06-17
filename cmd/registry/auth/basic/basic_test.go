@@ -59,7 +59,34 @@ Global Flags:
 `
 
 //nolint:unused // false positive
-var registryAuthBasicHelp = `Login to an OCI registry to push and pull artifacts`
+var registryAuthBasicHelp = `Login to an OCI registry
+
+Example - Log in with username and password from command line flags:
+	falcoctl registry auth basic -u username -p password localhost:5000
+
+Example - Login with username and password from env variables:
+	FALCOCTL_REGISTRY_AUTH_BASIC_USERNAME=username FALCOCTL_REGISTRY_AUTH_BASIC_PASSWORD=password falcoctl registry auth basic localhost:5000
+
+Example - Login with username and password from stdin:
+	falcoctl registry auth basic -u username --password-stdin localhost:5000
+
+Example - Login with username and password in an interactive prompt:
+	falcoctl registry auth basic localhost:5000
+
+Usage:
+  falcoctl registry auth basic [hostname]
+
+Flags:
+  -h, --help              help for basic
+  -p, --password string   registry password
+      --password-stdin    read password from stdin
+  -u, --username string   registry username
+
+Global Flags:
+      --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --log-format string   Set formatting for logs (color, text, json) (default "color")
+      --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
+`
 
 //nolint:unused // false positive
 var registryAuthBasicAssertFailedBehavior = func(usage, specificError string) {
