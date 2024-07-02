@@ -41,8 +41,9 @@ type driverDownloadOptions struct {
 type driverInstallOptions struct {
 	*options.Common
 	*options.Driver
-	Download bool
-	Compile  bool
+	Download        bool
+	Compile         bool
+	DownloadHeaders bool
 	driverDownloadOptions
 }
 
@@ -77,6 +78,7 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 
 	cmd.Flags().BoolVar(&o.Download, "download", true, "Whether to enable download of prebuilt drivers")
 	cmd.Flags().BoolVar(&o.Compile, "compile", true, "Whether to enable local compilation of drivers")
+	cmd.Flags().BoolVar(&o.DownloadHeaders, "download-headers", true, "Whether to enable automatic kernel headers download where supported")
 	cmd.Flags().BoolVar(&o.InsecureDownload, "http-insecure", false, "Whether you want to allow insecure downloads or not")
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
 	cmd.Flags().StringVar(&o.HTTPHeaders, "http-headers",
@@ -191,7 +193,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if !o.Printer.DisableStyling {
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to build the driver")
 		}
-		dest, err = driverdistro.Build(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name, o.Driver.Type, o.Driver.Version)
+		dest, err = driverdistro.Build(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name, o.Driver.Type, o.Driver.Version, o.DownloadHeaders)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}

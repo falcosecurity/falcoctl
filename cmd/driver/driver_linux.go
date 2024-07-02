@@ -138,6 +138,8 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 					return err
 				}
 				allowedDriverTypes = append(allowedDriverTypes, drvType)
+				opt.Printer.Logger.Debug("Allowed driver",
+					opt.Printer.Logger.Args("type", drvType))
 			}
 
 			// Step 2: fetch system info (kernel release/version and distro)

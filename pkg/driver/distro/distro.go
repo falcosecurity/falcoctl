@@ -169,6 +169,7 @@ func Build(ctx context.Context,
 	driverName string,
 	driverType drivertype.DriverType,
 	driverVer string,
+	downloadHeaders bool,
 ) (string, error) {
 	printer.Logger.Info("Trying to compile the requested driver")
 	driverFileName := toFilename(d, &kr, driverName, driverType)
@@ -190,7 +191,6 @@ func Build(ctx context.Context,
 	// Disable automatic kernel headers fetching
 	// if customizeBuild already retrieved kernel headers for us
 	// (and has set the KernelDirEnv key)
-	downloadHeaders := true
 	if _, ok := env[drivertype.KernelDirEnv]; ok {
 		downloadHeaders = false
 	}

@@ -34,6 +34,7 @@ Usage:
 Flags:
       --compile                 Whether to enable local compilation of drivers (default true)
       --download                Whether to enable download of prebuilt drivers (default true)
+      --download-headers        Whether to enable automatic kernel headers download where supported (default true)
   -h, --help                    help for install
       --http-headers string     Optional comma-separated list of headers for the http GET request (e.g. --http-headers='x-emc-namespace: default,Proxy-Authenticate: Basic'). Not necessary if default repo is used
       --http-insecure           Whether you want to allow insecure downloads or not
