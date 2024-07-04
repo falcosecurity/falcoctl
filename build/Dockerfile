@@ -1,4 +1,4 @@
-FROM golang:1.22 as builder
+FROM cgr.dev/chainguard/go AS builder
 WORKDIR /tmp/builder
 
 ARG RELEASE
@@ -29,14 +29,8 @@ RUN CGO_ENABLED=0 \
 
 RUN echo ${RELEASE}
 
-FROM alpine:3.18.4
+FROM cgr.dev/chainguard/static:latest
 
-RUN apk update --no-cache && \
-    apk add --upgrade --no-cache libssl3 libcrypto3
-RUN rm -rf /var/cache/apk/*
+COPY --from=builder /tmp/builder/falcoctl /usr/bin/falcoctl
 
-ARG BIN_NAME="falcoctl"
-COPY --from=builder /tmp/builder/${BIN_NAME} /usr/bin/${BIN_NAME}
-RUN ln -s /usr/bin/${BIN_NAME} /usr/bin/falcoctl-bin
-
-ENTRYPOINT [ "/usr/bin/falcoctl-bin" ]
+ENTRYPOINT [ "/usr/bin/falcoctl" ]
