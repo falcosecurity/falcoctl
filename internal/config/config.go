@@ -30,6 +30,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 
+	"github.com/falcosecurity/falcoctl/internal/utils"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
@@ -395,8 +396,14 @@ func basicAuthListHookFunc() mapstructure.DecodeHookFuncType {
 					return data, fmt.Errorf("not valid token %q", token)
 				}
 
+				// Allow to have the registry expressed as a ref, but actually extract it.
+				registry, err := utils.GetRegistryFromRef(values[0])
+				if err != nil {
+					registry = values[0]
+				}
+
 				auths[i] = BasicAuth{
-					Registry: values[0],
+					Registry: registry,
 					User:     values[1],
 					Password: values[2],
 				}

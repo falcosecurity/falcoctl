@@ -30,6 +30,7 @@ import (
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/basic"
+	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -95,8 +96,15 @@ Example - Login with username and password in an interactive prompt:
 
 // RunBasic executes the business logic for the basic command.
 func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
-	reg := args[0]
+	var reg string
 	logger := o.Printer.Logger
+
+	// Allow to have the registry expressed as a ref, but actually extract it.
+	reg, err := utils.GetRegistryFromRef(args[0])
+	if err != nil {
+		reg = args[0]
+	}
+
 	if err := getCredentials(o.Printer, o); err != nil {
 		return err
 	}
