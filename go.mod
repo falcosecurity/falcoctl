@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	cloud.google.com/go/storage v1.42.0
+	github.com/aws/aws-sdk-go v1.53.10
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cilium/ebpf v0.15.0

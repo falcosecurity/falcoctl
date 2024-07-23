@@ -25,6 +25,7 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/index/fetch/file"
 	"github.com/falcosecurity/falcoctl/pkg/index/fetch/gcs"
 	"github.com/falcosecurity/falcoctl/pkg/index/fetch/http"
+	"github.com/falcosecurity/falcoctl/pkg/index/fetch/s3"
 	"github.com/falcosecurity/falcoctl/pkg/index/index"
 )
 
@@ -48,12 +49,14 @@ func NewFetcher() *Fetcher {
 			"https": http.Fetch,
 			"gcs":   gcs.Fetch,
 			"file":  file.Fetch,
+			"s3":    s3.Fetch,
 		},
 		schemeDefaultBackends: map[string]string{
 			"http":  "http",
 			"https": "https",
 			"gs":    "gcs",
 			"file":  "file",
+			"s3":    "s3",
 		},
 	}
 }
