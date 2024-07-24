@@ -174,7 +174,7 @@ func (o *pushOptions) runPush(ctx context.Context, args []string) error {
 					return err
 				}
 			}
-			path, err := utils.CreateTarGzArchive("", p)
+			path, err := utils.CreateTarGzArchive("", p, true)
 			if err != nil {
 				return err
 			}
