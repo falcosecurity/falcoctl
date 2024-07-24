@@ -18,6 +18,7 @@ PROJECT?=github.com/falcosecurity/falcoctl
 # todo(leogr): re-enable race when CLI tests can run with race enabled
 TEST_FLAGS ?= -v -cover# -race
 
+.PHONY: falcoctl
 falcoctl:
 	$(GO) build -ldflags \
     "-X '${PROJECT}/cmd/version.semVersion=${RELEASE}' \
