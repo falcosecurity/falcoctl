@@ -40,7 +40,7 @@ func TestCreateTarGzArchiveFile(t *testing.T) {
 	}
 	defer f1.Close()
 
-	tarball, err := CreateTarGzArchive(tmpPrefix, filepath.Join(dir, filename1))
+	tarball, err := CreateTarGzArchive(tmpPrefix, filepath.Join(dir, filename1), false)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -67,6 +67,41 @@ func TestCreateTarGzArchiveFile(t *testing.T) {
 	}
 }
 
+func TestCreateTarGzArchiveFileStripComponents(t *testing.T) {
+	dir := t.TempDir()
+	f1, err := os.Create(filepath.Join(dir, filename1))
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	defer f1.Close()
+
+	tarball, err := CreateTarGzArchive(tmpPrefix, filepath.Join(dir, filename1), true)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	defer os.RemoveAll(filepath.Dir(tarball))
+
+	file, err := os.Open(tarball)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	paths, err := listHeaders(file)
+	fmt.Println(paths)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if len(paths) != 1 {
+		t.Fatalf("Expected 1 path, got %d", len(paths))
+	}
+
+	base := paths[0]
+	if base != filename1 {
+		t.Errorf("Expected file1, got %s", base)
+	}
+}
+
 func TestCreateTarGzArchiveDir(t *testing.T) {
 	// Test that we can compress directories
 	dir := t.TempDir()
@@ -83,7 +118,7 @@ func TestCreateTarGzArchiveDir(t *testing.T) {
 	}
 	defer f2.Close()
 
-	tarball, err := CreateTarGzArchive(tmpPrefix, dir)
+	tarball, err := CreateTarGzArchive(tmpPrefix, dir, false)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

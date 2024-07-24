@@ -31,7 +31,7 @@ import (
 const TmpDirPrefix = "falcoctl-registry-push-"
 
 // CreateTarGzArchive compresses and saves in a tar archive the passed file.
-func CreateTarGzArchive(dir, path string) (file string, err error) {
+func CreateTarGzArchive(dir, path string, stripComponents bool) (file string, err error) {
 	cleanedPath := filepath.Clean(path)
 	if dir == "" {
 		dir = TmpDirPrefix
@@ -96,13 +96,13 @@ func CreateTarGzArchive(dir, path string) (file string, err error) {
 				return nil
 			}
 
-			return copyToTarGz(path, tw, info)
+			return copyToTarGz(path, tw, info, stripComponents)
 		})
 		if err != nil {
 			return "", err
 		}
 	} else {
-		if err = copyToTarGz(path, tw, fInfo); err != nil {
+		if err = copyToTarGz(path, tw, fInfo, stripComponents); err != nil {
 			return "", err
 		}
 	}
@@ -110,9 +110,17 @@ func CreateTarGzArchive(dir, path string) (file string, err error) {
 	return outFile.Name(), err
 }
 
-func copyToTarGz(path string, tw *tar.Writer, info fs.FileInfo) error {
+func copyToTarGz(path string, tw *tar.Writer, info fs.FileInfo, stripComponents bool) error {
+	var headerName string
+
+	if stripComponents {
+		headerName = filepath.Base(path)
+	} else {
+		headerName = path
+	}
+
 	header := &tar.Header{
-		Name:     path,
+		Name:     headerName,
 		Size:     info.Size(),
 		Mode:     int64(info.Mode()),
 		Typeflag: tar.TypeReg,

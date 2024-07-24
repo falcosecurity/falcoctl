@@ -16,8 +16,7 @@
 package drivertype
 
 import (
-	// Needed for go:linkname to be able to access a private function from cilium/ebpf/features.
-	_ "unsafe"
+	_ "unsafe" // Needed for go:linkname to be able to access a private function from cilium/ebpf/features.
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/features"
