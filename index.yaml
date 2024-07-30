@@ -431,6 +431,31 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/k8smeta
+- name: kafka
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/kafka
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: |
+    Read events from Kafka topics into Falco
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/kafka
+  keywords:
+    - events
+    - kafka
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+    - email: Hunter.Madison@ibm.com
+      name: Hunter Madison
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/kafka
 - name: okta
   type: plugin
   registry: ghcr.io
