@@ -18,9 +18,14 @@ jobs:
         goarch:
           - arm64
           - amd64
+          - loong64
         exclude:
           - goarch: arm64
             goos: windows
+          - goarch: loong64
+            goos: windows
+          - goarch: loong64
+            goos: darwin
     steps:
       - name: Checkout commit
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
