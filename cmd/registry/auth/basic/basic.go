@@ -69,6 +69,10 @@ Example - Login with username and password in an interactive prompt:
 `,
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			_ = viper.BindPFlag("registry.auth.basic.username", cmd.Flags().Lookup("username"))
+			_ = viper.BindPFlag("registry.auth.basic.password", cmd.Flags().Lookup("password"))
+			_ = viper.BindPFlag("registry.auth.basic.password_stdin", cmd.Flags().Lookup("password-stdin"))
+
 			o.username = viper.GetString("registry.auth.basic.username")
 			o.password = viper.GetString("registry.auth.basic.password")
 			o.passwordFromStdin = viper.GetBool("registry.auth.basic.password_stdin")
@@ -83,13 +87,6 @@ Example - Login with username and password in an interactive prompt:
 	cmd.Flags().StringVarP(&o.username, "username", "u", "", "registry username")
 	cmd.Flags().StringVarP(&o.password, "password", "p", "", "registry password")
 	cmd.Flags().BoolVar(&o.passwordFromStdin, "password-stdin", false, "read password from stdin")
-
-	_ = viper.BindPFlag("registry.auth.basic.username", cmd.Flags().Lookup("username"))
-	_ = viper.BindPFlag("registry.auth.basic.password", cmd.Flags().Lookup("password"))
-	_ = viper.BindPFlag("registry.auth.basic.password_stdin", cmd.Flags().Lookup("password-stdin"))
-
-	// Bind to environment variables.
-	viper.AutomaticEnv()
 
 	return cmd
 }
