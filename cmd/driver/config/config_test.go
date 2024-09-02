@@ -35,10 +35,12 @@ Usage:
   falcoctl driver config [flags]
 
 Flags:
-  -h, --help                help for config
-      --kubeconfig string   Kubernetes config.
-      --namespace string    Kubernetes namespace.
-      --update-falco        Whether to update Falco config/configmap. (default true)
+      --configmap string          Falco configmap name.
+      --falco-config-dir string   Falco configuration directory. (default "/etc/falco")
+  -h, --help                      help for config
+      --kubeconfig string         Kubernetes config.
+      --namespace string          Kubernetes namespace.
+      --update-falco              Whether to overwrite Falco configuration (default true)
 
 Global Flags:
       --config string          config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
