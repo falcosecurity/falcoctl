@@ -36,6 +36,7 @@ require (
 	google.golang.org/api v0.186.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/api v0.30.2
 	k8s.io/apimachinery v0.30.2
 	k8s.io/client-go v0.30.2
 	oras.land/oras-go/v2 v2.5.0
@@ -332,7 +333,6 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.30.2 // indirect
 	k8s.io/cli-runtime v0.30.0 // indirect
 	k8s.io/component-base v0.30.0 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
