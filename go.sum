@@ -317,8 +317,8 @@ github.com/evanphx/json-patch v5.9.0+incompatible h1:fBXyNpNMuTTDdquAq/uisOr2lSh
 github.com/evanphx/json-patch v5.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f h1:Wl78ApPPB2Wvf/TIe2xdyJxTlb6obmF18d8QdkxNDu4=
 github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f/go.mod h1:OSYXu++VVOHnXeitef/D8n/6y4QV8uLHSFXX4NeXMGc=
-github.com/falcosecurity/driverkit v0.20.0 h1:JK95yA9JIIfuyRYhDq+eOvOU/PIcbiF0h91sbRHrhek=
-github.com/falcosecurity/driverkit v0.20.0/go.mod h1:jAfMal2CLnkGV0hAbOP0DEisOMqubbwfs7IcVu3H1Y0=
+github.com/falcosecurity/driverkit v0.20.3 h1:WCys2uMiaTnhgnAwaX8DQBYHGhHyciBsvWL9+wWGh7s=
+github.com/falcosecurity/driverkit v0.20.3/go.mod h1:xFecEFc9v8uMx1oI+6LJEEYrqX85r0dpNVsARUmrNNU=
 github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072/go.mod h1:duJ4Jxv5lDcvg4QuQr0oowTf7dz4/CR8NtyCooz9HL8=
 github.com/fatih/camelcase v1.0.0 h1:hxNvNX/xYBp0ovncs8WyWZrOrpBNub/JfaMvbURyft8=
 github.com/fatih/camelcase v1.0.0/go.mod h1:yN2Sb0lFhZJUdVvtELVWefmrXpuZESvPmqwoZc+/fpc=
