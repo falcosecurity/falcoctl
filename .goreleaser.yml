@@ -47,3 +47,6 @@ release:
 
 changelog:
   use: github-native
+
+git:
+  tag_sort: -version:creatordate
