@@ -63,6 +63,7 @@ func (o *IndexAddOptions) RunIndexAdd(ctx context.Context, args []string) error 
 	if len(args) == 3 {
 		backend = args[2]
 	} else if len(args) == 4 {
+		backend = args[2]
 		token = args[3]
 	}
 
