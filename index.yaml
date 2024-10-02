@@ -442,8 +442,7 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
-  description: |
-    Read events from Kafka topics into Falco
+  description: Read events from Kafka topics into Falco
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/kafka
   keywords:
     - events
