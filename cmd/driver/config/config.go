@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2024 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -238,7 +238,8 @@ func overwriteDriverType(configDir string, driverType drivertype.DriverType) err
 	_, err := os.Stat(configDir)
 	if os.IsNotExist(err) {
 		// Create it.
-		if err := os.MkdirAll(configDir, 0o750); err != nil {
+		// #nosec G301 -- under /etc we want 755 permissions
+		if err := os.MkdirAll(configDir, 0o755); err != nil {
 			return fmt.Errorf("unable to create directory %s: %w", configDir, err)
 		}
 	} else if err != nil && !os.IsNotExist(err) {
@@ -252,7 +253,8 @@ func overwriteDriverType(configDir string, driverType drivertype.DriverType) err
 	}
 
 	// Write the engine configuration to a specialized config file.
-	if err := os.WriteFile(filepath.Join(configDir, falcoDriverConfigFile), engineKind, 0o600); err != nil {
+	// #nosec G306 //under /etc we want 644 permissions
+	if err := os.WriteFile(filepath.Join(configDir, falcoDriverConfigFile), engineKind, 0o644); err != nil {
 		return fmt.Errorf("unable to persist engine kind to filesystem: %w", err)
 	}
 
