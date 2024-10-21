@@ -314,7 +314,7 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.21.0 // indirect
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.29.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.21.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.2.0 // indirect
 	go.starlark.net v0.0.0-20240507195648-35fe9f26b4bc // indirect
