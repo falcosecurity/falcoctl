@@ -28,7 +28,7 @@ import (
 // Login checks if passed gcp credentials are correct.
 func Login(ctx context.Context, reg string) error {
 	// Check that we can find a valid token source using GCE or ApplicationDefault.
-	ts, err := google.DefaultTokenSource(ctx)
+	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
 		return fmt.Errorf("wrong GCP token source, unable to find a valid source: %w", err)
 	}
