@@ -55,7 +55,7 @@ func GCPCredential(ctx context.Context, reg string) (auth.Credential, error) {
 
 	// load saved tokenSource or saves it
 	if SavedTokenSource == nil {
-		tokenSource, err = google.DefaultTokenSource(ctx)
+		tokenSource, err = google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
 		if err != nil {
 			return auth.EmptyCredential, fmt.Errorf("error while trying to identify a GCP TokenSource %w", err)
 		}
