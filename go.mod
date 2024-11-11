@@ -33,7 +33,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.28.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-	google.golang.org/api v0.204.0
+	google.golang.org/api v0.205.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.31.2
@@ -55,7 +55,7 @@ require (
 	atomicgo.dev/schedule v0.1.0 // indirect
 	cel.dev/expr v0.16.1 // indirect
 	cloud.google.com/go v0.116.0 // indirect
-	cloud.google.com/go/auth v0.10.0 // indirect
+	cloud.google.com/go/auth v0.10.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.5 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
 	cloud.google.com/go/iam v1.2.1 // indirect
