@@ -64,7 +64,7 @@ func WithPlainHTTP(plainHTTP bool) func(r *Repository) {
 func (r *Repository) Tags(ctx context.Context) ([]string, error) {
 	var result []string
 	var tagRetriever = func(tags []string) error {
-		result = tags
+		result = append(result, tags...)
 		return nil
 	}
 
