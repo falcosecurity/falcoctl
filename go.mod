@@ -1,6 +1,6 @@
 module github.com/falcosecurity/falcoctl
 
-go 1.22.8
+go 1.22.9
 
 require (
 	cloud.google.com/go/storage v1.47.0
@@ -11,7 +11,7 @@ require (
 	github.com/distribution/distribution/v3 v3.0.0-rc.1
 	github.com/docker/cli v27.3.1+incompatible
 	github.com/docker/docker v27.3.1+incompatible
-	github.com/falcosecurity/driverkit v0.20.3
+	github.com/falcosecurity/driverkit v0.20.4
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-containerregistry v0.20.2
