@@ -20,7 +20,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.35.1
 	github.com/opencontainers/image-spec v1.1.0
-	github.com/pterm/pterm v0.12.79
+	github.com/pterm/pterm v0.12.80
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sigstore/cosign/v2 v2.4.1
 	github.com/sigstore/sigstore v1.8.10
@@ -233,7 +233,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
