@@ -63,7 +63,7 @@ fmt: gci addlicense
 .PHONY: golangci-lint
 golangci-lint:
 ifeq (, $(shell which golangci-lint))
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
 GOLANGCILINT=$(GOBIN)/golangci-lint
 else
 GOLANGCILINT=$(shell which golangci-lint)
