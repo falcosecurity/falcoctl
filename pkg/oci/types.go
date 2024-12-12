@@ -88,8 +88,8 @@ func HumanReadableMediaType(s string) string {
 		return string(Asset)
 	}
 
-	// should never happen
-	return ""
+	// If we do not have a match for a well known mediaType then we return the original mediaType.
+	return s
 }
 
 // ArtifactTypeSlice is a slice of ArtifactType, can be passed as comma separated values.
