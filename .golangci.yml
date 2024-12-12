@@ -44,13 +44,8 @@ linters-settings:
       - opinionated
       - performance
       - style
-    disabled-checks:
-      # Conflicts with govet check-shadowing
-      - sloppyReassign
   goimports:
     local-prefixes: github.com/falcosecurity/falcoctl
-  govet:
-    check-shadowing: true
   misspell:
     locale: US
   nolintlint:
@@ -71,7 +66,7 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
-    - exportloopref
+    - copyloopvar
     # - funlen
     # - gochecknoglobals
     # - gochecknoinits
