@@ -9,7 +9,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cilium/ebpf v0.16.0
 	github.com/distribution/distribution/v3 v3.0.0-rc.1
-	github.com/docker/cli v27.3.1+incompatible
+	github.com/docker/cli v27.4.0+incompatible
 	github.com/docker/docker v27.4.0+incompatible
 	github.com/falcosecurity/driverkit v0.20.5
 	github.com/go-oauth2/oauth2/v4 v4.5.2
