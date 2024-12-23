@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
-	github.com/cilium/ebpf v0.16.0
+	github.com/cilium/ebpf v0.17.1
 	github.com/distribution/distribution/v3 v3.0.0-rc.1
 	github.com/docker/cli v27.4.1+incompatible
 	github.com/docker/docker v27.4.0+incompatible
