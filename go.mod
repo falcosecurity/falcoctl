@@ -17,7 +17,7 @@ require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/gookit/color v1.5.4
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/onsi/ginkgo/v2 v2.22.1
+	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pterm/pterm v0.12.80
