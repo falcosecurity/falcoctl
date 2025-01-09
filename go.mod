@@ -36,9 +36,9 @@ require (
 	google.golang.org/api v0.214.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.31.3
+	k8s.io/api v0.32.0
 	k8s.io/apimachinery v0.32.0
-	k8s.io/client-go v0.31.3
+	k8s.io/client-go v0.32.0
 	oras.land/oras-go/v2 v2.5.0
 )
 
@@ -218,7 +218,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
 	github.com/hashicorp/vault/api v1.15.0 // indirect
-	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20230811132847-661be99b8267 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
