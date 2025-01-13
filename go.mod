@@ -3,7 +3,7 @@ module github.com/falcosecurity/falcoctl
 go 1.23.4
 
 require (
-	cloud.google.com/go/storage v1.49.0
+	cloud.google.com/go/storage v1.50.0
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
