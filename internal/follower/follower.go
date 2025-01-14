@@ -114,8 +114,18 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 		return nil, err
 	}
 
-	// Create temp dir where to put pulled artifacts.
-	tmpDir, err := os.MkdirTemp(conf.TmpDir, "falcoctl-")
+	// Always create temporary directories at the root level to avoid nesting issues.
+	// If TmpDir points to a subdirectory (e.g., /tmp/foo/bar), we use its parent (/tmp/foo)
+	// to prevent creating temporary directories inside artifact directories.
+	baseDir := conf.TmpDir
+	if baseDir != "" {
+		baseDir = filepath.Clean(baseDir)
+		if filepath.Base(baseDir) != "." {
+			baseDir = filepath.Dir(baseDir)
+		}
+	}
+
+	tmpDir, err := os.MkdirTemp(baseDir, "falcoctl-")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
@@ -203,52 +213,80 @@ func (f *Follower) follow(ctx context.Context) {
 		return
 	}
 
+	// Move files to their destination
+	if err := f.moveFiles(ctx, filePaths, dstDir); err != nil {
+		return
+	}
+
+	f.logger.Info("Artifact correctly installed",
+		f.logger.Args("followerName", f.ref, "artifactName", f.ref, "type", res.Type, "digest", res.Digest, "directory", dstDir))
+	f.currentDigest = desc.Digest.String()
+}
+
+// moveFiles moves files from their temporary location to the destination directory.
+// It preserves the directory structure relative to the temporary directory.
+// For example, if a file is at "tmpDir/subdir/file.yaml", it will be moved to
+// "dstDir/subdir/file.yaml". This ensures that files in subdirectories are moved
+// correctly as individual files, not as entire directories.
+func (f *Follower) moveFiles(ctx context.Context, filePaths []string, dstDir string) error {
 	// Install the artifacts if necessary.
 	for _, path := range filePaths {
-		baseName := filepath.Base(path)
-		f.logger.Debug("Installing file", f.logger.Args("followerName", f.ref, "fileName", baseName))
-		dstPath := filepath.Join(dstDir, baseName)
-		// Check if the file exists.
-		f.logger.Debug("Checking if file already exists", f.logger.Args("followerName", f.ref, "fileName", baseName, "directory", dstDir))
-		exists, err := utils.FileExists(dstPath)
+		// Get the relative path from the temporary directory to preserve directory structure
+		relPath, err := filepath.Rel(f.tmpDir, path)
 		if err != nil {
-			f.logger.Error("Unable to check existence for file", f.logger.Args("followerName", f.ref, "fileName", baseName, "reason", err.Error()))
-			return
+			f.logger.Error("Unable to get relative path", f.logger.Args("followerName", f.ref, "path", path, "reason", err.Error()))
+			return err
+		}
+
+		dstPath := filepath.Join(dstDir, relPath)
+		// Ensure the parent directory exists
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+			f.logger.Error("Unable to create destination directory", f.logger.Args("followerName", f.ref, "directory", filepath.Dir(dstPath), "reason", err.Error()))
+			return err
+		}
+
+		f.logger.Debug("Installing file", f.logger.Args("followerName", f.ref, "path", relPath))
+		// Check if the file exists.
+		f.logger.Debug("Checking if file already exists", f.logger.Args("followerName", f.ref, "path", relPath, "directory", dstDir))
+		_, err = os.Stat(dstPath)
+		exists := err == nil
+		if err != nil && !os.IsNotExist(err) {
+			f.logger.Error("Unable to check existence for file", f.logger.Args("followerName", f.ref, "path", relPath, "reason", err.Error()))
+			return err
 		}
 
 		if !exists {
-			f.logger.Debug("Moving file", f.logger.Args("followerName", f.ref, "fileName", baseName, "destDirectory", dstDir))
+			f.logger.Debug("Moving file", f.logger.Args("followerName", f.ref, "path", relPath, "destDirectory", dstDir))
 			if err = utils.Move(path, dstPath); err != nil {
-				f.logger.Error("Unable to move file", f.logger.Args("followerName", f.ref, "fileName", baseName, "destDirectory", dstDir, "reason", err.Error()))
-				return
+				f.logger.Error("Unable to move file", f.logger.Args("followerName", f.ref, "path", relPath, "destDirectory", dstDir, "reason", err.Error()))
+				return err
 			}
 			f.logger.Debug("File correctly installed", f.logger.Args("followerName", f.ref, "path", path))
 			// It's done, move to the next file.
 			continue
 		}
-		f.logger.Debug(fmt.Sprintf("file %q already exists in %q, checking if it is equal to the existing one", baseName, dstDir),
+
+		f.logger.Debug(fmt.Sprintf("file %q already exists in %q, checking if it is equal to the existing one", relPath, dstDir),
 			f.logger.Args("followerName", f.ref))
+
 		// Check if the files are equal.
 		eq, err := equal([]string{path, dstPath})
 		if err != nil {
-			f.logger.Error("Unable to compare files", f.logger.Args("followerName", f.ref, "newFile", path, "existingFile", dstPath, "reason", err.Error()))
-			return
+			f.logger.Error("Unable to check if files are equal", f.logger.Args("followerName", f.ref, "existingFile", dstPath, "reason", err.Error()))
+			return err
 		}
 
 		if !eq {
 			f.logger.Debug(fmt.Sprintf("Overwriting file %q with file %q", dstPath, path), f.logger.Args("followerName", f.ref))
 			if err = utils.Move(path, dstPath); err != nil {
 				f.logger.Error("Unable to overwrite file", f.logger.Args("followerName", f.ref, "existingFile", dstPath, "reason", err.Error()))
-				return
+				return err
 			}
 		} else {
 			f.logger.Debug("The two file are equal, nothing to be done")
 		}
 	}
-
-	f.logger.Info("Artifact correctly installed",
-		f.logger.Args("followerName", f.ref, "artifactName", f.ref, "type", res.Type, "digest", res.Digest, "directory", dstDir))
-	f.currentDigest = desc.Digest.String()
+	return nil
 }
 
 // pull downloads, extracts, and installs the artifact.

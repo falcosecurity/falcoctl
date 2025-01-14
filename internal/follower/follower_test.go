@@ -16,8 +16,11 @@
 package follower
 
 import (
+	"context"
 	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
@@ -131,6 +134,194 @@ func TestCheckRequirements(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestFollowFileHandling(t *testing.T) {
+	type testFile struct {
+		path     string
+		content  string
+		replace  bool // true if file should be replaced when it exists
+	}
+
+	tests := []struct {
+		name     string
+		files    []testFile
+		existing []testFile
+	}{
+		{
+			name: "basic file at root",
+			files: []testFile{
+				{
+					path:    "file1.yaml",
+					content: "content1",
+				},
+			},
+		},
+		{
+			name: "file in subdirectory",
+			files: []testFile{
+				{
+					path:    "subdir/file2.yaml",
+					content: "content2",
+				},
+			},
+		},
+		{
+			name: "file in nested subdirectory",
+			files: []testFile{
+				{
+					path:    "subdir/nested/file3.yaml",
+					content: "content3",
+				},
+			},
+		},
+		{
+			name: "multiple files in different directories",
+			files: []testFile{
+				{
+					path:    "file1.yaml",
+					content: "content1",
+				},
+				{
+					path:    "subdir/file2.yaml",
+					content: "content2",
+				},
+				{
+					path:    "subdir/nested/file3.yaml",
+					content: "content3",
+				},
+			},
+		},
+		{
+			name: "existing file with identical content",
+			files: []testFile{
+				{
+					path:     "file1.yaml",
+					content:  "content1",
+					replace:  false,
+				},
+			},
+			existing: []testFile{
+				{
+					path:    "file1.yaml",
+					content: "content1",
+				},
+			},
+		},
+		{
+			name: "existing file with different content",
+			files: []testFile{
+				{
+					path:     "file1.yaml",
+					content:  "new content",
+					replace:  true,
+				},
+			},
+			existing: []testFile{
+				{
+					path:    "file1.yaml",
+					content: "old content",
+				},
+			},
+		},
+		{
+			name: "mix of new and existing files",
+			files: []testFile{
+				{
+					path:     "file1.yaml",
+					content:  "content1",
+					replace:  false,
+				},
+				{
+					path:     "subdir/file2.yaml",
+					content:  "new content2",
+					replace:  true,
+				},
+			},
+			existing: []testFile{
+				{
+					path:    "file1.yaml",
+					content: "content1",
+				},
+				{
+					path:    "subdir/file2.yaml",
+					content: "old content2",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir, err := os.MkdirTemp("", "falcoctl-test-*")
+			assert.NoError(t, err)
+			defer os.RemoveAll(tmpDir)
+
+			dstDir, err := os.MkdirTemp("", "falcoctl-dst-*")
+			assert.NoError(t, err)
+			defer os.RemoveAll(dstDir)
+
+			// Setup existing files
+			for _, ef := range tt.existing {
+				dstPath := filepath.Join(dstDir, ef.path)
+				err = os.MkdirAll(filepath.Dir(dstPath), 0755)
+				assert.NoError(t, err)
+				err = os.WriteFile(dstPath, []byte(ef.content), 0644)
+				assert.NoError(t, err)
+			}
+
+			f, err := New("test-registry/test-ref", output.NewPrinter(pterm.LogLevelDebug, pterm.LogFormatterJSON, os.Stdout), &Config{
+				RulesfilesDir: dstDir,
+				TmpDir:        tmpDir,
+			})
+			assert.NoError(t, err)
+
+			var paths []string
+			for _, tf := range tt.files {
+				fullPath := filepath.Join(f.tmpDir, tf.path)
+				err = os.MkdirAll(filepath.Dir(fullPath), 0755)
+				assert.NoError(t, err)
+				err = os.WriteFile(fullPath, []byte(tf.content), 0644)
+				assert.NoError(t, err)
+				paths = append(paths, fullPath)
+			}
+
+			// Track modification times of existing files
+			modTimes := make(map[string]time.Time)
+			for _, ef := range tt.existing {
+				dstPath := filepath.Join(dstDir, ef.path)
+				info, err := os.Stat(dstPath)
+				if err == nil {
+					modTimes[dstPath] = info.ModTime()
+				}
+			}
+
+			ctx := context.Background()
+			f.currentDigest = "test-digest"
+			err = f.moveFiles(ctx, paths, dstDir)
+			assert.NoError(t, err)
+
+			for _, tf := range tt.files {
+				dstPath := filepath.Join(dstDir, tf.path)
+				_, err = os.Stat(dstPath)
+				assert.NoError(t, err, "file should exist at %s", dstPath)
+
+				content, err := os.ReadFile(dstPath)
+				assert.NoError(t, err)
+				assert.Equal(t, tf.content, string(content))
+
+				if origTime, exists := modTimes[dstPath]; exists {
+					info, err := os.Stat(dstPath)
+					assert.NoError(t, err)
+					if tf.replace {
+						assert.NotEqual(t, origTime, info.ModTime(), "file should be replaced: %s", dstPath)
+					} else {
+						assert.Equal(t, origTime, info.ModTime(), "file should not be replaced: %s", dstPath)
+					}
+				}
 			}
 		})
 	}
