@@ -303,6 +303,33 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit
+- name: k8saudit-aks
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/k8saudit-aks
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Read Kubernetes Audit Events from AWS AKS Clusters
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-aks
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+    - aks
+    - azure
+    - k8saudit-aks
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-aks
 - name: k8saudit-eks
   type: plugin
   registry: ghcr.io
@@ -382,6 +409,36 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-gke/rules
+- name: k8saudit-ovh
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/k8saudit-ovh
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Read Kubernetes Audit Events from OVHcloud MKS Clusters
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-ovh
+  keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+    - mks
+    - ovh
+    - ovhcloud
+    - k8saudit-ovh
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+    - email: scraly@gmail.com
+      name: Aurélie Vache
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-ovh
 - name: k8saudit-rules
   type: rulesfile
   registry: ghcr.io
