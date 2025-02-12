@@ -51,6 +51,8 @@ type Driver struct {
 	Type     drivertype.DriverType
 	Name     string
 	Repos    []string
+	Pubkey   string
+	NoVerify bool
 	Version  string
 	HostRoot string
 	Distro   driverdistro.Distro
@@ -63,6 +65,8 @@ func (d *Driver) ToDriverConfig() *config.Driver {
 		Type:     []string{d.Type.String()},
 		Name:     d.Name,
 		Repos:    d.Repos,
+		Pubkey:   d.Pubkey,
+		NoVerify: d.NoVerify,
 		Version:  d.Version,
 		HostRoot: d.HostRoot,
 	}

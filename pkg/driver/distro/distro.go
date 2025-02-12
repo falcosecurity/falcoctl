@@ -35,6 +35,7 @@ import (
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
 
+	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 	"github.com/falcosecurity/falcoctl/pkg/output"
@@ -263,8 +264,8 @@ func Download(ctx context.Context,
 			printer.Logger.Warn("Error creating http request.", printer.Logger.Args("err", err))
 			continue
 		}
+		header := http.Header{}
 		if httpHeaders != "" {
-			header := http.Header{}
 			for _, h := range strings.Split(httpHeaders, ",") {
 				key, value := func() (string, string) {
 					x := strings.Split(h, ":")
@@ -272,8 +273,8 @@ func Download(ctx context.Context,
 				}()
 				header.Add(key, value)
 			}
-			req.Header = header
 		}
+		req.Header = header
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != 200 {
 			if err == nil {
@@ -284,9 +285,91 @@ func Download(ctx context.Context,
 			}
 			continue
 		}
-		return destination, copyDataToLocalPath(destination, resp.Body)
+		if err = copyDataToLocalPath(destination, resp.Body); err != nil {
+			return destination, err
+		}
+
+		// Download the signature, if any, and write it next to the downloaded driver.
+		signatureURL := driverURL + ".asc"
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, signatureURL, nil)
+		if err != nil {
+			printer.Logger.Warn("Error creating http request for signature.", printer.Logger.Args("err", err), printer.Logger.Args("signatureURL", signatureURL))
+			// Signature not found is not an error
+			return destination, nil
+		}
+		req.Header = header
+		resp, err = http.DefaultClient.Do(req)
+		if err != nil || resp.StatusCode != 200 {
+			if err == nil {
+				_ = resp.Body.Close()
+				printer.Logger.Warn("Non-200 response from url for signature.", printer.Logger.Args("code", resp.StatusCode))
+			} else {
+				printer.Logger.Warn("Error GETting url for signature.", printer.Logger.Args("err", err))
+			}
+			// Signature not found is not an error
+			return destination, nil
+		}
+		copyDataToLocalPath(destination+".asc", resp.Body)
+		return destination, nil
 	}
 	return destination, fmt.Errorf("unable to find a prebuilt driver")
+}
+
+func VerifyDownloadedSignature(ctx context.Context, printer *output.Printer, downloadedDriverDest, pubkey, httpHeaders string) error {
+	var pubkeyReader io.Reader
+
+	if strings.HasPrefix(pubkey, "http://") || strings.HasPrefix(pubkey, "https://") {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, pubkey, nil)
+		if err != nil {
+			printer.Logger.Warn("Error creating http request.", printer.Logger.Args("err", err))
+			return err
+		}
+		header := http.Header{}
+		if httpHeaders != "" {
+			for _, h := range strings.Split(httpHeaders, ",") {
+				key, value := func() (string, string) {
+					x := strings.Split(h, ":")
+					return x[0], x[1]
+				}()
+				header.Add(key, value)
+			}
+		}
+		req.Header = header
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			printer.Logger.Warn("Error GETting url.", printer.Logger.Args("err", err))
+			return err
+		}
+		if resp.StatusCode != 200 {
+			_ = resp.Body.Close()
+			printer.Logger.Warn("Non-200 response from url.", printer.Logger.Args("code", resp.StatusCode))
+			return errors.New("could not download pubkey for signature verification " + pubkey)
+		}
+
+		pubkeyReader = resp.Body
+		defer resp.Body.Close()
+	} else {
+		fp, err := os.Open(pubkey)
+		if err != nil {
+			return err
+		}
+		pubkeyReader = fp
+		defer fp.Close()
+	}
+
+	signatureFile, err := os.Open(downloadedDriverDest + ".asc")
+	if err != nil {
+		return err
+	}
+	defer signatureFile.Close()
+
+	driverFile, err := os.Open(downloadedDriverDest)
+	if err != nil {
+		return err
+	}
+	defer driverFile.Close()
+
+	return signature.VerifyPGP(driverFile, signatureFile, pubkeyReader)
 }
 
 func customizeDownloadKernelSrcBuild(printer *output.Printer, kr *kernelrelease.KernelRelease) error {

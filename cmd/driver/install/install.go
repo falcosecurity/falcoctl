@@ -174,12 +174,19 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			o.Printer.DefaultText.Print(buf.String())
 		}
 		buf.Reset()
-		if err == nil {
-			o.Printer.Logger.Info("Driver downloaded.", o.Printer.Logger.Args("path", dest))
-			return dest, nil
-		}
 		if errors.Is(err, driverdistro.ErrAlreadyPresent) {
 			o.Printer.Logger.Info("Skipping download, driver already present.", o.Printer.Logger.Args("path", dest))
+			return dest, nil
+		}
+		if err == nil && !o.NoVerify && o.Driver.Pubkey != "" {
+			o.Printer.Logger.Info("Verifying driver signature.", o.Printer.Logger.Args("pubkey", o.Driver.Pubkey))
+			err = driverdistro.VerifyDownloadedSignature(ctx, o.Printer, dest, o.Pubkey, o.HTTPHeaders)
+			if err != nil {
+				o.Printer.Logger.Warn("Could not verify driver signature: " + err.Error())
+			}
+		}
+		if err == nil {
+			o.Printer.Logger.Info("Driver downloaded.", o.Printer.Logger.Args("path", dest))
 			return dest, nil
 		}
 		// Print the error but go on
@@ -187,6 +194,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if o.Compile {
 			o.Printer.Logger.Warn(err.Error())
 		}
+
 	}
 
 	if o.Compile {

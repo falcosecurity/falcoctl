@@ -316,7 +316,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			digestRef := fmt.Sprintf("%s@%s", repo, result.RootDigest)
 
 			logger.Info("Verifying signature for artifact", logger.Args("digest", digestRef))
-			err = signature.Verify(ctx, digestRef, sig)
+			err = signature.VerifyOCI(ctx, digestRef, sig)
 			if err != nil {
 				return fmt.Errorf("error while verifying signature for %s: %w", digestRef, err)
 			}

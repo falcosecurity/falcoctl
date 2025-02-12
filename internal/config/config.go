@@ -134,6 +134,10 @@ const (
 	DriverVersionKey = "driver.version"
 	// DriverReposKey is the Viper key for the driver repositories.
 	DriverReposKey = "driver.repos"
+	// DriverPubkeyKey is the Viper key for the driver pubkey.
+	DriverPubkeyKey = "driver.pubkey"
+	// DriverNoVerifyKey is the Viper key for the driver no verify option.
+	DriverNoVerifyKey = "driver.noVerify"
 	// DriverNameKey is the Viper key for the driver name.
 	DriverNameKey = "driver.name"
 	// DriverHostRootKey is the Viper key for the driver host root.
@@ -193,6 +197,8 @@ type Driver struct {
 	Type     []string `mapstructure:"type"`
 	Name     string   `mapstructure:"name"`
 	Repos    []string `mapstructure:"repos"`
+	Pubkey   string   `mapstructure:"pubkey"`
+	NoVerify bool     `mapstructure:"noVerify"`
 	Version  string   `mapstructure:"version"`
 	HostRoot string   `mapstructure:"hostRoot"`
 }
@@ -212,6 +218,8 @@ func init() {
 		Type:     []string{drivertype.TypeModernBpf, drivertype.TypeKmod, drivertype.TypeBpf},
 		Name:     "falco",
 		Repos:    []string{"https://download.falco.org/driver"},
+		Pubkey:   "https://falco.org/repo/falcosecurity-packages.asc",
+		NoVerify: false,
 		Version:  "",
 		HostRoot: string(os.PathSeparator),
 	}
@@ -240,6 +248,8 @@ func Load(path string) error {
 	viper.SetDefault(DriverHostRootKey, DefaultDriver.HostRoot)
 	viper.SetDefault(DriverNameKey, DefaultDriver.Name)
 	viper.SetDefault(DriverReposKey, DefaultDriver.Repos)
+	viper.SetDefault(DriverPubkeyKey, DefaultDriver.Pubkey)
+	viper.SetDefault(DriverNoVerifyKey, DefaultDriver.NoVerify)
 	viper.SetDefault(DriverVersionKey, DefaultDriver.Version)
 	// Bind FALCOCTL_DRIVER_HOSTROOT key to HOST_ROOT,
 	// so that we manage Falco HOST_ROOT variable too.

@@ -16,11 +16,14 @@
 package driverdistro
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
+	"github.com/falcosecurity/falcoctl/pkg/output"
+	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/ini.v1"
@@ -231,5 +234,33 @@ func TestDiscoverDistro(t *testing.T) {
 		}
 		assert.IsType(t, tCase.distroExpected, d)
 		tCase.postFn()
+	}
+}
+
+func TestVerifyDownloadedSignature(t *testing.T) {
+	type testCase struct {
+		name                 string
+		downloadedDriverDest string
+		pubkey               string
+		valid                bool
+	}
+	testCases := []testCase{
+		{"valid local pubkey", "testdata/hello.txt", "testdata/key.pub", true},
+		// {"valid remote pubkey", "testdata/hello.txt", "https://raw.githubusercontent.com/LucaGuerra/falcoctl/8875a534256686a936213b8b8dc5bbf74b5febfc/internal/signature/testdata/key.pub", true},
+		// {"invalid remote pubkey", "testdata/hello.txt", "https://raw.githubusercontent.com/LucaGuerra/falcoctl/8875a534256686a936213b8b8dc5bbf74b5febfc/internal/signature/testdata/does_not_exist.pub", false},
+		{"missing signature", "testdata/hello2.txt", "testdata/key.pub", false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			printer := output.NewPrinter(pterm.LogLevelInfo, pterm.LogFormatterJSON, os.Stdout)
+
+			err := VerifyDownloadedSignature(context.Background(), printer, tc.downloadedDriverDest, tc.pubkey, "")
+			if tc.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
 	}
 }
