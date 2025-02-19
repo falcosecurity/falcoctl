@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -183,6 +184,8 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			err = driverdistro.VerifyDownloadedSignature(ctx, o.Printer, dest, o.Pubkey, o.HTTPHeaders)
 			if err != nil {
 				o.Printer.Logger.Warn("Could not verify driver signature: " + err.Error())
+				// If the file was downloaded we need to remove it to prevent it from being loaded
+				_ = os.Remove(dest)
 			}
 		}
 		if err == nil {
