@@ -245,6 +245,7 @@ func Download(ctx context.Context,
 	driverType drivertype.DriverType,
 	driverVer string, repos []string,
 	httpHeaders string,
+	downloadSignature bool,
 ) (string, error) {
 	driverFileName := toFilename(d, &kr, driverName, driverType)
 	// Skip if existent
@@ -289,27 +290,29 @@ func Download(ctx context.Context,
 			return destination, err
 		}
 
-		// Download the signature, if any, and write it next to the downloaded driver.
-		signatureURL := driverURL + ".asc"
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, signatureURL, nil)
-		if err != nil {
-			printer.Logger.Warn("Error creating http request for signature.", printer.Logger.Args("err", err), printer.Logger.Args("signatureURL", signatureURL))
-			// Signature not found is not an error
-			return destination, nil
-		}
-		req.Header = header
-		resp, err = http.DefaultClient.Do(req)
-		if err != nil || resp.StatusCode != 200 {
-			if err == nil {
-				_ = resp.Body.Close()
-				printer.Logger.Warn("Non-200 response from url for signature.", printer.Logger.Args("code", resp.StatusCode))
-			} else {
-				printer.Logger.Warn("Error GETting url for signature.", printer.Logger.Args("err", err))
+		if downloadSignature {
+			// Download the signature, if any, and write it next to the downloaded driver.
+			signatureURL := driverURL + ".asc"
+			req, err = http.NewRequestWithContext(ctx, http.MethodGet, signatureURL, nil)
+			if err != nil {
+				printer.Logger.Warn("Error creating http request for signature.", printer.Logger.Args("err", err), printer.Logger.Args("signatureURL", signatureURL))
+				// Signature not found is not an error
+				return destination, nil
 			}
-			// Signature not found is not an error
-			return destination, nil
+			req.Header = header
+			resp, err = http.DefaultClient.Do(req)
+			if err != nil || resp.StatusCode != 200 {
+				if err == nil {
+					_ = resp.Body.Close()
+					printer.Logger.Warn("Non-200 response from url for signature.", printer.Logger.Args("code", resp.StatusCode), printer.Logger.Args("signatureURL", signatureURL))
+				} else {
+					printer.Logger.Warn("Error GETting url for signature.", printer.Logger.Args("err", err))
+				}
+				// Signature not found is not an error
+				return destination, nil
+			}
+			copyDataToLocalPath(destination+".asc", resp.Body)
 		}
-		copyDataToLocalPath(destination+".asc", resp.Body)
 		return destination, nil
 	}
 	return destination, fmt.Errorf("unable to find a prebuilt driver")

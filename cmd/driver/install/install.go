@@ -162,7 +162,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to download the driver")
 		}
 		dest, err = driverdistro.Download(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name,
-			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders)
+			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders, !o.NoVerify)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
