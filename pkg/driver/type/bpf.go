@@ -27,9 +27,6 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
 
-// TypeBpf is the string for the bpf driver type.
-const TypeBpf = "ebpf"
-
 func init() {
 	driverTypes[TypeBpf] = &bpf{}
 }
