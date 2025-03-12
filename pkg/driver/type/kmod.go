@@ -30,8 +30,6 @@ import (
 )
 
 const (
-	// TypeKmod is the string for the bpf driver type.
-	TypeKmod      = "kmod"
 	maxRmmodWait  = 10
 	rmmodWaitTime = 5 * time.Second
 )

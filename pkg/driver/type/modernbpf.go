@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package drivertype
 
 import (
@@ -25,9 +27,6 @@ import (
 
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
-
-// TypeModernBpf is the string for the bpf driver type.
-const TypeModernBpf = "modern_ebpf"
 
 func init() {
 	driverTypes[TypeModernBpf] = &modernBpf{}
