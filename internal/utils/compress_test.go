@@ -36,25 +36,25 @@ func TestCreateTarGzArchiveFile(t *testing.T) {
 	dir := t.TempDir()
 	f1, err := os.Create(filepath.Join(dir, filename1))
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer f1.Close()
 
 	tarball, err := CreateTarGzArchive(tmpPrefix, filepath.Join(dir, filename1), false)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer os.RemoveAll(filepath.Dir(tarball))
 
 	file, err := os.Open(tarball)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	paths, err := listHeaders(file)
 	fmt.Println(paths)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	if len(paths) != 1 {
@@ -71,25 +71,25 @@ func TestCreateTarGzArchiveFileStripComponents(t *testing.T) {
 	dir := t.TempDir()
 	f1, err := os.Create(filepath.Join(dir, filename1))
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer f1.Close()
 
 	tarball, err := CreateTarGzArchive(tmpPrefix, filepath.Join(dir, filename1), true)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer os.RemoveAll(filepath.Dir(tarball))
 
 	file, err := os.Open(tarball)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	paths, err := listHeaders(file)
 	fmt.Println(paths)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	if len(paths) != 1 {
@@ -109,30 +109,30 @@ func TestCreateTarGzArchiveDir(t *testing.T) {
 	// add some files
 	f1, err := os.Create(filepath.Join(dir, filename1))
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer f1.Close()
 	f2, err := os.Create(filepath.Join(dir, filename2))
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer f2.Close()
 
 	tarball, err := CreateTarGzArchive(tmpPrefix, dir, false)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer os.RemoveAll(filepath.Dir(tarball))
 
 	file, err := os.Open(tarball)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer file.Close()
 
 	paths, err := listHeaders(file)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	if len(paths) != 3 {
