@@ -1,6 +1,6 @@
 module github.com/falcosecurity/falcoctl
 
-go 1.23.4
+go 1.23.7
 
 require (
 	cloud.google.com/go/storage v1.50.0
