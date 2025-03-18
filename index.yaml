@@ -23,6 +23,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Reads Cloudtrail JSON logs from files/S3 and injects as events
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/cloudtrail
   keywords:
@@ -48,6 +50,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Reads Cloudtrail JSON logs from files/S3 and injects as events
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/cloudtrail
   keywords:
@@ -101,6 +105,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/rules/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Falco incubating rules
   home: https://github.com/falcosecurity/rules/blob/main/rules/falco-incubating_rules.yaml
   keywords:
@@ -122,6 +128,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/rules/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Falco rules that are loaded by default
   home: https://github.com/falcosecurity/rules/blob/main/rules/falco_rules.yaml
   keywords:
@@ -143,6 +151,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/rules/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Falco sandbox rules
   home: https://github.com/falcosecurity/rules/blob/main/rules/falco-sandbox_rules.yaml
   keywords:
@@ -164,6 +174,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read GCP Audit Logs
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/gcpaudit
   keywords:
@@ -189,6 +201,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read GCP Audit Logs
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/gcpaudit
   keywords:
@@ -214,6 +228,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Github Webhook Events
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/github
   keywords:
@@ -239,6 +255,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Github Webhook Events
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/github
   keywords:
@@ -265,6 +283,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Extract values from any JSON payload
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/json
   keywords:
@@ -289,6 +309,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit
   keywords:
@@ -314,6 +336,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events from AWS AKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-aks
   keywords:
@@ -341,6 +365,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events from AWS EKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-eks
   keywords:
@@ -368,6 +394,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events from GKE Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-gke
   keywords:
@@ -394,6 +422,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events from GKE Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-gke
   keywords:
@@ -420,6 +450,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events from OVHcloud MKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-ovh
   keywords:
@@ -450,6 +482,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read Kubernetes Audit Events and monitor Kubernetes Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit
   keywords:
@@ -475,6 +509,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Enriche Falco syscall flow with Kubernetes Metadata
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8smeta
   keywords:
@@ -499,6 +535,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Read events from Kafka topics into Falco
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/kafka
   keywords:
@@ -523,6 +561,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Okta Log Events
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/okta
   keywords:
@@ -546,6 +586,8 @@
         certificate-identity: ""
         certificate-identity-regexp: https://github.com/falcosecurity/plugins/
         certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
   description: Okta Log Events
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/okta
   keywords:
