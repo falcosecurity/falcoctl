@@ -94,6 +94,20 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/dummy_c
+- name: dummy_rs
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/dummy_rs
+  description: Like dummy, but written in Rust
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/dummy_rs
+  keywords:
+    - dummy_rs
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/dummy_rs
 - name: falco-incubating-rules
   type: rulesfile
   registry: ghcr.io
