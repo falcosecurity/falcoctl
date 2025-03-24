@@ -66,6 +66,31 @@
       name: The Falco Authors
   sources:
     - https://github.com/falcosecurity/plugins/tree/main/plugins/cloudtrail/rules
+- name: container
+  type: plugin
+  registry: ghcr.io
+  repository: falcosecurity/plugins/plugin/container
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+        key: ""
+        ignore-tlog: false
+  description: Enriche Falco syscall flow with Container Metadata
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/container
+  keywords:
+    - container
+    - syscall
+    - extractor
+  license: Apache-2.0
+  maintainers:
+    - email: cncf-falco-dev@lists.cncf.io
+      name: The Falco Authors
+  sources:
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/container
 - name: dummy
   type: plugin
   registry: ghcr.io
