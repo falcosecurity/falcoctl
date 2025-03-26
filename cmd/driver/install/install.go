@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -161,7 +162,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			o.Printer.Spinner, _ = o.Printer.Spinner.Start("Trying to download the driver")
 		}
 		dest, err = driverdistro.Download(ctx, o.Distro, o.Printer.WithWriter(&buf), o.Kr, o.Driver.Name,
-			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders)
+			o.Driver.Type, o.Driver.Version, o.Driver.Repos, o.HTTPHeaders, !o.NoVerify)
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
@@ -174,12 +175,21 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 			o.Printer.DefaultText.Print(buf.String())
 		}
 		buf.Reset()
-		if err == nil {
-			o.Printer.Logger.Info("Driver downloaded.", o.Printer.Logger.Args("path", dest))
-			return dest, nil
-		}
 		if errors.Is(err, driverdistro.ErrAlreadyPresent) {
 			o.Printer.Logger.Info("Skipping download, driver already present.", o.Printer.Logger.Args("path", dest))
+			return dest, nil
+		}
+		if err == nil && !o.NoVerify && o.Driver.Pubkey != "" {
+			o.Printer.Logger.Info("Verifying driver signature.", o.Printer.Logger.Args("pubkey", o.Driver.Pubkey))
+			err = driverdistro.VerifyDownloadedSignature(ctx, o.Printer, dest, o.Pubkey, o.HTTPHeaders)
+			if err != nil {
+				o.Printer.Logger.Warn("Could not verify driver signature: " + err.Error())
+				// If the file was downloaded we need to remove it to prevent it from being loaded
+				_ = os.Remove(dest)
+			}
+		}
+		if err == nil {
+			o.Printer.Logger.Info("Driver downloaded.", o.Printer.Logger.Args("path", dest))
 			return dest, nil
 		}
 		// Print the error but go on
@@ -187,6 +197,7 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		if o.Compile {
 			o.Printer.Logger.Warn(err.Error())
 		}
+
 	}
 
 	if o.Compile {

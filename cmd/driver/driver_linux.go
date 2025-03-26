@@ -89,6 +89,30 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 				}
 			}
 
+			// Override "pubkey" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("pubkey")
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag pubkey")
+			} else if !f.Changed && viper.IsSet(config.DriverPubkeyKey) {
+				val := viper.Get(config.DriverPubkeyKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite \"pubkey\" flag: %w", err)
+				}
+			}
+
+			// Override "no-verify" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup("no-verify")
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag no-verify")
+			} else if !f.Changed && viper.IsSet(config.DriverNoVerifyKey) {
+				val := viper.Get(config.DriverNoVerifyKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite \"no-verify\" flag: %w", err)
+				}
+			}
+
 			// Override "name" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup("name")
 			if f == nil {
@@ -189,6 +213,8 @@ func NewDriverCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&driver.Version, "version", config.DefaultDriver.Version, "Driver version to be used.")
 	cmd.PersistentFlags().StringSliceVar(&driver.Repos, "repo", config.DefaultDriver.Repos, "Driver repo to be used.")
 	cmd.PersistentFlags().StringVar(&driver.Name, "name", config.DefaultDriver.Name, "Driver name to be used.")
+	cmd.PersistentFlags().StringVar(&driver.Pubkey, "pubkey", config.DefaultDriver.Pubkey, "Driver signature public key to be used. Can be an http/https URL or a local file path.")
+	cmd.PersistentFlags().BoolVar(&driver.NoVerify, "no-verify", config.DefaultDriver.NoVerify, "Do not verify driver signatures.")
 	cmd.PersistentFlags().StringVar(&driver.HostRoot, "host-root", config.DefaultDriver.HostRoot, "Driver host root to be used.")
 	cmd.PersistentFlags().StringVar(&driverKernelRelease,
 		"kernelrelease",
