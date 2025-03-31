@@ -1,7 +1,6 @@
 module github.com/falcosecurity/falcoctl
 
 go 1.24.1
-
 require (
 	cloud.google.com/go/storage v1.51.0
 	github.com/aws/aws-sdk-go v1.55.6
@@ -9,7 +8,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cilium/ebpf v0.17.3
 	github.com/distribution/distribution/v3 v3.0.0-rc.4
-	github.com/docker/cli v28.0.2+incompatible
+	github.com/docker/cli v28.0.4+incompatible
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/falcosecurity/driverkit v0.20.5
 	github.com/go-oauth2/oauth2/v4 v4.5.2
@@ -30,7 +29,7 @@ require (
 	github.com/sigstore/sigstore/pkg/signature/kms/hashivault v1.9.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
-	github.com/spf13/viper v1.20.0
+	github.com/spf13/viper v1.20.1
 	golang.org/x/crypto v0.36.0
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	google.golang.org/api v0.227.0
