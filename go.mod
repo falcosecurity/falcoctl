@@ -1,7 +1,6 @@
 module github.com/falcosecurity/falcoctl
 
 go 1.24.1
-
 require (
 	cloud.google.com/go/storage v1.51.0
 	github.com/aws/aws-sdk-go v1.55.6
@@ -376,7 +375,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/net v0.37.0
+	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.28.0
 	golang.org/x/sys v0.31.0
 	golang.org/x/term v0.30.0
