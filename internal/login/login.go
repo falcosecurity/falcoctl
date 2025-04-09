@@ -78,7 +78,7 @@ func PerformBasicAuthsLogin(
 ) error {
 	for _, basicAuth := range auths {
 		if _, exists := registrySet[basicAuth.Registry]; exists {
-			if err := basic.Login(ctx, client, credStore, basicAuth.Registry, basicAuth.User, basicAuth.Password); err != nil {
+			if err := basic.Login(ctx, client, credStore, basicAuth.Registry, basicAuth.User, basicAuth.Password, basicAuth.Insecure); err != nil {
 				return err
 			}
 		}

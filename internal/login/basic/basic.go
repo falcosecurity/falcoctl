@@ -26,7 +26,7 @@ import (
 )
 
 // Login checks if passed credentials are correct and stores them.
-func Login(ctx context.Context, client *auth.Client, credStore credentials.Store, reg, username, password string) error {
+func Login(ctx context.Context, client *auth.Client, credStore credentials.Store, reg, username, password string, insecure bool) error {
 	cred := auth.Credential{
 		Username: username,
 		Password: password,
@@ -34,7 +34,7 @@ func Login(ctx context.Context, client *auth.Client, credStore credentials.Store
 
 	client.Credential = auth.StaticCredential(reg, cred)
 
-	r, err := registry.NewRegistry(reg, registry.WithClient(client))
+	r, err := registry.NewRegistry(reg, registry.WithClient(client), registry.WithInsecure(insecure))
 	if err != nil {
 		return err
 	}

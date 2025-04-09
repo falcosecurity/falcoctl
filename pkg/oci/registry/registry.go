@@ -17,6 +17,7 @@ package registry
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -60,6 +61,22 @@ func WithClient(client remote.Client) func(r *Registry) {
 func WithPlainHTTP(plainHTTP bool) func(r *Registry) {
 	return func(r *Registry) {
 		r.PlainHTTP = plainHTTP
+	}
+}
+
+// WithInsecure sets both plain HTTP and skips TLS verification.
+func WithInsecure(insecure bool) func(r *Registry) {
+	return func(r *Registry) {
+		r.PlainHTTP = insecure
+		if insecure {
+			if httpClient, ok := r.Client.(*http.Client); ok {
+				httpClient.Transport = &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				}
+			}
+		}
 	}
 }
 

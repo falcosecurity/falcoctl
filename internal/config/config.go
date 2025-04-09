@@ -161,6 +161,7 @@ type BasicAuth struct {
 	Registry string `mapstructure:"registry"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
+	Insecure bool   `mapstructure:"insecure"`
 }
 
 // GcpAuth represents a Gcp activation setting.
