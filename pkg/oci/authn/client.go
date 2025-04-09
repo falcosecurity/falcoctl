@@ -36,6 +36,7 @@ type Options struct {
 	CredentialsFuncs      []func(context.Context, string) (auth.Credential, error)
 	AutoLoginHandler      *AutoLoginHandler
 	ClientTokenCache      auth.Cache
+	Insecure             bool
 }
 
 // NewClient creates a new authenticated client to interact with a remote registry.
@@ -149,5 +150,12 @@ func WithStore(store credentials.Store) func(c *Options) {
 func WithClientTokenCache(cache auth.Cache) func(c *Options) {
 	return func(c *Options) {
 		c.ClientTokenCache = cache
+	}
+}
+
+// WithInsecure sets the insecure option to skip TLS verification
+func WithInsecure(insecure bool) func(c *Options) {
+	return func(c *Options) {
+		c.Insecure = insecure
 	}
 }

@@ -1,17 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2023 The Falco Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 package basic
 
@@ -41,6 +29,7 @@ type loginOptions struct {
 	username          string
 	password          string
 	passwordFromStdin bool
+	insecure          bool // <-- added
 }
 
 // NewBasicCmd returns the basic command.
@@ -55,27 +44,31 @@ func NewBasicCmd(ctx context.Context, opt *options.Common) *cobra.Command {
 		Short:                 "Login to an OCI registry",
 		Long: `Login to an OCI registry
 
-Example - Log in with username and password from command line flags:
-	falcoctl registry auth basic -u username -p password localhost:5000
+Examples:
 
-Example - Login with username and password from env variables:
-	FALCOCTL_REGISTRY_AUTH_BASIC_USERNAME=username FALCOCTL_REGISTRY_AUTH_BASIC_PASSWORD=password falcoctl registry auth basic localhost:5000
+  Log in with username and password from command line flags:
+    falcoctl registry auth basic -u username -p password localhost:5000
 
-Example - Login with username and password from stdin:
-	falcoctl registry auth basic -u username --password-stdin localhost:5000
+  Log in with env variables:
+    FALCOCTL_REGISTRY_AUTH_BASIC_USERNAME=username FALCOCTL_REGISTRY_AUTH_BASIC_PASSWORD=password falcoctl registry auth basic localhost:5000
 
-Example - Login with username and password in an interactive prompt:
-	falcoctl registry auth basic localhost:5000
+  Log in with password from stdin:
+    falcoctl registry auth basic -u username --password-stdin localhost:5000
+
+  Log in interactively:
+    falcoctl registry auth basic localhost:5000
 `,
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			_ = viper.BindPFlag("registry.auth.basic.username", cmd.Flags().Lookup("username"))
 			_ = viper.BindPFlag("registry.auth.basic.password", cmd.Flags().Lookup("password"))
 			_ = viper.BindPFlag("registry.auth.basic.password_stdin", cmd.Flags().Lookup("password-stdin"))
+			_ = viper.BindPFlag("registry.auth.basic.insecure", cmd.Flags().Lookup("insecure"))
 
 			o.username = viper.GetString("registry.auth.basic.username")
 			o.password = viper.GetString("registry.auth.basic.password")
 			o.passwordFromStdin = viper.GetBool("registry.auth.basic.password_stdin")
+			o.insecure = viper.GetBool("registry.auth.basic.insecure")
 
 			return nil
 		},
@@ -87,6 +80,7 @@ Example - Login with username and password in an interactive prompt:
 	cmd.Flags().StringVarP(&o.username, "username", "u", "", "registry username")
 	cmd.Flags().StringVarP(&o.password, "password", "p", "", "registry password")
 	cmd.Flags().BoolVar(&o.passwordFromStdin, "password-stdin", false, "read password from stdin")
+	cmd.Flags().BoolVar(&o.insecure, "insecure", false, "allow insecure server connections when using SSL")
 
 	return cmd
 }
@@ -96,7 +90,6 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	var reg string
 	logger := o.Printer.Logger
 
-	// Allow to have the registry expressed as a ref, but actually extract it.
 	reg, err := utils.GetRegistryFromRef(args[0])
 	if err != nil {
 		reg = args[0]
@@ -106,10 +99,9 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 		return err
 	}
 
-	// create empty client
-	client := authn.NewClient()
+	// create auth client with insecure option
+	client := authn.NewClient(authn.WithInsecure(o.insecure))
 
-	// create credential store
 	credentialStore, err := credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
 		AllowPlaintextPut: true,
 	})
@@ -117,7 +109,7 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 		return fmt.Errorf("unable to create new store: %w", err)
 	}
 
-	if err := basic.Login(ctx, client, credentialStore, reg, o.username, o.password); err != nil {
+	if err := basic.Login(ctx, client, credentialStore, reg, o.username, o.password, o.insecure); err != nil {
 		return err
 	}
 	logger.Debug("Credentials added", logger.Args("credential store", config.RegistryCredentialConfPath()))
@@ -126,7 +118,6 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	return nil
 }
 
-// getCredentials is used to retrieve username and password from standard input.
 func getCredentials(p *output.Printer, opt *loginOptions) error {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -153,7 +144,6 @@ func getCredentials(p *output.Printer, opt *loginOptions) error {
 			if err != nil {
 				return err
 			}
-
 			opt.password = string(bytePassword)
 		}
 	}
