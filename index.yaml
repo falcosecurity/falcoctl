@@ -377,7 +377,7 @@
         certificate-github-workflow: ""
         key: ""
         ignore-tlog: false
-  description: Read Kubernetes Audit Events from AWS AKS Clusters
+  description: Read Kubernetes Audit Events from Azure AKS Clusters
   home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-aks
   keywords:
     - audit
