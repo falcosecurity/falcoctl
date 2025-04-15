@@ -73,11 +73,15 @@ Example - Login with username and password from stdin:
 Example - Login with username and password in an interactive prompt:
 	falcoctl registry auth basic localhost:5000
 
+Example - Login to an insecure registry:
+	falcoctl registry auth basic --insecure localhost:5000
+
 Usage:
   falcoctl registry auth basic [hostname]
 
 Flags:
   -h, --help              help for basic
+      --insecure          allow connections to SSL registry without certs
   -p, --password string   registry password
       --password-stdin    read password from stdin
   -u, --username string   registry username
@@ -127,8 +131,54 @@ var registryAuthBasicTests = Describe("auth", func() {
 			Expect(output).Should(gbytes.Say(regexp.QuoteMeta(registryAuthBasicHelp)))
 		})
 	})
-	Context("failure", func() {
 
+	Context("insecure flag", func() {
+		When("using HTTP with --insecure", func() {
+			BeforeEach(func() {
+				args = []string{registryCmd, authCmd, basicCmd, "--insecure", "-u", "username", "-p", "password", "--config", configFile, registry}
+			})
+
+			It("should succeed with plain HTTP", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(output).Should(gbytes.Say("Login succeeded"))
+			})
+		})
+
+		When("using HTTPS with self-signed cert and --insecure", func() {
+			BeforeEach(func() {
+				// The registry is already configured for HTTPS in the test suite
+				args = []string{registryCmd, authCmd, basicCmd, "--insecure", "-u", "username", "-p", "password", "--config", configFile, registryBasic}
+			})
+
+			It("should succeed with insecure HTTPS", func() {
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(output).Should(gbytes.Say("Login succeeded"))
+			})
+		})
+
+		When("using HTTPS without --insecure", func() {
+			BeforeEach(func() {
+				args = []string{registryCmd, authCmd, basicCmd, "-u", "username", "-p", "password", "--config", configFile, registryBasic}
+			})
+
+			It("should fail with certificate verification error", func() {
+				Expect(err).Should(HaveOccurred())
+				Expect(output).Should(gbytes.Say("certificate"))
+			})
+		})
+
+		When("using HTTP without --insecure", func() {
+			BeforeEach(func() {
+				args = []string{registryCmd, authCmd, basicCmd, "-u", "username", "-p", "password", "--config", configFile, "http://" + registry}
+			})
+
+			It("should fail when trying plain HTTP without insecure flag", func() {
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+	})
+
+	Context("failure", func() {
 		When("without hostname", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, authCmd, basicCmd}
@@ -137,5 +187,4 @@ var registryAuthBasicTests = Describe("auth", func() {
 				"ERROR accepts 1 arg(s), received 0")
 		})
 	})
-
 })
