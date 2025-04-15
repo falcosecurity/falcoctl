@@ -18,6 +18,7 @@ package basic
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
@@ -34,12 +35,27 @@ func Login(ctx context.Context, client *auth.Client, credStore credentials.Store
 
 	client.Credential = auth.StaticCredential(reg, cred)
 
-	r, err := registry.NewRegistry(reg, registry.WithClient(client))
+	// Check if client is configured for insecure connections
+	transport, ok := client.Client.Transport.(*http.Transport)
+	plainHTTP := ok && transport.TLSClientConfig != nil && transport.TLSClientConfig.InsecureSkipVerify
+
+	r, err := registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(plainHTTP))
 	if err != nil {
 		return err
 	}
 
-	if err := r.CheckConnection(ctx); err != nil {
+	// Try HTTPS first, then fallback to HTTP if insecure is enabled and HTTPS fails
+	err = r.CheckConnection(ctx)
+	if err != nil && plainHTTP {
+		// If HTTPS failed and insecure is enabled, try HTTP
+		r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(true))
+		if err != nil {
+			return err
+		}
+		if err := r.CheckConnection(ctx); err != nil {
+			return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
+		}
+	} else if err != nil {
 		return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
 	}
 

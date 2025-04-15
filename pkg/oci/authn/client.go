@@ -17,6 +17,7 @@ package authn
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
@@ -36,6 +37,7 @@ type Options struct {
 	CredentialsFuncs      []func(context.Context, string) (auth.Credential, error)
 	AutoLoginHandler      *AutoLoginHandler
 	ClientTokenCache      auth.Cache
+	Insecure              bool
 }
 
 // NewClient creates a new authenticated client to interact with a remote registry.
@@ -48,21 +50,28 @@ func NewClient(options ...func(*Options)) *auth.Client {
 		o(opt)
 	}
 
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	if opt.Insecure {
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
 	authClient := auth.Client{
 		Client: &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).DialContext,
-				ForceAttemptHTTP2:     true,
-				MaxIdleConns:          100,
-				IdleConnTimeout:       90 * time.Second,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-				// TODO(loresuso, alacuku): tls config.
-			},
+			Transport: transport,
 		},
 		Cache: opt.ClientTokenCache,
 		Credential: func(ctx context.Context, reg string) (auth.Credential, error) {
@@ -149,5 +158,12 @@ func WithStore(store credentials.Store) func(c *Options) {
 func WithClientTokenCache(cache auth.Cache) func(c *Options) {
 	return func(c *Options) {
 		c.ClientTokenCache = cache
+	}
+}
+
+// WithInsecure configures the client to skip TLS verification
+func WithInsecure() func(c *Options) {
+	return func(c *Options) {
+		c.Insecure = true
 	}
 }

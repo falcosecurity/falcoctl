@@ -22,6 +22,9 @@ import (
 
 // GetRegistryFromRef extracts the registry from a ref string.
 func GetRegistryFromRef(ref string) (string, error) {
+	// Remove scheme if present
+	ref = strings.TrimPrefix(strings.TrimPrefix(ref, "http://"), "https://")
+
 	index := strings.Index(ref, "/")
 	if index <= 0 {
 		return "", fmt.Errorf("cannot extract registry name from ref %q", ref)

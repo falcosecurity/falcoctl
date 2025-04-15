@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/term"
+	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
@@ -41,6 +42,7 @@ type loginOptions struct {
 	username          string
 	password          string
 	passwordFromStdin bool
+	insecure          bool
 }
 
 // NewBasicCmd returns the basic command.
@@ -66,16 +68,21 @@ Example - Login with username and password from stdin:
 
 Example - Login with username and password in an interactive prompt:
 	falcoctl registry auth basic localhost:5000
+
+Example - Login to an insecure registry:
+	falcoctl registry auth basic --insecure localhost:5000
 `,
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			_ = viper.BindPFlag("registry.auth.basic.username", cmd.Flags().Lookup("username"))
 			_ = viper.BindPFlag("registry.auth.basic.password", cmd.Flags().Lookup("password"))
 			_ = viper.BindPFlag("registry.auth.basic.password_stdin", cmd.Flags().Lookup("password-stdin"))
+			_ = viper.BindPFlag("registry.auth.basic.insecure", cmd.Flags().Lookup("insecure"))
 
 			o.username = viper.GetString("registry.auth.basic.username")
 			o.password = viper.GetString("registry.auth.basic.password")
 			o.passwordFromStdin = viper.GetBool("registry.auth.basic.password_stdin")
+			o.insecure = viper.GetBool("registry.auth.basic.insecure")
 
 			return nil
 		},
@@ -87,6 +94,7 @@ Example - Login with username and password in an interactive prompt:
 	cmd.Flags().StringVarP(&o.username, "username", "u", "", "registry username")
 	cmd.Flags().StringVarP(&o.password, "password", "p", "", "registry password")
 	cmd.Flags().BoolVar(&o.passwordFromStdin, "password-stdin", false, "read password from stdin")
+	cmd.Flags().BoolVar(&o.insecure, "insecure", false, "allow connections to SSL registry without certs")
 
 	return cmd
 }
@@ -96,18 +104,26 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	var reg string
 	logger := o.Printer.Logger
 
+	// Remove scheme if present
+	registryArg := strings.TrimPrefix(strings.TrimPrefix(args[0], "http://"), "https://")
+
 	// Allow to have the registry expressed as a ref, but actually extract it.
-	reg, err := utils.GetRegistryFromRef(args[0])
+	reg, err := utils.GetRegistryFromRef(registryArg)
 	if err != nil {
-		reg = args[0]
+		reg = registryArg
 	}
 
 	if err := getCredentials(o.Printer, o); err != nil {
 		return err
 	}
 
-	// create empty client
-	client := authn.NewClient()
+	// create empty client with insecure option if specified
+	var client *auth.Client
+	if o.insecure {
+		client = authn.NewClient(authn.WithInsecure())
+	} else {
+		client = authn.NewClient()
+	}
 
 	// create credential store
 	credentialStore, err := credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
