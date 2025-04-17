@@ -64,6 +64,7 @@ func NewClient(options ...func(*Options)) *auth.Client {
 	}
 
 	if opt.Insecure {
+		//nolint:gosec // InsecureSkipVerify is intentionally set to true when --insecure flag is used
 		transport.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
@@ -161,7 +162,7 @@ func WithClientTokenCache(cache auth.Cache) func(c *Options) {
 	}
 }
 
-// WithInsecure configures the client to skip TLS verification
+// WithInsecure configures the client to skip TLS verification.
 func WithInsecure() func(c *Options) {
 	return func(c *Options) {
 		c.Insecure = true
