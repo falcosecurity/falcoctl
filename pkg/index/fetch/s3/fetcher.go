@@ -20,30 +20,31 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 
-	"github.com/falcosecurity/falcoctl/pkg/index/config"
+	indexConfig "github.com/falcosecurity/falcoctl/pkg/index/config"
 )
 
 // Fetch fetches the raw index file from an S3 object.
-func Fetch(ctx context.Context, conf *config.Entry) ([]byte, error) {
+func Fetch(ctx context.Context, conf *indexConfig.Entry) ([]byte, error) {
 	o, err := s3ObjectFromURI(conf.URL)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a new AWS session
-	sess, err := session.NewSession()
+	// Create a new AWS config
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		return nil, fmt.Errorf("unable to create AWS session: %w", err)
+		// handle error
+		return nil, fmt.Errorf("unable to create AWS config: %w", err)
 	}
 
-	svc := s3.New(sess)
+	svc := s3.NewFromConfig(cfg)
 
 	// Get the object from S3
-	res, err := svc.GetObjectWithContext(ctx, &s3.GetObjectInput{
+	res, err := svc.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(o.Bucket),
 		Key:    aws.String(o.Key),
 	})
