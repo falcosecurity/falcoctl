@@ -17,15 +17,17 @@ package signature
 
 import (
 	"context"
+	"io"
 
+	"github.com/ProtonMail/gopenpgp/v3/crypto"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/options"
 
 	"github.com/falcosecurity/falcoctl/internal/cosign"
 	"github.com/falcosecurity/falcoctl/pkg/index/index"
 )
 
-// Verify checks that a fully qualified reference is signed according to the parameters.
-func Verify(ctx context.Context, ref string, signature *index.Signature) error {
+// VerifyOCI checks that a fully qualified OCI artifact reference is signed according to the parameters.
+func VerifyOCI(ctx context.Context, ref string, signature *index.Signature) error {
 	if signature == nil {
 		// nothing to do
 		return nil
@@ -47,4 +49,31 @@ func Verify(ctx context.Context, ref string, signature *index.Signature) error {
 		IgnoreTlog: signature.Cosign.IgnoreTlog,
 	}
 	return v.DoVerify(ctx, []string{ref})
+}
+
+// VerifyPGP verifies that content is signed with PGP with the supplied key
+func VerifyPGP(targetReader, signatureReader, pubkeyReader io.Reader) error {
+	pubkey, err := crypto.NewKeyFromReader(pubkeyReader)
+	if err != nil {
+		return err
+	}
+
+	pgp := crypto.PGP()
+
+	verifier, err := pgp.Verify().VerificationKey(pubkey).New()
+	if err != nil {
+		return err
+	}
+
+	vReader, err := verifier.VerifyingReader(targetReader, signatureReader, crypto.Armor)
+	if err != nil {
+		return err
+	}
+
+	validationResult, err := vReader.ReadAllAndVerifySignature()
+	if err != nil {
+		return err
+	}
+
+	return validationResult.SignatureError()
 }
