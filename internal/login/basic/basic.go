@@ -58,7 +58,7 @@ func Login(ctx context.Context, client *auth.Client, credStore credentials.Store
 	case forceHTTP:
 		// For explicit HTTP URLs, use HTTP if insecure is enabled
 		if !insecure {
-			return fmt.Errorf("cannot use plain HTTP without --insecure flag")
+			return fmt.Errorf("cannot use plain HTTP for %q without --insecure flag", reg)
 		}
 		r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(true))
 	default:

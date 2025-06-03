@@ -94,7 +94,7 @@ Example - Login to an insecure registry:
 	cmd.Flags().StringVarP(&o.username, "username", "u", "", "registry username")
 	cmd.Flags().StringVarP(&o.password, "password", "p", "", "registry password")
 	cmd.Flags().BoolVar(&o.passwordFromStdin, "password-stdin", false, "read password from stdin")
-	cmd.Flags().BoolVar(&o.insecure, "insecure", false, "allow connections to SSL registry without certs")
+	cmd.Flags().BoolVar(&o.insecure, "insecure", false, "enables plain HTTP and skips TLS verification")
 
 	return cmd
 }
