@@ -64,12 +64,9 @@ func Login(ctx context.Context, client *auth.Client, credStore credentials.Store
 	default:
 		// For URLs without scheme, try HTTPS first, then fall back to HTTP if insecure is enabled
 		r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(false))
-		if err == nil {
-			err = r.CheckConnection(ctx)
-			if err != nil && insecure {
-				// If HTTPS failed and insecure is enabled, try HTTP
-				r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(true))
-			}
+		if err != nil && insecure {
+			// If HTTPS failed and insecure is enabled, try HTTP
+			r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(true))
 		}
 	}
 
