@@ -18,6 +18,8 @@ package basic
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
@@ -34,9 +36,42 @@ func Login(ctx context.Context, client *auth.Client, credStore credentials.Store
 
 	client.Credential = auth.StaticCredential(reg, cred)
 
-	r, err := registry.NewRegistry(reg, registry.WithClient(client))
+	// Check if client is configured for insecure connections
+	transport, ok := client.Client.Transport.(*http.Transport)
+	insecure := ok && transport.TLSClientConfig != nil && transport.TLSClientConfig.InsecureSkipVerify
+
+	// If the registry URL starts with https://, force HTTPS
+	forceHTTPS := strings.HasPrefix(reg, "https://")
+	// If the registry URL starts with http://, force HTTP
+	forceHTTP := strings.HasPrefix(reg, "http://")
+	// Strip scheme if present
+	reg = strings.TrimPrefix(strings.TrimPrefix(reg, "http://"), "https://")
+
+	// Create registry client with appropriate settings
+	var r *registry.Registry
+	var err error
+
+	switch {
+	case forceHTTPS:
+		// For explicit HTTPS URLs, use HTTPS with insecure setting from client
+		r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(false))
+	case forceHTTP:
+		// For explicit HTTP URLs, use HTTP if insecure is enabled
+		if !insecure {
+			return fmt.Errorf("cannot use plain HTTP for %q without --insecure flag", reg)
+		}
+		r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(true))
+	default:
+		// For URLs without scheme, try HTTPS first, then fall back to HTTP if insecure is enabled
+		r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(false))
+		if err != nil && insecure {
+			// If HTTPS failed and insecure is enabled, try HTTP
+			r, err = registry.NewRegistry(reg, registry.WithClient(client), registry.WithPlainHTTP(true))
+		}
+	}
+
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to connect to registry %q: %w", reg, err)
 	}
 
 	if err := r.CheckConnection(ctx); err != nil {
