@@ -14,8 +14,8 @@ require (
 	github.com/docker/cli v28.0.2+incompatible
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/falcosecurity/driverkit v0.20.5
-	github.com/go-oauth2/oauth2/v4 v4.5.2
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/go-oauth2/oauth2/v4 v4.5.3
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/go-containerregistry v0.20.3
 	github.com/gookit/color v1.5.4
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
@@ -187,7 +187,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
