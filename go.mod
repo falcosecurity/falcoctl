@@ -44,7 +44,7 @@ require (
 	google.golang.org/api v0.227.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.3
+	k8s.io/api v0.33.4
 	k8s.io/apimachinery v0.33.4
 	k8s.io/client-go v0.32.3
 	oras.land/oras-go/v2 v2.5.0
