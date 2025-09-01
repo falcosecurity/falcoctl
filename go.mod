@@ -17,7 +17,7 @@ require (
 	github.com/go-oauth2/oauth2/v4 v4.5.3
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/go-containerregistry v0.20.3
-	github.com/gookit/color v1.5.4
+	github.com/gookit/color v1.6.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/onsi/ginkgo/v2 v2.23.3
