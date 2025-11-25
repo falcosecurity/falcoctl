@@ -73,8 +73,8 @@ const (
 	// AssetsDir default path where assets are installed.
 	AssetsDir = "/etc/falco/assets"
 	// FollowResync time interval how often it checks for newer version of the artifact.
-	// Default values is set every 24 hours.
-	FollowResync = time.Hour * 24
+	// Default values is set every 7 days.
+	FollowResync = time.Hour * 24 * 7
 
 	//
 	// Viper configuration keys.
