@@ -82,15 +82,16 @@ type artifactFollowOptions struct {
 	*options.Common
 	*options.Registry
 	*options.Directory
-	tmpDir        string
-	every         time.Duration
-	cron          string
-	falcoVersions string
-	versions      config.FalcoVersions
-	timeout       time.Duration
-	closeChan     chan bool
-	allowedTypes  oci.ArtifactTypeSlice
-	noVerify      bool
+	tmpDir          string
+	every           time.Duration
+	cron            string
+	startupBehavior string
+	falcoVersions   string
+	versions        config.FalcoVersions
+	timeout         time.Duration
+	closeChan       chan bool
+	allowedTypes    oci.ArtifactTypeSlice
+	noVerify        bool
 }
 
 // NewArtifactFollowCmd returns the artifact follow command.
@@ -111,8 +112,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 		Long:  longFollow,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Override "every" flag with viper config if not set by user.
-			f := cmd.Flags().Lookup("every")
-			if f == nil {
+			if f := cmd.Flags().Lookup("every"); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag every")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowEveryKey) {
@@ -122,9 +122,19 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 				}
 			}
 
+			// Override "startup-behavior" flag with viper config if not set by user.
+			if f := cmd.Flags().Lookup("startup-behavior"); f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag startup-behavior")
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowStartupBehaviorKey) {
+				val := viper.Get(config.ArtifactFollowStartupBehaviorKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite \"startup-behavior\" flag: %w", err)
+				}
+			}
+
 			// Override "cron" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("cron")
-			if f == nil {
+			if f := cmd.Flags().Lookup("cron"); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag cron")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowCronKey) {
@@ -135,8 +145,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "falco-versions" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("falco-versions")
-			if f == nil {
+			if f := cmd.Flags().Lookup("falco-versions"); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag falco-versions")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowFalcoVersionsKey) {
@@ -147,8 +156,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "rulesfiles-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(options.FlagRulesFilesDir)
-			if f == nil {
+			if f := cmd.Flags().Lookup(options.FlagRulesFilesDir); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag %q", options.FlagRulesFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowRulesfilesDirKey) {
@@ -159,8 +167,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "plugins-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(options.FlagPluginsFilesDir)
-			if f == nil {
+			if f := cmd.Flags().Lookup(options.FlagPluginsFilesDir); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag %q", options.FlagPluginsFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowPluginsDirKey) {
@@ -171,8 +178,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "assets-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(options.FlagAssetsFilesDir)
-			if f == nil {
+			if f := cmd.Flags().Lookup(options.FlagAssetsFilesDir); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag %q", options.FlagAssetsFilesDir)
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowAssetsDirKey) {
@@ -183,8 +189,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "tmp-dir" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup("tmp-dir")
-			if f == nil {
+			if f := cmd.Flags().Lookup("tmp-dir"); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag tmp-dir")
 			} else if !f.Changed && viper.IsSet(config.ArtifactFollowTmpDirKey) {
@@ -195,8 +200,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "allowed-types" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(install.FlagAllowedTypes)
-			if f == nil {
+			if f := cmd.Flags().Lookup(install.FlagAllowedTypes); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag %s", install.FlagAllowedTypes)
 			} else if !f.Changed && viper.IsSet(config.ArtifactAllowedTypesKey) {
@@ -210,8 +214,7 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 			}
 
 			// Override "no-verify" flag with viper config if not set by user.
-			f = cmd.Flags().Lookup(install.FlagNoVerify)
-			if f == nil {
+			if f := cmd.Flags().Lookup(install.FlagNoVerify); f == nil {
 				// should never happen
 				return fmt.Errorf("unable to retrieve flag %s", install.FlagNoVerify)
 			} else if !f.Changed && viper.IsSet(config.ArtifactNoVerifyKey) {
@@ -219,6 +222,17 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
 					return fmt.Errorf("unable to overwrite %q flag: %w", install.FlagNoVerify, err)
 				}
+			}
+
+			// Validate startup behavior value.
+			switch follower.StartupBehavior(o.startupBehavior) {
+			case follower.StartupBehaviorSkip, follower.StartupBehaviorJitter, follower.StartupBehaviorImmediate:
+				// ok
+			case "":
+				// should not happen because cobra will set the default value.
+			default:
+				return fmt.Errorf("invalid value for --startup-behavior: %q. Allowed values are: %q, %q, %q",
+					o.startupBehavior, follower.StartupBehaviorSkip, follower.StartupBehaviorJitter, follower.StartupBehaviorImmediate)
 			}
 
 			// Get Falco versions via HTTP endpoint
@@ -239,6 +253,8 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 		"artifact. Cannot be used together with 'cron' option.")
 	cmd.Flags().StringVar(&o.cron, "cron", "", "Cron-like string to specify interval how often it checks for a new version of the artifact."+
 		" Cannot be used together with 'every' option.")
+	cmd.Flags().StringVar(&o.startupBehavior, "startup-behavior", string(follower.StartupBehaviorJitter),
+		"Startup behavior for the follower: 'skip', 'jitter', or 'immediate'.")
 	cmd.Flags().StringVar(&o.tmpDir, "tmp-dir", "", "Directory where to save temporary files")
 	cmd.Flags().StringVar(&o.falcoVersions, "falco-versions", "http://localhost:8765/versions",
 		"Where to retrieve versions, it can be either an URL or a path to a file")
@@ -284,6 +300,15 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 		sched = scheduledDuration{o.every}
 	}
 
+	var startupMaxDelay time.Duration
+	if o.cron != "" {
+		now := time.Now()
+		next := sched.Next(now)
+		startupMaxDelay = next.Sub(now)
+	} else {
+		startupMaxDelay = o.every
+	}
+
 	var wg sync.WaitGroup
 	// For each artifact create a follower.
 	var followers = make(map[string]*follower.Follower, 0)
@@ -305,13 +330,15 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 
 		cfg := &follower.Config{
 			WaitGroup:         &wg,
+			CloseChan:         o.closeChan,
 			Resync:            sched,
+			StartupBehavior:   follower.StartupBehavior(o.startupBehavior),
+			StartupMaxDelay:   startupMaxDelay,
 			RulesfilesDir:     o.RulesfilesDir,
 			PluginsDir:        o.PluginsDir,
 			AssetsDir:         o.AssetsDir,
 			ArtifactReference: ref,
 			PlainHTTP:         o.PlainHTTP,
-			CloseChan:         o.closeChan,
 			TmpDir:            o.tmpDir,
 			FalcoVersions:     o.versions,
 			AllowedTypes:      o.allowedTypes,
