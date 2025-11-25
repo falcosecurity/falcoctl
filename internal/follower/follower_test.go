@@ -16,9 +16,11 @@
 package follower
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
@@ -302,4 +304,125 @@ func TestMoveFiles(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStartupBehavior(t *testing.T) {
+	printer := output.NewPrinter(pterm.LogLevelDebug, pterm.LogFormatterJSON, os.Stdout)
+
+	tests := []struct {
+		name            string
+		startupBehavior StartupBehavior
+		expected        StartupBehavior
+	}{
+		{
+			name:            "skip behavior",
+			startupBehavior: StartupBehaviorSkip,
+			expected:        StartupBehaviorSkip,
+		},
+		{
+			name:            "jitter behavior",
+			startupBehavior: StartupBehaviorJitter,
+			expected:        StartupBehaviorJitter,
+		},
+		{
+			name:            "immediate behavior",
+			startupBehavior: StartupBehaviorImmediate,
+			expected:        StartupBehaviorImmediate,
+		},
+		{
+			name:            "empty behavior defaults to jitter",
+			startupBehavior: "",
+			expected:        StartupBehaviorJitter,
+		},
+		{
+			name:            "invalid behavior defaults to jitter",
+			startupBehavior: StartupBehavior("invalid"),
+			expected:        StartupBehaviorJitter,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir, err := os.MkdirTemp("", "falcoctl-test-*")
+			assert.NoError(t, err)
+			defer os.RemoveAll(tmpDir)
+
+			config := Config{
+				StartupBehavior: tt.startupBehavior,
+				TmpDir:          tmpDir,
+			}
+			f, err := New("ghcr.io/falcosecurity/rules/my_rule:0.1.0", printer, &config)
+			assert.NoError(t, err)
+
+			// Test the startupBehavior method indirectly by checking the behavior
+			// We can't call it directly since it's private, but we can verify
+			// the behavior through the Follow method's execution
+			result := f.startupBehavior()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSleepWithContext(t *testing.T) {
+	t.Run("zero duration returns immediately", func(t *testing.T) {
+		ctx := context.Background()
+		start := time.Now()
+		err := sleepWithContext(ctx, 0)
+		elapsed := time.Since(start)
+		assert.NoError(t, err)
+		assert.Less(t, elapsed, 10*time.Millisecond, "sleep with zero duration should return immediately")
+	})
+
+	t.Run("negative duration returns immediately", func(t *testing.T) {
+		ctx := context.Background()
+		start := time.Now()
+		err := sleepWithContext(ctx, -1*time.Second)
+		elapsed := time.Since(start)
+		assert.NoError(t, err)
+		assert.Less(t, elapsed, 10*time.Millisecond, "sleep with negative duration should return immediately")
+	})
+
+	t.Run("sleeps for specified duration", func(t *testing.T) {
+		ctx := context.Background()
+		duration := 50 * time.Millisecond
+		start := time.Now()
+		err := sleepWithContext(ctx, duration)
+		elapsed := time.Since(start)
+		assert.NoError(t, err)
+		assert.GreaterOrEqual(t, elapsed, duration, "should sleep for at least the specified duration")
+		assert.Less(t, elapsed, duration+20*time.Millisecond, "should not sleep significantly longer than specified")
+	})
+
+	t.Run("returns error when context is canceled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		duration := 100 * time.Millisecond
+
+		// Cancel context after a short delay
+		go func() {
+			time.Sleep(20 * time.Millisecond)
+			cancel()
+		}()
+
+		start := time.Now()
+		err := sleepWithContext(ctx, duration)
+		elapsed := time.Since(start)
+
+		assert.Error(t, err)
+		assert.Equal(t, context.Canceled, err)
+		assert.Less(t, elapsed, duration, "should return early when context is canceled")
+	})
+
+	t.Run("returns error when context times out", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+		defer cancel()
+
+		duration := 100 * time.Millisecond
+		start := time.Now()
+		err := sleepWithContext(ctx, duration)
+		elapsed := time.Since(start)
+
+		assert.Error(t, err)
+		assert.Equal(t, context.DeadlineExceeded, err)
+		assert.Less(t, elapsed, duration, "should return early when context times out")
+	})
 }
