@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_SECRET }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
         with:
           role-to-assume: arn:aws:iam::292999226676:role/github_actions-falcoctl-ecr
           aws-region: us-east-1
@@ -64,7 +64,7 @@ jobs:
 
       - name: Docker Meta
         id: meta_falcoctl
-        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           # list of Docker images to use as base name for tags
           images: |
