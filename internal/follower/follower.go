@@ -35,6 +35,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"oras.land/oras-go/v2/registry"
 
+	"github.com/falcosecurity/falcoctl/internal/artifactstate"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -141,7 +142,7 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 	}
 
-	return &Follower{
+	follower := &Follower{
 		ref:           ref,
 		tag:           tag,
 		tmpDir:        tmpDir,
@@ -149,7 +150,28 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 		Config:        conf,
 		logger:        printer.Logger,
 		FalcoVersions: conf.FalcoVersions,
-	}, nil
+	}
+
+	// Best-effort: initialize currentDigest from an on-disk state.
+	// This is meant to deduplicate the first follow after a previous install
+	// in the same shared volume (e.g., Helm initContainer + sidecar).
+	for _, baseDir := range []string{conf.PluginsDir, conf.RulesfilesDir, conf.AssetsDir} {
+		if baseDir == "" {
+			continue
+		}
+		d, ok, err := artifactstate.Read(baseDir, ref)
+		if err != nil {
+			printer.Logger.Debug("Unable to read persisted artifact state",
+				printer.Logger.Args("followerName", ref, "directory", baseDir, "reason", err.Error()))
+			continue
+		}
+		if ok {
+			follower.currentDigest = d
+			break
+		}
+	}
+
+	return follower, nil
 }
 
 func (f *Follower) startupBehavior() StartupBehavior {
@@ -275,6 +297,7 @@ func (f *Follower) follow(ctx context.Context) {
 	f.logger.Info("Artifact correctly installed",
 		f.logger.Args("followerName", f.ref, "artifactName", f.ref, "type", res.Type, "digest", res.Digest, "directory", dstDir))
 	f.currentDigest = desc.Digest.String()
+	_ = artifactstate.Write(dstDir, f.ref, f.currentDigest)
 }
 
 // moveFiles moves files from their temporary location to the destination directory.
