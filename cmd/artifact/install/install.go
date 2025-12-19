@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/falcosecurity/falcoctl/internal/artifactstate"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -331,6 +332,8 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		if err != nil {
 			return err
 		}
+
+		_ = artifactstate.Write(destDir, resolvedRef, result.RootDigest)
 
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
