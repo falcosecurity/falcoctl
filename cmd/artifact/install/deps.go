@@ -25,6 +25,7 @@ import (
 )
 
 type artifactConfigResolver func(ref string) (*oci.RegistryResult, error)
+type refResolver func(ref string) (string, error)
 type depsMapType map[string]*depInfo
 
 var (
@@ -53,7 +54,7 @@ func copyDepsMap(in depsMapType) (out depsMapType) {
 }
 
 // ResolveDeps resolves dependencies to a list of references.
-func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []string, err error) {
+func ResolveDeps(configResolver artifactConfigResolver, refResolver refResolver, inRefs ...string) (outRefs []string, err error) {
 	depMap := make(depsMapType)
 	// configMap is used to avoid getting a remote config layer more than once
 	configMap := make(map[string]*oci.ArtifactConfig)
@@ -61,7 +62,7 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 	retrieveConfig := func(ref string) (*oci.ArtifactConfig, error) {
 		config, ok := configMap[ref]
 		if !ok {
-			res, err := resolver(ref)
+			res, err := configResolver(ref)
 			if err != nil {
 				return nil, err
 			}
@@ -99,17 +100,6 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 
 	// Prepare initial map from user inputs
 	for _, ref := range inRefs {
-		config, err := retrieveConfig(ref)
-		if err != nil {
-			return nil, err
-		}
-		name := config.Name
-
-		// todo: shall we shadow?
-		if info, ok := depMap[name]; ok {
-			return nil, fmt.Errorf(`cannot provide multiple references for %q: %q, %q`, name, info.ref, ref)
-		}
-
 		if err := upsertMap(ref); err != nil {
 			return nil, err
 		}
@@ -180,8 +170,13 @@ func ResolveDeps(resolver artifactConfigResolver, inRefs ...string) (outRefs []s
 					continue
 				}
 
+				resolved, err := refResolver(required.Name + ":" + required.Version)
+				if err != nil {
+					return nil, fmt.Errorf("unable to resolve reference for dependency %q required by %q: %w", required.Name, name, err)
+				}
+
 				// dep to be added or bumped
-				if err := upsertMap(required.Name + ":" + required.Version); err != nil {
+				if err := upsertMap(resolved); err != nil {
 					return nil, err
 				}
 				allOk = false
