@@ -461,5 +461,4 @@ var artifactInstallTests = Describe("install", func() {
 		})
 
 	})
-
 })

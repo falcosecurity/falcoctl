@@ -54,7 +54,7 @@ func copyDepsMap(in depsMapType) (out depsMapType) {
 }
 
 // ResolveDeps resolves dependencies to a list of references.
-func ResolveDeps(configResolver artifactConfigResolver, refResolver refResolver, inRefs ...string) (outRefs []string, err error) {
+func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, inRefs ...string) (outRefs []string, err error) {
 	depMap := make(depsMapType)
 	// configMap is used to avoid getting a remote config layer more than once
 	configMap := make(map[string]*oci.ArtifactConfig)
@@ -170,7 +170,7 @@ func ResolveDeps(configResolver artifactConfigResolver, refResolver refResolver,
 					continue
 				}
 
-				resolved, err := refResolver(required.Name + ":" + required.Version)
+				resolved, err := resolver(required.Name + ":" + required.Version)
 				if err != nil {
 					return nil, fmt.Errorf("unable to resolve reference for dependency %q required by %q: %w", required.Name, name, err)
 				}

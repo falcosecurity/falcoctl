@@ -31,6 +31,7 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
+	"github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -233,51 +234,9 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		return err
 	}
 
-	refResolver := refResolver(func(ref string) (string, error) {
-		return o.IndexCache.ResolveReference(ref)
-	})
-
-	// Specify how to pull config layer for each artifact requested by user.
-	configResolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-		artifactConfig, err := puller.ArtifactConfig(ctx, ref, o.platformOS, o.platformArch)
-		if err != nil {
-			return nil, err
-		}
-
-		return &oci.RegistryResult{
-			Config: *artifactConfig,
-		}, nil
-	})
-
-	seen := make(map[string]struct{})
-	var resolved []string
-
-	// Compute unique resolved references and collect signatures
-	for _, arg := range args {
-		ref, err := o.IndexCache.ResolveReference(arg)
-		if err != nil {
-			return err
-		}
-
-		if _, ok := seen[ref]; ok {
-			continue
-		}
-		seen[ref] = struct{}{}
-		resolved = append(resolved, ref)
-	}
-
-	var refs []string
-	if o.resolveDeps {
-		// Solve dependencies
-		logger.Info("Resolving dependencies ...")
-
-		allRefs, err := ResolveDeps(configResolver, refResolver, resolved...)
-		if err != nil {
-			return err
-		}
-		refs = allRefs
-	} else {
-		refs = resolved
+	refs, err := o.PrepareArtifactList(ctx, puller, args)
+	if err != nil {
+		return err
 	}
 
 	logger.Info("Installing artifacts", logger.Args("refs", refs))
@@ -371,4 +330,53 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	}
 
 	return nil
+}
+
+func (o *artifactInstallOptions) PrepareArtifactList(ctx context.Context, puller *puller.Puller, args []string) (refs []string, err error) {
+	logger := o.Printer.Logger
+
+	resolver := refResolver(func(ref string) (string, error) {
+		return o.IndexCache.ResolveReference(ref)
+	})
+
+	configResolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+		artifactConfig, err := puller.ArtifactConfig(ctx, ref, o.platformOS, o.platformArch)
+		if err != nil {
+			return nil, err
+		}
+
+		return &oci.RegistryResult{
+			Config: *artifactConfig,
+		}, nil
+	})
+
+	seen := make(map[string]struct{})
+	var resolved []string
+
+	// Compute unique resolved references
+	for _, arg := range args {
+		ref, err := resolver(arg)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := seen[ref]; ok {
+			continue
+		}
+		seen[ref] = struct{}{}
+		resolved = append(resolved, ref)
+	}
+
+	if o.resolveDeps {
+		// Resolve dependencies
+		logger.Info("Resolving dependencies ...")
+
+		allRefs, err := ResolveDeps(configResolver, resolver, resolved...)
+		if err != nil {
+			return nil, err
+		}
+		return allRefs, nil
+	}
+
+	return resolved, nil
 }
