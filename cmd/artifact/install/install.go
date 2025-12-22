@@ -233,13 +233,12 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		return err
 	}
 
-	// Specify how to pull config layer for each artifact requested by user.
-	resolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-		ref, err := o.IndexCache.ResolveReference(ref)
-		if err != nil {
-			return nil, err
-		}
+	refResolver := refResolver(func(ref string) (string, error) {
+		return o.IndexCache.ResolveReference(ref)
+	})
 
+	// Specify how to pull config layer for each artifact requested by user.
+	configResolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 		artifactConfig, err := puller.ArtifactConfig(ctx, ref, o.platformOS, o.platformArch)
 		if err != nil {
 			return nil, err
@@ -250,62 +249,63 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		}, nil
 	})
 
-	signatures := make(map[string]*index.Signature)
+	seen := make(map[string]struct{})
+	var resolved []string
 
-	// Compute input to install dependencies
-	for i, arg := range args {
+	// Compute unique resolved references and collect signatures
+	for _, arg := range args {
 		ref, err := o.IndexCache.ResolveReference(arg)
 		if err != nil {
 			return err
 		}
-		if sig := o.IndexCache.SignatureForIndexRef(arg); sig != nil {
-			signatures[ref] = sig
+
+		if _, ok := seen[ref]; ok {
+			continue
 		}
-		args[i] = ref
+		seen[ref] = struct{}{}
+		resolved = append(resolved, ref)
 	}
 
 	var refs []string
 	if o.resolveDeps {
 		// Solve dependencies
 		logger.Info("Resolving dependencies ...")
-		refs, err = ResolveDeps(resolver, args...)
+
+		allRefs, err := ResolveDeps(configResolver, refResolver, resolved...)
 		if err != nil {
 			return err
 		}
+		refs = allRefs
 	} else {
-		refs = args
+		refs = resolved
 	}
 
 	logger.Info("Installing artifacts", logger.Args("refs", refs))
 
+	signatures := make(map[string]*index.Signature)
 	for _, ref := range refs {
-		resolvedRef, err := o.IndexCache.ResolveReference(ref)
-		if err != nil {
-			return err
-		}
-
-		if signatures[resolvedRef] == nil {
+		if signatures[ref] == nil {
 			if sig := o.IndexCache.SignatureForIndexRef(ref); sig != nil {
-				signatures[resolvedRef] = sig
+				signatures[ref] = sig
 			}
 		}
 
-		logger.Info("Preparing to pull artifact", logger.Args("ref", resolvedRef))
+		logger.Info("Preparing to pull artifact", logger.Args("ref", ref))
 
-		if err := puller.CheckAllowedType(ctx, resolvedRef, o.platformOS, o.platformArch, o.allowedTypes.Types); err != nil {
+		if err := puller.CheckAllowedType(ctx, ref, o.platformOS, o.platformArch, o.allowedTypes.Types); err != nil {
 			return err
 		}
 
 		// Install will always install artifact for the current OS and architecture
-		result, err := puller.Pull(ctx, resolvedRef, tmpDir, o.platformOS, o.platformArch)
+		result, err := puller.Pull(ctx, ref, tmpDir, o.platformOS, o.platformArch)
 		if err != nil {
 			return err
 		}
 
-		sig := signatures[resolvedRef]
+		sig := signatures[ref]
 
 		if sig != nil && !o.noVerify {
-			repo, err := utils.RepositoryFromRef(resolvedRef)
+			repo, err := utils.RepositoryFromRef(ref)
 			if err != nil {
 				return err
 			}
@@ -367,7 +367,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
-		logger.Info("Artifact successfully installed", logger.Args("name", resolvedRef, "type", result.Type, "digest", result.Digest, "directory", destDir))
+		logger.Info("Artifact successfully installed", logger.Args("name", ref, "type", result.Type, "digest", result.Digest, "directory", destDir))
 	}
 
 	return nil
