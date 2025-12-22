@@ -28,7 +28,7 @@ type testCase struct {
 	scenario       string
 	description    string
 	inRef          []string
-	configResolver       artifactConfigResolver
+	configResolver artifactConfigResolver
 	expectedOutRef []string
 	expectedErr    error
 }
