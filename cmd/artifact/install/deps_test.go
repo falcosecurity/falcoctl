@@ -28,7 +28,7 @@ type testCase struct {
 	scenario       string
 	description    string
 	inRef          []string
-	resolver       artifactConfigResolver
+	configResolver       artifactConfigResolver
 	expectedOutRef []string
 	expectedErr    error
 }
@@ -59,12 +59,16 @@ func TestResolveDeps(t *testing.T) {
 		alt1           = "alt1:2.5.0"
 	)
 
+	refResolver := refResolver(func(ref string) (string, error) {
+		return ref, nil
+	})
+
 	testCases := []testCase{
 		{
 			scenario:    "resolve one dependency",
 			description: "ref:0.1.2 --> dep1:1.2.3",
 			inRef:       []string{ref1},
-			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 				if ref == ref1 {
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
@@ -91,7 +95,7 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve common compatible dependency",
 			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:1.3.0",
 			inRef:       []string{ref1, ref2},
-			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 				switch ref {
 				case ref1:
 					return &oci.RegistryResult{
@@ -127,7 +131,7 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve common but not compatible dependency",
 			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:2.3.0",
 			inRef:       []string{ref1, ref2},
-			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 				switch ref {
 				case ref1:
 					return &oci.RegistryResult{
@@ -163,7 +167,7 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve compatible alternative",
 			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:2.5.0",
 			inRef:       []string{ref1, alt1},
-			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 				if ref == ref1 {
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
@@ -178,7 +182,6 @@ func TestResolveDeps(t *testing.T) {
 						},
 					}, nil
 				}
-
 				splittedRef := strings.Split(ref, ":")
 				return &oci.RegistryResult{
 					Config: oci.ArtifactConfig{
@@ -195,7 +198,7 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve not compatible alternative",
 			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:3.0.0",
 			inRef:       []string{ref1, "alt1:3.0.0"},
-			resolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
 				if ref == ref1 {
 					return &oci.RegistryResult{
 						Config: oci.ArtifactConfig{
@@ -226,7 +229,7 @@ func TestResolveDeps(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		outRef, err := ResolveDeps(testCase.resolver, testCase.inRef...)
+		outRef, err := ResolveDeps(testCase.configResolver, refResolver, testCase.inRef...)
 		if err != nil && !errors.Is(err, testCase.expectedErr) {
 			t.Fatalf("unexpected error in scenario %q, %q: %v",
 				testCase.scenario, testCase.description, err)
