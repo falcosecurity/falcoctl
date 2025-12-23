@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -41,6 +42,12 @@ type State struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// ErrInvalidWriteArgs is returned when Write is called with invalid (empty) arguments.
+var ErrInvalidWriteArgs = errors.New("invalid artifact state write args")
+
+// ErrInvalidReadArgs is returned when Read is called with invalid (empty) arguments.
+var ErrInvalidReadArgs = errors.New("invalid artifact state read args")
+
 func filePath(baseDir, ref string) string {
 	sum := sha256.Sum256([]byte(ref))
 	name := hex.EncodeToString(sum[:]) + ".json"
@@ -50,7 +57,7 @@ func filePath(baseDir, ref string) string {
 // Read loads the persisted state for the given artifact ref from disk.
 func Read(baseDir, ref string) (digest string, ok bool, err error) {
 	if baseDir == "" || ref == "" {
-		return "", false, nil
+		return "", false, fmt.Errorf("%w: empty argument", ErrInvalidReadArgs)
 	}
 
 	b, err := os.ReadFile(filePath(baseDir, ref))
@@ -74,7 +81,7 @@ func Read(baseDir, ref string) (digest string, ok bool, err error) {
 // Write persists the state for the given artifact ref to disk.
 func Write(baseDir, ref, digest string) error {
 	if baseDir == "" || ref == "" || digest == "" {
-		return nil
+		return fmt.Errorf("%w: empty argument", ErrInvalidWriteArgs)
 	}
 
 	path := filePath(baseDir, ref)

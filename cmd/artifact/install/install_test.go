@@ -27,6 +27,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/falcosecurity/falcoctl/cmd"
+	"github.com/falcosecurity/falcoctl/internal/artifactstate"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
@@ -465,4 +466,96 @@ var artifactInstallTests = Describe("install", func() {
 		})
 
 	})
+	Context("artifact state", func() {
+		var (
+			tracker   out.Tracker
+			pusher    *ocipusher.Pusher
+			destDir   string
+			configDir string
+		)
+		const (
+			plainHTTP = true
+		)
+
+		BeforeEach(func() {
+			configDir = GinkgoT().TempDir()
+			destDir = GinkgoT().TempDir()
+		})
+
+		When("installing a rulesfile", func() {
+			var ref string
+			var expectedRootDigest string
+			BeforeEach(func() {
+				configFilePath := filepath.Join(configDir, "config.yaml")
+				content := []byte(correctIndexConfig)
+				err := os.WriteFile(configFilePath, content, 0o644)
+				Expect(err).To(BeNil())
+
+				// Push rulesfile artifact
+				pusher = ocipusher.NewPusher(authn.NewClient(authn.WithCredentials(&auth.EmptyCredential)), plainHTTP, tracker)
+				ref = registry + repoAndTag
+				config := ocipusher.WithArtifactConfig(oci.ArtifactConfig{
+					Name:    "test-rules",
+					Version: "1.0.0",
+				})
+				filePaths := ocipusher.WithFilepaths([]string{rulesfiletgz})
+				options := []ocipusher.Option{filePaths, config}
+				result, err := pusher.Push(ctx, oci.Rulesfile, ref, options...)
+				Expect(err).To(BeNil())
+				Expect(result).ToNot(BeNil())
+				expectedRootDigest = result.RootDigest
+
+				args = []string{artifactCmd, installCmd, ref, "--plain-http",
+					"--config", configFilePath, "--rulesfiles-dir", destDir}
+			})
+
+			It("should write artifact state file after installation", func() {
+				Expect(err).To(BeNil())
+
+				// Assert the persisted digest matches what install should have written.
+				digest, ok, err := artifactstate.Read(destDir, ref)
+				Expect(err).To(BeNil())
+				Expect(ok).To(BeTrue())
+				Expect(digest).To(Equal(expectedRootDigest))
+			})
+		})
+
+		When("installing a plugin", func() {
+			var ref string
+			var expectedRootDigest string
+			BeforeEach(func() {
+				configFilePath := filepath.Join(configDir, "config.yaml")
+				content := []byte(correctIndexConfig)
+				err := os.WriteFile(configFilePath, content, 0o644)
+				Expect(err).To(BeNil())
+
+				// Push plugin artifact
+				pusher = ocipusher.NewPusher(authn.NewClient(authn.WithCredentials(&auth.EmptyCredential)), plainHTTP, tracker)
+				ref = registry + repoAndTag
+				config := ocipusher.WithArtifactConfig(oci.ArtifactConfig{
+					Name:    "test-plugin",
+					Version: "0.1.0",
+				})
+				filePathsAndPlatforms := ocipusher.WithFilepathsAndPlatforms([]string{plugintgz}, []string{"linux/amd64"})
+				options := []ocipusher.Option{filePathsAndPlatforms, config}
+				result, err := pusher.Push(ctx, oci.Plugin, ref, options...)
+				Expect(err).To(BeNil())
+				Expect(result).ToNot(BeNil())
+				expectedRootDigest = result.RootDigest
+
+				args = []string{artifactCmd, installCmd, ref, "--plain-http", "--platform", "linux/amd64",
+					"--config", configFilePath, "--plugins-dir", destDir}
+			})
+
+			It("should write artifact state file with correct digest", func() {
+				Expect(err).To(BeNil())
+
+				digest, ok, err := artifactstate.Read(destDir, ref)
+				Expect(err).To(BeNil())
+				Expect(ok).To(BeTrue())
+				Expect(digest).To(Equal(expectedRootDigest))
+			})
+		})
+	})
+
 })
