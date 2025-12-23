@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,29 +24,32 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
-type artifactConfigResolver func(ref string) (*oci.RegistryResult, error)
+type artifactConfigResolver func(ref string) (*oci.ArtifactConfig, error)
 type refResolver func(ref string) (string, error)
-type depsMapType map[string]*depInfo
+
+// ArtifactMapType maps artifact names to their metadata.
+type ArtifactMapType map[string]*ArtifactInfo
 
 var (
 	// ErrCannotSatisfyDependencies is the error returned when we cannot correctly resolve dependencies.
 	ErrCannotSatisfyDependencies = errors.New("cannot satisfy dependencies")
 )
 
-type depInfo struct {
+// ArtifactInfo contains metadata about a resolved artifact.
+type ArtifactInfo struct {
 	// ref is the remote reference to this artifact
 	ref string
 	// config contains the config layer for this artifact
 	config *oci.ArtifactConfig
 	// ver represents the semver version of this artifact
 	ver *semver.Version
-	// ok is used to mark this dependency as fully processed, with its own
+	// ok is used to mark this artifact as fully processed, with its own
 	// dependencies and alternatives
 	ok bool
 }
 
-func copyDepsMap(in depsMapType) (out depsMapType) {
-	out = make(depsMapType, len(in))
+func copyArtifactMap(in ArtifactMapType) (out ArtifactMapType) {
+	out = make(ArtifactMapType, len(in))
 	for k, v := range in {
 		out[k] = v
 	}
@@ -54,29 +57,12 @@ func copyDepsMap(in depsMapType) (out depsMapType) {
 }
 
 // ResolveDeps resolves dependencies to a list of references.
-func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, inRefs ...string) (outRefs []string, err error) {
-	depMap := make(depsMapType)
-	// configMap is used to avoid getting a remote config layer more than once
-	configMap := make(map[string]*oci.ArtifactConfig)
-
-	retrieveConfig := func(ref string) (*oci.ArtifactConfig, error) {
-		config, ok := configMap[ref]
-		if !ok {
-			res, err := configResolver(ref)
-			if err != nil {
-				return nil, err
-			}
-
-			configMap[ref] = &res.Config
-			return &res.Config, nil
-		}
-
-		return config, nil
-	}
+func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, inRefs ...string) (artifacts ArtifactMapType, err error) {
+	depMap := make(ArtifactMapType)
 
 	upsertMap := func(ref string) error {
 		// fetch artifact config layer metadata
-		config, err := retrieveConfig(ref)
+		config, err := configResolver(ref)
 		if err != nil {
 			return err
 		}
@@ -90,7 +76,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 			return fmt.Errorf("unable to parse version %q for ref %q, %w", config.Version, ref, err)
 		}
 
-		depMap[config.Name] = &depInfo{
+		depMap[config.Name] = &ArtifactInfo{
 			ref:    ref,
 			config: config,
 			ver:    &ver,
@@ -109,7 +95,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 		allOk := true
 		// Since we are updating depMap in this for loop, let's copy the map for iterating it
 		// while we continue inserting new values in the real depMap map.
-		for name, info := range copyDepsMap(depMap) {
+		for name, info := range copyArtifactMap(depMap) {
 			if info.ok {
 				continue
 			}
@@ -159,7 +145,12 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 					}
 
 					if alternativeVer.Compare(*existing.ver) > 0 {
-						if err := upsertMap(alternative.Name + ":" + alternativeVer.String()); err != nil {
+						resolvedAlternative, err := resolver(alternative.Name + ":" + alternative.Version)
+						if err != nil {
+							return nil, fmt.Errorf("unable to resolve reference for alternative dependency %q required by %q: %w", alternative.Name, name, err)
+						}
+
+						if err := upsertMap(resolvedAlternative); err != nil {
 							return nil, err
 						}
 					}
@@ -187,10 +178,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 		}
 
 		if allOk {
-			for _, info := range depMap {
-				outRefs = append(outRefs, info.ref)
-			}
-			return
+			return depMap, nil
 		}
 	}
 }
