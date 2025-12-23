@@ -234,7 +234,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		return err
 	}
 
-	refs, err := o.PrepareArtifactList(ctx, puller, args)
+	refs, err := o.prepareArtifactList(ctx, puller, args)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 	return nil
 }
 
-func (o *artifactInstallOptions) PrepareArtifactList(ctx context.Context, puller *puller.Puller, args []string) (refs []string, err error) {
+func (o *artifactInstallOptions) prepareArtifactList(ctx context.Context, puller *puller.Puller, args []string) (refs []string, err error) {
 	logger := o.Printer.Logger
 
 	resolver := refResolver(func(ref string) (string, error) {
@@ -350,8 +350,8 @@ func (o *artifactInstallOptions) PrepareArtifactList(ctx context.Context, puller
 		}, nil
 	})
 
-	seen := make(map[string]struct{})
-	var resolved []string
+	seen := make(map[string]struct{}, len(args))
+	resolved := make([]string, 0, len(args))
 
 	// Compute unique resolved references
 	for _, arg := range args {
