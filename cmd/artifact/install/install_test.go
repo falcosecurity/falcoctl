@@ -182,7 +182,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(err).To(BeNil())
 				args = []string{artifactCmd, installCmd, "noregistry/testrules", "--plain-http", "--config", configFile}
 			})
-			installAssertFailedBehavior(artifactInstallUsage, `ERROR unable to get manifest: unable to fetch reference`)
+			installAssertFailedBehavior(artifactInstallUsage, `ERROR unable to fetch config for "noregistry/testrules:latest": unable to get manifest`)
 		})
 
 		When("invalid repository", func() {
@@ -194,7 +194,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(err).To(BeNil())
 				args = []string{artifactCmd, installCmd, newReg, "--plain-http", "--config", configFile}
 			})
-			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERROR unable to get manifest: unable to fetch reference %q", newReg))
+			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERROR unable to fetch config for %q: unable to get manifest", newReg))
 		})
 
 		When("with disallowed types (rulesfile)", func() {
