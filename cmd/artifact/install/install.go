@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/falcosecurity/falcoctl/internal/artifactstate"
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/signature"
 	"github.com/falcosecurity/falcoctl/internal/utils"
@@ -362,6 +363,14 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		err = os.Remove(result.Filename)
 		if err != nil {
 			return err
+		}
+
+		if err := artifactstate.Write(destDir, resolvedRef, result.RootDigest); err != nil {
+			logger.Warn("Unable to persist artifact state", logger.Args(
+				"name", resolvedRef,
+				"directory", destDir,
+				"reason", err.Error(),
+			))
 		}
 
 		if o.Printer.Spinner != nil {

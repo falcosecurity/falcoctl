@@ -24,7 +24,9 @@ import (
 
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/falcosecurity/falcoctl/internal/artifactstate"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 	"github.com/falcosecurity/falcoctl/pkg/output"
 )
@@ -424,5 +426,118 @@ func TestSleepWithContext(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, context.DeadlineExceeded, err)
 		assert.Less(t, elapsed, duration, "should return early when context times out")
+	})
+}
+
+func TestArtifactStateIntegration(t *testing.T) {
+	printer := output.NewPrinter(pterm.LogLevelDebug, pterm.LogFormatterJSON, os.Stdout)
+
+	t.Run("initializes currentDigest from persisted state", func(t *testing.T) {
+		rulesDir := t.TempDir()
+		pluginsDir := t.TempDir()
+		assetsDir := t.TempDir()
+		tmpDir := t.TempDir()
+
+		ref := "ghcr.io/falcosecurity/plugins/k8saudit:0.5.0"
+		pluginsDigest := "sha256:plugins"
+		require.NoError(t, artifactstate.Write(pluginsDir, ref, pluginsDigest))
+
+		cfg := &Config{
+			RulesfilesDir: rulesDir,
+			PluginsDir:    pluginsDir,
+			AssetsDir:     assetsDir,
+			TmpDir:        tmpDir,
+		}
+
+		follower, err := New(ref, printer, cfg)
+		require.NoError(t, err)
+		require.NotNil(t, follower)
+		assert.Equal(t, pluginsDigest, follower.currentDigest)
+	})
+
+	t.Run("falls back to rulesfilesDir when pluginsDir has no state", func(t *testing.T) {
+		rulesDir := t.TempDir()
+		pluginsDir := t.TempDir()
+		assetsDir := t.TempDir()
+		tmpDir := t.TempDir()
+
+		ref := "ghcr.io/falcosecurity/rules/falco-rules:latest"
+		rulesDigest := "sha256:rules-b"
+
+		require.NoError(t, artifactstate.Write(rulesDir, ref, rulesDigest))
+
+		cfg := &Config{
+			RulesfilesDir: rulesDir,
+			PluginsDir:    pluginsDir,
+			AssetsDir:     assetsDir,
+			TmpDir:        tmpDir,
+		}
+
+		follower, err := New(ref, printer, cfg)
+		require.NoError(t, err)
+		require.NotNil(t, follower)
+		assert.Equal(t, rulesDigest, follower.currentDigest)
+	})
+
+	t.Run("avoid read artifacts state from tmpDir", func(t *testing.T) {
+		rulesDir := t.TempDir()
+		pluginsDir := t.TempDir()
+		assetsDir := t.TempDir()
+		tmpDir := t.TempDir()
+
+		ref := "ghcr.io/falcosecurity/rules/tmp-state-ignored:0.0.1"
+		tmpDigest := "sha256:tmp-only"
+
+		// Even if a state file exists under tmpDir, New() only consults the destination dirs (rulesfilesDir, pluginsDir, assetsDir).
+		require.NoError(t, artifactstate.Write(tmpDir, ref, tmpDigest))
+
+		cfg := &Config{
+			RulesfilesDir: rulesDir,
+			PluginsDir:    pluginsDir,
+			AssetsDir:     assetsDir,
+			TmpDir:        tmpDir,
+		}
+
+		follower, err := New(ref, printer, cfg)
+		require.NoError(t, err)
+		require.NotNil(t, follower)
+		assert.Empty(t, follower.currentDigest)
+	})
+
+	t.Run("handles missing state gracefully", func(t *testing.T) {
+		rulesDir := t.TempDir()
+		pluginsDir := t.TempDir()
+		tmpDir := t.TempDir()
+
+		ref := "ghcr.io/falcosecurity/rules/new-rules:latest"
+
+		cfg := &Config{
+			RulesfilesDir: rulesDir,
+			PluginsDir:    pluginsDir,
+			TmpDir:        tmpDir,
+		}
+
+		// Should not fail even if no state exists
+		follower, err := New(ref, printer, cfg)
+		assert.NoError(t, err)
+		assert.NotNil(t, follower)
+		assert.Empty(t, follower.currentDigest, "currentDigest should be empty when no state exists")
+	})
+
+	t.Run("handles empty baseDir gracefully", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		ref := "ghcr.io/falcosecurity/rules/test:latest"
+
+		cfg := &Config{
+			RulesfilesDir: "", // Empty directory
+			PluginsDir:    "", // Empty directory
+			TmpDir:        tmpDir,
+		}
+
+		// Should not fail with empty directories
+		follower, err := New(ref, printer, cfg)
+		assert.NoError(t, err)
+		assert.NotNil(t, follower)
+		assert.Empty(t, follower.currentDigest)
 	})
 }
