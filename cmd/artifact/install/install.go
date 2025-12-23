@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/falcosecurity/falcoctl/internal/utils"
 	"github.com/falcosecurity/falcoctl/pkg/index/index"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
-	"github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ociutils "github.com/falcosecurity/falcoctl/pkg/oci/utils"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -234,37 +234,42 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		return err
 	}
 
-	refs, err := o.prepareArtifactList(ctx, puller, args)
+	artifacts, err := o.prepareArtifactList(ctx, puller.ArtifactConfig, args)
 	if err != nil {
 		return err
+	}
+
+	refs := make([]string, 0, len(artifacts))
+	for _, artifact := range artifacts {
+		refs = append(refs, artifact.ref)
 	}
 
 	logger.Info("Installing artifacts", logger.Args("refs", refs))
 
 	signatures := make(map[string]*index.Signature)
-	for _, ref := range refs {
-		if signatures[ref] == nil {
-			if sig := o.IndexCache.SignatureForIndexRef(ref); sig != nil {
-				signatures[ref] = sig
+	for name, artifact := range artifacts {
+		if signatures[name] == nil {
+			if sig := o.IndexCache.SignatureForIndexRef(name); sig != nil {
+				signatures[name] = sig
 			}
 		}
 
-		logger.Info("Preparing to pull artifact", logger.Args("ref", ref))
+		logger.Info("Preparing to pull artifact", logger.Args("ref", artifact.ref))
 
-		if err := puller.CheckAllowedType(ctx, ref, o.platformOS, o.platformArch, o.allowedTypes.Types); err != nil {
+		if err := puller.CheckAllowedType(ctx, artifact.ref, o.platformOS, o.platformArch, o.allowedTypes.Types); err != nil {
 			return err
 		}
 
 		// Install will always install artifact for the current OS and architecture
-		result, err := puller.Pull(ctx, ref, tmpDir, o.platformOS, o.platformArch)
+		result, err := puller.Pull(ctx, artifact.ref, tmpDir, o.platformOS, o.platformArch)
 		if err != nil {
 			return err
 		}
 
-		sig := signatures[ref]
+		sig := signatures[name]
 
 		if sig != nil && !o.noVerify {
-			repo, err := utils.RepositoryFromRef(ref)
+			repo, err := utils.RepositoryFromRef(artifact.ref)
 			if err != nil {
 				return err
 			}
@@ -326,57 +331,91 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
 		}
-		logger.Info("Artifact successfully installed", logger.Args("name", ref, "type", result.Type, "digest", result.Digest, "directory", destDir))
+		logger.Info("Artifact successfully installed",
+			logger.Args("name", artifact.ref, "type", result.Type, "digest", result.Digest, "directory", destDir))
 	}
 
 	return nil
 }
 
-func (o *artifactInstallOptions) prepareArtifactList(ctx context.Context, puller *puller.Puller, args []string) (refs []string, err error) {
+func (o *artifactInstallOptions) prepareArtifactList(
+	ctx context.Context,
+	artifactConfig func(ctx context.Context, ref, os, arch string) (*oci.ArtifactConfig, error),
+	args []string,
+) (arttifacts ArtifactMapType, err error) {
 	logger := o.Printer.Logger
-
+	// configMap is used to avoid getting a remote config layer more than once
+	configMap := make(map[string]*oci.ArtifactConfig)
+	artifactMap := make(ArtifactMapType, len(args))
 	resolver := refResolver(func(ref string) (string, error) {
 		return o.IndexCache.ResolveReference(ref)
 	})
 
-	configResolver := artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
-		artifactConfig, err := puller.ArtifactConfig(ctx, ref, o.platformOS, o.platformArch)
-		if err != nil {
-			return nil, err
+	configResolver := func(ref string) (*oci.ArtifactConfig, error) {
+		config, ok := configMap[ref]
+		if !ok {
+			cfg, err := artifactConfig(ctx, ref, o.platformOS, o.platformArch)
+			if err != nil {
+				return nil, err
+			}
+
+			configMap[ref] = cfg
+			return cfg, nil
 		}
 
-		return &oci.RegistryResult{
-			Config: *artifactConfig,
-		}, nil
-	})
+		return config, nil
+	}
 
-	seen := make(map[string]struct{}, len(args))
-	resolved := make([]string, 0, len(args))
-
-	// Compute unique resolved references
 	for _, arg := range args {
 		ref, err := resolver(arg)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, ok := seen[ref]; ok {
-			continue
+		config, err := configResolver(ref)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch config for %q: %w", ref, err)
 		}
-		seen[ref] = struct{}{}
-		resolved = append(resolved, ref)
+
+		if config.Version == "" {
+			return nil, fmt.Errorf("empty version for ref %q: config may be corrupted", ref)
+		}
+
+		ver, err := semver.Parse(config.Version)
+		if err != nil {
+			return nil, fmt.Errorf("invalid version %q for artifact %q: %w", config.Version, config.Name, err)
+		}
+
+		if existing, ok := artifactMap[config.Name]; ok {
+			// Keep the higher version
+			if ver.Compare(*existing.ver) > 0 {
+				logger.Debug("Artifact version conflict resolved",
+					logger.Args("artifact", config.Name, "kept", ver.String(), "discarded", existing.ver.String()))
+				artifactMap[config.Name] = &ArtifactInfo{ref: ref, ver: &ver}
+			} else {
+				logger.Debug("Artifact version conflict resolved",
+					logger.Args("artifact", config.Name, "kept", existing.ver.String(), "discarded", ver.String()))
+			}
+		} else {
+			artifactMap[config.Name] = &ArtifactInfo{ref: ref, ver: &ver}
+		}
+	}
+
+	resolved := make([]string, 0, len(artifactMap))
+	for _, artifact := range artifactMap {
+		resolved = append(resolved, artifact.ref)
 	}
 
 	if o.resolveDeps {
 		// Resolve dependencies
 		logger.Info("Resolving dependencies ...")
 
-		allRefs, err := ResolveDeps(configResolver, resolver, resolved...)
+		allArtifacts, err := ResolveDeps(configResolver, resolver, resolved...)
 		if err != nil {
 			return nil, err
 		}
-		return allRefs, nil
+		return allArtifacts, nil
 	}
 
-	return resolved, nil
+	return artifactMap, nil
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,24 +68,20 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve one dependency",
 			description: "ref:0.1.2 --> dep1:1.2.3",
 			inRef:       []string{ref1},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				if ref == ref1 {
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:         "ref1",
-							Version:      "0.1.2",
-							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
-						},
+					return &oci.ArtifactConfig{
+						Name:         "ref1",
+						Version:      "0.1.2",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
 					}, nil
 				}
 
 				splittedRef := strings.Split(ref, ":")
-				return &oci.RegistryResult{
-					Config: oci.ArtifactConfig{
-						Name:    splittedRef[0],
-						Version: splittedRef[1],
-						// no dependencies here
-					},
+				return &oci.ArtifactConfig{
+					Name:    splittedRef[0],
+					Version: splittedRef[1],
+					// no dependencies here
 				}, nil
 			}),
 			expectedOutRef: []string{ref1, dep1},
@@ -95,32 +91,26 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve common compatible dependency",
 			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:1.3.0",
 			inRef:       []string{ref1, ref2},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				switch ref {
 				case ref1:
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:         "ref1",
-							Version:      "0.1.2",
-							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
-						},
+					return &oci.ArtifactConfig{
+						Name:         "ref1",
+						Version:      "0.1.2",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
 					}, nil
 				case ref2:
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:         "ref2",
-							Version:      "4.5.6",
-							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.3.0"}},
-						},
+					return &oci.ArtifactConfig{
+						Name:         "ref2",
+						Version:      "4.5.6",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.3.0"}},
 					}, nil
 				default:
 					splittedRef := strings.Split(ref, ":")
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    splittedRef[0],
-							Version: splittedRef[1],
-							// no dependencies here
-						},
+					return &oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+						// no dependencies here
 					}, nil
 				}
 			}),
@@ -131,32 +121,26 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve common but not compatible dependency",
 			description: "ref1:0.1.2 --> dep1:1.2.3, ref2:4.5.6 --> dep1:2.3.0",
 			inRef:       []string{ref1, ref2},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				switch ref {
 				case ref1:
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:         "ref1",
-							Version:      "0.1.2",
-							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
-						},
+					return &oci.ArtifactConfig{
+						Name:         "ref1",
+						Version:      "0.1.2",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "1.2.3"}},
 					}, nil
 				case ref2:
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:         "ref2",
-							Version:      "4.5.6",
-							Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "2.3.0"}},
-						},
+					return &oci.ArtifactConfig{
+						Name:         "ref2",
+						Version:      "4.5.6",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep1", Version: "2.3.0"}},
 					}, nil
 				default:
 					splittedRef := strings.Split(ref, ":")
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    splittedRef[0],
-							Version: splittedRef[1],
-							// no dependencies here
-						},
+					return &oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+						// no dependencies here
 					}, nil
 				}
 			}),
@@ -167,28 +151,24 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve compatible alternative",
 			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:2.5.0",
 			inRef:       []string{ref1, alt1},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				if ref == ref1 {
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    "ref1",
-							Version: "0.1.2",
-							Dependencies: []oci.ArtifactDependency{
-								{
-									Name:         "dep1",
-									Version:      "1.2.3",
-									Alternatives: []oci.Dependency{{Name: "alt1", Version: "2.3.0"}},
-								}},
-						},
+					return &oci.ArtifactConfig{
+						Name:    "ref1",
+						Version: "0.1.2",
+						Dependencies: []oci.ArtifactDependency{
+							{
+								Name:         "dep1",
+								Version:      "1.2.3",
+								Alternatives: []oci.Dependency{{Name: "alt1", Version: "2.3.0"}},
+							}},
 					}, nil
 				}
 				splittedRef := strings.Split(ref, ":")
-				return &oci.RegistryResult{
-					Config: oci.ArtifactConfig{
-						Name:    splittedRef[0],
-						Version: splittedRef[1],
-						// no dependencies here
-					},
+				return &oci.ArtifactConfig{
+					Name:    splittedRef[0],
+					Version: splittedRef[1],
+					// no dependencies here
 				}, nil
 			}),
 			expectedOutRef: []string{ref1, alt1},
@@ -198,29 +178,25 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "resolve not compatible alternative",
 			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:3.0.0",
 			inRef:       []string{ref1, "alt1:3.0.0"},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.RegistryResult, error) {
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				if ref == ref1 {
-					return &oci.RegistryResult{
-						Config: oci.ArtifactConfig{
-							Name:    "ref1",
-							Version: "0.1.2",
-							Dependencies: []oci.ArtifactDependency{
-								{
-									Name:         "dep1",
-									Version:      "1.2.3",
-									Alternatives: []oci.Dependency{{Name: "alt1", Version: "2.3.0"}},
-								}},
-						},
+					return &oci.ArtifactConfig{
+						Name:    "ref1",
+						Version: "0.1.2",
+						Dependencies: []oci.ArtifactDependency{
+							{
+								Name:         "dep1",
+								Version:      "1.2.3",
+								Alternatives: []oci.Dependency{{Name: "alt1", Version: "2.3.0"}},
+							}},
 					}, nil
 				}
 
 				splittedRef := strings.Split(ref, ":")
-				return &oci.RegistryResult{
-					Config: oci.ArtifactConfig{
-						Name:    splittedRef[0],
-						Version: splittedRef[1],
-						// no dependencies here
-					},
+				return &oci.ArtifactConfig{
+					Name:    splittedRef[0],
+					Version: splittedRef[1],
+					// no dependencies here
 				}, nil
 			}),
 			expectedOutRef: nil,
@@ -229,10 +205,15 @@ func TestResolveDeps(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		outRef, err := ResolveDeps(testCase.configResolver, refResolver, testCase.inRef...)
+		artifacts, err := ResolveDeps(testCase.configResolver, refResolver, testCase.inRef...)
 		if err != nil && !errors.Is(err, testCase.expectedErr) {
 			t.Fatalf("unexpected error in scenario %q, %q: %v",
 				testCase.scenario, testCase.description, err)
+		}
+
+		outRef := make([]string, 0, len(artifacts))
+		for _, info := range artifacts {
+			outRef = append(outRef, info.ref)
 		}
 
 		if !testCase.checkOutRef(outRef) {

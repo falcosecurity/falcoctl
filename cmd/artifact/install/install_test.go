@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -182,7 +182,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(err).To(BeNil())
 				args = []string{artifactCmd, installCmd, "noregistry/testrules", "--plain-http", "--config", configFile}
 			})
-			installAssertFailedBehavior(artifactInstallUsage, `ERROR unable to get manifest: unable to fetch reference`)
+			installAssertFailedBehavior(artifactInstallUsage, `ERROR unable to fetch config for "noregistry/testrules:latest": unable to get manifest`)
 		})
 
 		When("invalid repository", func() {
@@ -194,7 +194,7 @@ var artifactInstallTests = Describe("install", func() {
 				Expect(err).To(BeNil())
 				args = []string{artifactCmd, installCmd, newReg, "--plain-http", "--config", configFile}
 			})
-			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERROR unable to get manifest: unable to fetch reference %q", newReg))
+			installAssertFailedBehavior(artifactInstallUsage, fmt.Sprintf("ERROR unable to fetch config for %q: unable to get manifest", newReg))
 		})
 
 		When("with disallowed types (rulesfile)", func() {
