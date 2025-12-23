@@ -132,9 +132,6 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 	}
 
 	puller := ocipuller.NewPuller(client, conf.PlainHTTP, nil)
-	if err != nil {
-		return nil, err
-	}
 
 	// Create temp dir where to put pulled artifacts.
 	tmpDir, err := os.MkdirTemp(conf.TmpDir, "falcoctl-")
@@ -297,7 +294,10 @@ func (f *Follower) follow(ctx context.Context) {
 	f.logger.Info("Artifact correctly installed",
 		f.logger.Args("followerName", f.ref, "artifactName", f.ref, "type", res.Type, "digest", res.Digest, "directory", dstDir))
 	f.currentDigest = desc.Digest.String()
-	_ = artifactstate.Write(dstDir, f.ref, f.currentDigest)
+	if err := artifactstate.Write(dstDir, f.ref, f.currentDigest); err != nil {
+		f.logger.Warn("Unable to persist artifact state",
+			f.logger.Args("followerName", f.ref, "directory", dstDir, "reason", err))
+	}
 }
 
 // moveFiles moves files from their temporary location to the destination directory.
