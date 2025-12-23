@@ -333,7 +333,13 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			return err
 		}
 
-		_ = artifactstate.Write(destDir, resolvedRef, result.RootDigest)
+		if err := artifactstate.Write(destDir, resolvedRef, result.RootDigest); err != nil {
+			logger.Warn("Unable to persist artifact state", logger.Args(
+				"name", resolvedRef,
+				"directory", destDir,
+				"reason", err.Error(),
+			))
+		}
 
 		if o.Printer.Spinner != nil {
 			_ = o.Printer.Spinner.Stop()
