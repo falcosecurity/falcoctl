@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -127,6 +127,7 @@ func TestCheckRequirements(t *testing.T) {
 		t.Run(artConf.testName, func(t *testing.T) {
 			config := Config{
 				FalcoVersions: artConf.falcoVersions,
+				StateDir:      t.TempDir(),
 			}
 			f, err := New("ghcr.io/falcosecurity/rules/my_rule:0.1.0", printer, &config)
 			assert.NoError(t, err)
@@ -268,6 +269,7 @@ func TestMoveFiles(t *testing.T) {
 
 			f, err := New("test-registry/test-ref", output.NewPrinter(pterm.LogLevelDebug, pterm.LogFormatterJSON, os.Stdout), &Config{
 				RulesfilesDir: dstDir,
+				StateDir:      t.TempDir(),
 				TmpDir:        tmpDir,
 			})
 			assert.NoError(t, err)
@@ -351,6 +353,7 @@ func TestStartupBehavior(t *testing.T) {
 
 			config := Config{
 				StartupBehavior: tt.startupBehavior,
+				StateDir:        t.TempDir(),
 				TmpDir:          tmpDir,
 			}
 			f, err := New("ghcr.io/falcosecurity/rules/my_rule:0.1.0", printer, &config)
@@ -432,112 +435,74 @@ func TestSleepWithContext(t *testing.T) {
 func TestArtifactStateIntegration(t *testing.T) {
 	printer := output.NewPrinter(pterm.LogLevelDebug, pterm.LogFormatterJSON, os.Stdout)
 
-	t.Run("initializes currentDigest from persisted state", func(t *testing.T) {
-		rulesDir := t.TempDir()
-		pluginsDir := t.TempDir()
-		assetsDir := t.TempDir()
-		tmpDir := t.TempDir()
+	t.Run("initializes currentDigest from persisted state in stateDir", func(t *testing.T) {
+		stateDir := t.TempDir()
 
 		ref := "ghcr.io/falcosecurity/plugins/k8saudit:0.5.0"
-		pluginsDigest := "sha256:plugins"
-		require.NoError(t, artifactstate.Write(pluginsDir, ref, pluginsDigest))
+		expectedDigest := "sha256:plugins"
+		require.NoError(t, artifactstate.Write(stateDir, ref, expectedDigest))
 
 		cfg := &Config{
-			RulesfilesDir: rulesDir,
-			PluginsDir:    pluginsDir,
-			AssetsDir:     assetsDir,
-			TmpDir:        tmpDir,
+			RulesfilesDir: t.TempDir(),
+			PluginsDir:    t.TempDir(),
+			StateDir:      stateDir,
+			TmpDir:        t.TempDir(),
 		}
 
 		follower, err := New(ref, printer, cfg)
 		require.NoError(t, err)
 		require.NotNil(t, follower)
-		assert.Equal(t, pluginsDigest, follower.currentDigest)
+		assert.Equal(t, expectedDigest, follower.currentDigest)
 	})
 
-	t.Run("falls back to rulesfilesDir when pluginsDir has no state", func(t *testing.T) {
-		rulesDir := t.TempDir()
-		pluginsDir := t.TempDir()
-		assetsDir := t.TempDir()
-		tmpDir := t.TempDir()
-
-		ref := "ghcr.io/falcosecurity/rules/falco-rules:latest"
-		rulesDigest := "sha256:rules-b"
-
-		require.NoError(t, artifactstate.Write(rulesDir, ref, rulesDigest))
-
-		cfg := &Config{
-			RulesfilesDir: rulesDir,
-			PluginsDir:    pluginsDir,
-			AssetsDir:     assetsDir,
-			TmpDir:        tmpDir,
-		}
-
-		follower, err := New(ref, printer, cfg)
-		require.NoError(t, err)
-		require.NotNil(t, follower)
-		assert.Equal(t, rulesDigest, follower.currentDigest)
-	})
-
-	t.Run("avoid read artifacts state from tmpDir", func(t *testing.T) {
-		rulesDir := t.TempDir()
-		pluginsDir := t.TempDir()
-		assetsDir := t.TempDir()
+	t.Run("ignores state written in tmpDir", func(t *testing.T) {
+		stateDir := t.TempDir()
 		tmpDir := t.TempDir()
 
 		ref := "ghcr.io/falcosecurity/rules/tmp-state-ignored:0.0.1"
-		tmpDigest := "sha256:tmp-only"
-
-		// Even if a state file exists under tmpDir, New() only consults the destination dirs (rulesfilesDir, pluginsDir, assetsDir).
-		require.NoError(t, artifactstate.Write(tmpDir, ref, tmpDigest))
+		// Write state in tmpDir (which should be ignored)
+		require.NoError(t, artifactstate.Write(tmpDir, ref, "sha256:tmp-only"))
 
 		cfg := &Config{
-			RulesfilesDir: rulesDir,
-			PluginsDir:    pluginsDir,
-			AssetsDir:     assetsDir,
+			RulesfilesDir: t.TempDir(),
+			PluginsDir:    t.TempDir(),
+			StateDir:      stateDir,
 			TmpDir:        tmpDir,
 		}
 
 		follower, err := New(ref, printer, cfg)
+		require.NoError(t, err)
+		require.NotNil(t, follower)
+		assert.Empty(t, follower.currentDigest, "state in tmpDir should be ignored")
+	})
+
+	t.Run("handles missing state file gracefully", func(t *testing.T) {
+		stateDir := t.TempDir() // Empty, no state file written
+
+		cfg := &Config{
+			RulesfilesDir: t.TempDir(),
+			PluginsDir:    t.TempDir(),
+			StateDir:      stateDir,
+			TmpDir:        t.TempDir(),
+		}
+
+		follower, err := New("ghcr.io/falcosecurity/rules/new-rules:latest", printer, cfg)
 		require.NoError(t, err)
 		require.NotNil(t, follower)
 		assert.Empty(t, follower.currentDigest)
 	})
 
-	t.Run("handles missing state gracefully", func(t *testing.T) {
-		rulesDir := t.TempDir()
-		pluginsDir := t.TempDir()
-		tmpDir := t.TempDir()
-
-		ref := "ghcr.io/falcosecurity/rules/new-rules:latest"
-
+	t.Run("handles empty stateDir config gracefully", func(t *testing.T) {
 		cfg := &Config{
-			RulesfilesDir: rulesDir,
-			PluginsDir:    pluginsDir,
-			TmpDir:        tmpDir,
+			RulesfilesDir: t.TempDir(),
+			PluginsDir:    t.TempDir(),
+			StateDir:      "", // Empty - will log a warning but not fail
+			TmpDir:        t.TempDir(),
 		}
 
-		// Should not fail even if no state exists
-		follower, err := New(ref, printer, cfg)
-		assert.NoError(t, err)
-		assert.NotNil(t, follower)
-		assert.Empty(t, follower.currentDigest, "currentDigest should be empty when no state exists")
-	})
-
-	t.Run("handles empty baseDir gracefully", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		ref := "ghcr.io/falcosecurity/rules/test:latest"
-
-		cfg := &Config{
-			RulesfilesDir: "", // Empty directory
-			PluginsDir:    "", // Empty directory
-			TmpDir:        tmpDir,
-		}
-
-		// Should not fail with empty directories
-		follower, err := New(ref, printer, cfg)
-		assert.NoError(t, err)
-		assert.NotNil(t, follower)
+		follower, err := New("ghcr.io/falcosecurity/rules/test:latest", printer, cfg)
+		require.NoError(t, err)
+		require.NotNil(t, follower)
 		assert.Empty(t, follower.currentDigest)
 	})
 }

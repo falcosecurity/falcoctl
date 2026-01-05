@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2025 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ type Config struct {
 	PluginsDir string
 	// AssetsDir directory where assets are stored.
 	AssetsDir string
+	// StateDir directory where artifact state is persisted.
+	StateDir string
 	// ArtifactReference reference to the artifact in a remote repository.
 	ArtifactReference string
 	// PlainHTTP is set to true if all registry interaction must be in plain http.
@@ -152,20 +154,12 @@ func New(ref string, printer *output.Printer, conf *Config) (*Follower, error) {
 	// Best-effort: initialize currentDigest from an on-disk state.
 	// This is meant to deduplicate the first follow after a previous install
 	// in the same shared volume (e.g., Helm initContainer + sidecar).
-	for _, baseDir := range []string{conf.PluginsDir, conf.RulesfilesDir, conf.AssetsDir} {
-		if baseDir == "" {
-			continue
-		}
-		d, ok, err := artifactstate.Read(baseDir, ref)
-		if err != nil {
-			printer.Logger.Debug("Unable to read persisted artifact state",
-				printer.Logger.Args("followerName", ref, "directory", baseDir, "reason", err.Error()))
-			continue
-		}
-		if ok {
-			follower.currentDigest = d
-			break
-		}
+	d, ok, err := artifactstate.Read(conf.StateDir, ref)
+	if err != nil {
+		printer.Logger.Debug("Unable to read persisted artifact state",
+			printer.Logger.Args("followerName", ref, "directory", conf.StateDir, "reason", err.Error()))
+	} else if ok {
+		follower.currentDigest = d
 	}
 
 	return follower, nil
@@ -294,9 +288,9 @@ func (f *Follower) follow(ctx context.Context) {
 	f.logger.Info("Artifact correctly installed",
 		f.logger.Args("followerName", f.ref, "artifactName", f.ref, "type", res.Type, "digest", res.Digest, "directory", dstDir))
 	f.currentDigest = desc.Digest.String()
-	if err := artifactstate.Write(dstDir, f.ref, f.currentDigest); err != nil {
+	if err := artifactstate.Write(f.StateDir, f.ref, f.currentDigest); err != nil {
 		f.logger.Warn("Unable to persist artifact state",
-			f.logger.Args("followerName", f.ref, "directory", dstDir, "reason", err))
+			f.logger.Args("followerName", f.ref, "directory", f.StateDir, "reason", err))
 	}
 }
 
