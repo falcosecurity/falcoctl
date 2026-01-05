@@ -337,6 +337,7 @@ func (o *artifactFollowOptions) RunArtifactFollow(ctx context.Context, args []st
 			RulesfilesDir:     o.RulesfilesDir,
 			PluginsDir:        o.PluginsDir,
 			AssetsDir:         o.AssetsDir,
+			StateDir:          o.StateDir,
 			ArtifactReference: ref,
 			PlainHTTP:         o.PlainHTTP,
 			TmpDir:            o.tmpDir,

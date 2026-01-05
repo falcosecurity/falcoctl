@@ -471,6 +471,7 @@ var artifactInstallTests = Describe("install", func() {
 			tracker   out.Tracker
 			pusher    *ocipusher.Pusher
 			destDir   string
+			stateDir  string
 			configDir string
 		)
 		const (
@@ -480,6 +481,7 @@ var artifactInstallTests = Describe("install", func() {
 		BeforeEach(func() {
 			configDir = GinkgoT().TempDir()
 			destDir = GinkgoT().TempDir()
+			stateDir = GinkgoT().TempDir()
 		})
 
 		When("installing a rulesfile", func() {
@@ -506,14 +508,14 @@ var artifactInstallTests = Describe("install", func() {
 				expectedRootDigest = result.RootDigest
 
 				args = []string{artifactCmd, installCmd, ref, "--plain-http",
-					"--config", configFilePath, "--rulesfiles-dir", destDir}
+					"--config", configFilePath, "--rulesfiles-dir", destDir, "--state-dir", stateDir}
 			})
 
 			It("should write artifact state file after installation", func() {
 				Expect(err).To(BeNil())
 
 				// Assert the persisted digest matches what install should have written.
-				digest, ok, err := artifactstate.Read(destDir, ref)
+				digest, ok, err := artifactstate.Read(stateDir, ref)
 				Expect(err).To(BeNil())
 				Expect(ok).To(BeTrue())
 				Expect(digest).To(Equal(expectedRootDigest))
@@ -544,13 +546,13 @@ var artifactInstallTests = Describe("install", func() {
 				expectedRootDigest = result.RootDigest
 
 				args = []string{artifactCmd, installCmd, ref, "--plain-http", "--platform", "linux/amd64",
-					"--config", configFilePath, "--plugins-dir", destDir}
+					"--config", configFilePath, "--plugins-dir", destDir, "--state-dir", stateDir}
 			})
 
 			It("should write artifact state file with correct digest", func() {
 				Expect(err).To(BeNil())
 
-				digest, ok, err := artifactstate.Read(destDir, ref)
+				digest, ok, err := artifactstate.Read(stateDir, ref)
 				Expect(err).To(BeNil())
 				Expect(ok).To(BeTrue())
 				Expect(digest).To(Equal(expectedRootDigest))

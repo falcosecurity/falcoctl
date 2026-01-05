@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ const (
 
 	// FlagAssetsFilesDir is the name of the flag to specify the directory path of assets.
 	FlagAssetsFilesDir = "assets-dir"
+
+	// FlagStateDir is the name of the flag to specify the directory path for artifact state.
+	FlagStateDir = "state-dir"
 )
 
 // Directory options for install directories for artifacts.
@@ -38,8 +41,10 @@ type Directory struct {
 	RulesfilesDir string
 	// PluginsDir path where plugins are installed
 	PluginsDir string
-	// AssetsDire path where assets are installed
+	// AssetsDir path where assets are installed
 	AssetsDir string
+	// StateDir path where artifact state is persisted
+	StateDir string
 }
 
 // AddFlags registers the directories flags.
@@ -50,4 +55,6 @@ func (o *Directory) AddFlags(cmd *cobra.Command) {
 		"Directory where to install plugins")
 	cmd.Flags().StringVarP(&o.AssetsDir, FlagAssetsFilesDir, "", config.AssetsDir,
 		"Directory where to install assets")
+	cmd.Flags().StringVarP(&o.StateDir, FlagStateDir, "", config.StateDir,
+		"Directory where to persist artifact state")
 }

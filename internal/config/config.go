@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2024 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ const (
 	RulesfilesDir = "/etc/falco"
 	// AssetsDir default path where assets are installed.
 	AssetsDir = "/etc/falco/assets"
+	// StateDir default path where artifact state is persisted.
+	StateDir = "/var/lib/falcoctl"
 	// FollowResync time interval how often it checks for newer version of the artifact.
 	// Default values is set every 7 days.
 	FollowResync = time.Hour * 24 * 7
