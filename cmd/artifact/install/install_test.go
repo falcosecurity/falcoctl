@@ -81,6 +81,10 @@ When providing just the name of the artifact, the command will search for the ar
 the configured index files, and if found, it will use the registry and repository specified
 in the indexes.
 
+Note: If multiple versions of the same artifact are specified (e.g., foo:1.0.0 foo:2.0.0),
+the command will automatically keep only the highest version and discard the others.
+A warning will be displayed when this occurs.
+
 Example - Install "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
 	falcoctl artifact install k8saudit-rules
 
