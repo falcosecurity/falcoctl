@@ -290,6 +290,10 @@ By default, if we give the name of an **artifact** it will search for the **arti
 
  > If the repositories of the **artifacts** your are trying to install are not public then you need to authenticate to the remote registry.
 
+##### Handling Multiple Versions
+
+Starting from version `v0.12.0`, when multiple versions of the same artifact are specified (e.g., `falcoctl artifact install foo:1.0.0 foo:2.0.0`), the command will automatically keep only the **highest version** and discard the others. A warning message will be displayed to inform you which version was kept and which were discarded. This behavior also applies when resolving dependencies: if different artifacts require different versions of the same dependency, the highest compatible version will be selected.
+
 #### Falcoctl artifact follow
 The above commands allow us to keep up-to-date one or more given **artifacts**. The `artifact follow` command checks for updates on a periodic basis and then downloads and installs the latest version, as specified by the passed tags. 
 It pulls the **artifact** from remote repository, and saves it in a given directory. The following command installs the *github-rules* rulesfile in the default path:

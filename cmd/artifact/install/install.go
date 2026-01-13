@@ -60,6 +60,10 @@ When providing just the name of the artifact, the command will search for the ar
 the configured index files, and if found, it will use the registry and repository specified
 in the indexes.
 
+Note: If multiple versions of the same artifact are specified (e.g., foo:1.0.0 foo:2.0.0),
+the command will automatically keep only the highest version and discard the others.
+A warning will be displayed when this occurs.
+
 Example - Install "latest" tag of "k8saudit-rules" artifact by relying on index metadata:
 	falcoctl artifact install k8saudit-rules
 
@@ -342,7 +346,7 @@ func (o *artifactInstallOptions) prepareArtifactList(
 	ctx context.Context,
 	artifactConfig func(ctx context.Context, ref, os, arch string) (*oci.ArtifactConfig, error),
 	args []string,
-) (arttifacts ArtifactMapType, err error) {
+) (artifacts ArtifactMapType, err error) {
 	logger := o.Printer.Logger
 	// configMap is used to avoid getting a remote config layer more than once
 	configMap := make(map[string]*oci.ArtifactConfig)
@@ -389,11 +393,11 @@ func (o *artifactInstallOptions) prepareArtifactList(
 		if existing, ok := artifactMap[config.Name]; ok {
 			// Keep the higher version
 			if ver.Compare(*existing.ver) > 0 {
-				logger.Debug("Artifact version conflict resolved",
+				logger.Warn("Multiple versions of the same artifact detected, keeping the highest version",
 					logger.Args("artifact", config.Name, "kept", ver.String(), "discarded", existing.ver.String()))
 				artifactMap[config.Name] = &ArtifactInfo{ref: ref, ver: &ver}
 			} else {
-				logger.Debug("Artifact version conflict resolved",
+				logger.Warn("Multiple versions of the same artifact detected, keeping the highest version",
 					logger.Args("artifact", config.Name, "kept", existing.ver.String(), "discarded", ver.String()))
 			}
 		} else {
