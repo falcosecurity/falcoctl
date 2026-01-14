@@ -140,7 +140,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 					if existing.ver.Major != alternativeVer.Major {
 						return nil, fmt.Errorf(
 							`%w: %s depends on %s:%s but an incompatible version %s:%s is required by other artifacts`,
-							ErrCannotSatisfyDependencies, name, required.Name, required.Version, required.Name, existing.ver.String(),
+							ErrCannotSatisfyDependencies, name, required.Name, required.Version, alternative.Name, existing.ver.String(),
 						)
 					}
 
