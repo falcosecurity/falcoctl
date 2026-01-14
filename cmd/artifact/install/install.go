@@ -318,14 +318,21 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 		result.Filename = filepath.Join(tmpDir, result.Filename)
 
-		f, err := os.Open(result.Filename)
+		err = func() error {
+			f, err := os.Open(result.Filename)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			// Extract artifact and move it to its destination directory
+			_, err = utils.ExtractTarGz(ctx, f, destDir, 0)
+			if err != nil {
+				return fmt.Errorf("cannot extract %q to %q: %w", result.Filename, destDir, err)
+			}
+			return nil
+		}()
 		if err != nil {
 			return err
-		}
-		// Extract artifact and move it to its destination directory
-		_, err = utils.ExtractTarGz(ctx, f, destDir, 0)
-		if err != nil {
-			return fmt.Errorf("cannot extract %q to %q: %w", result.Filename, destDir, err)
 		}
 
 		err = os.Remove(result.Filename)
@@ -404,13 +411,13 @@ func (o *artifactInstallOptions) prepareArtifactList(
 			if ver.Compare(*existing.ver) > 0 {
 				logger.Warn("Multiple versions of the same artifact detected, keeping the highest version",
 					logger.Args("artifact", config.Name, "kept", ver.String(), "discarded", existing.ver.String()))
-				artifactMap[config.Name] = &ArtifactInfo{ref: ref, ver: &ver}
+				artifactMap[config.Name] = &ArtifactInfo{ref: ref, config: config, ver: &ver}
 			} else {
 				logger.Warn("Multiple versions of the same artifact detected, keeping the highest version",
 					logger.Args("artifact", config.Name, "kept", existing.ver.String(), "discarded", ver.String()))
 			}
 		} else {
-			artifactMap[config.Name] = &ArtifactInfo{ref: ref, ver: &ver}
+			artifactMap[config.Name] = &ArtifactInfo{ref: ref, config: config, ver: &ver}
 		}
 	}
 
