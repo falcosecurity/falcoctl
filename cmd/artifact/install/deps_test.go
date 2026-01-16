@@ -202,6 +202,162 @@ func TestResolveDeps(t *testing.T) {
 			expectedOutRef: nil,
 			expectedErr:    ErrCannotSatisfyDependencies,
 		},
+		{
+			scenario:    "tolerant semver - major only version",
+			description: "custom-rules:1 (major only) should work",
+			inRef:       []string{"ghcr.io/example/falco-test/custom-rules:1"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				return &oci.ArtifactConfig{
+					Name:    "custom-rules",
+					Version: "1",
+				}, nil
+			}),
+			expectedOutRef: []string{"ghcr.io/example/falco-test/custom-rules:1"},
+			expectedErr:    nil,
+		},
+		{
+			scenario:    "tolerant semver - major.minor version",
+			description: "custom-rules:1.2 (major.minor) should work",
+			inRef:       []string{"ghcr.io/example/rules:1.2"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				return &oci.ArtifactConfig{
+					Name:    "rules",
+					Version: "1.2", // Major.Minor only - should be parsed as 1.2.0
+				}, nil
+			}),
+			expectedOutRef: []string{"ghcr.io/example/rules:1.2"},
+			expectedErr:    nil,
+		},
+		{
+			scenario:    "tolerant semver - version with v prefix",
+			description: "custom-rules:v1.2.3 (v prefix) should work",
+			inRef:       []string{"ghcr.io/example/rules:v1.2.3"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				return &oci.ArtifactConfig{
+					Name:    "rules",
+					Version: "v1.2.3", // v prefix - should be parsed as 1.2.3
+				}, nil
+			}),
+			expectedOutRef: []string{"ghcr.io/example/rules:v1.2.3"},
+			expectedErr:    nil,
+		},
+		{
+			scenario:    "tolerant semver - dependency with major only version",
+			description: "ref:0.1.2 --> dep:1 (major only dependency)",
+			inRef:       []string{"ghcr.io/example/ref:0.1.2"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				if ref == "ghcr.io/example/ref:0.1.2" {
+					return &oci.ArtifactConfig{
+						Name:         "ref",
+						Version:      "0.1.2",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1"}}, // Major only
+					}, nil
+				}
+				return &oci.ArtifactConfig{
+					Name:    "dep",
+					Version: "1", // Major only
+				}, nil
+			}),
+			expectedOutRef: []string{"ghcr.io/example/ref:0.1.2", "dep:1"},
+			expectedErr:    nil,
+		},
+		{
+			scenario:    "tolerant semver - compatible major versions with tolerant format",
+			description: "ref1:1 --> dep:1, ref2:2 --> dep:1.5 (compatible majors with tolerant)",
+			inRef:       []string{"ref1:1", "ref2:2"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				switch ref {
+				case "ref1:1":
+					return &oci.ArtifactConfig{
+						Name:         "ref1",
+						Version:      "1", // Major only
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1"}},
+					}, nil
+				case "ref2:2":
+					return &oci.ArtifactConfig{
+						Name:         "ref2",
+						Version:      "2", // Major only
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1.5"}},
+					}, nil
+				default:
+					splittedRef := strings.Split(ref, ":")
+					return &oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+					}, nil
+				}
+			}),
+			expectedOutRef: []string{"ref1:1", "ref2:2", "dep:1.5"},
+			expectedErr:    nil,
+		},
+		{
+			scenario:    "tolerant semver - incompatible major versions with tolerant format",
+			description: "ref1:1 --> dep:1, ref2:2 --> dep:2 (incompatible majors with tolerant)",
+			inRef:       []string{"ref1:1", "ref2:2"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				switch ref {
+				case "ref1:1":
+					return &oci.ArtifactConfig{
+						Name:         "ref1",
+						Version:      "1",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1"}}, // Major 1
+					}, nil
+				case "ref2:2":
+					return &oci.ArtifactConfig{
+						Name:         "ref2",
+						Version:      "2",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "2"}}, // Major 2
+					}, nil
+				default:
+					splittedRef := strings.Split(ref, ":")
+					return &oci.ArtifactConfig{
+						Name:    splittedRef[0],
+						Version: splittedRef[1],
+					}, nil
+				}
+			}),
+			expectedOutRef: nil,
+			expectedErr:    ErrCannotSatisfyDependencies,
+		},
+		{
+			scenario:    "tolerant semver - alternative with major only version",
+			description: "ref:1 --> dep:1 | alt:2 (alternative with tolerant)",
+			inRef:       []string{"ref:1", "alt:2"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				if ref == "ref:1" {
+					return &oci.ArtifactConfig{
+						Name:    "ref",
+						Version: "1",
+						Dependencies: []oci.ArtifactDependency{
+							{
+								Name:         "dep",
+								Version:      "1",
+								Alternatives: []oci.Dependency{{Name: "alt", Version: "2"}},
+							}},
+					}, nil
+				}
+				splittedRef := strings.Split(ref, ":")
+				return &oci.ArtifactConfig{
+					Name:    splittedRef[0],
+					Version: splittedRef[1],
+				}, nil
+			}),
+			expectedOutRef: []string{"ref:1", "alt:2"},
+			expectedErr:    ErrCannotSatisfyDependencies,
+		},
+		{
+			scenario:    "tolerant semver - version zero",
+			description: "rules:0 (version zero) should work for pre-1.0 software",
+			inRef:       []string{"ghcr.io/example/rules:0"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				return &oci.ArtifactConfig{
+					Name:    "rules",
+					Version: "0",
+				}, nil
+			}),
+			expectedOutRef: []string{"ghcr.io/example/rules:0"},
+			expectedErr:    nil,
+		},
 	}
 
 	for _, testCase := range testCases {
