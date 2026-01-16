@@ -18,7 +18,7 @@ package driverdistro
 import (
 	"os/exec"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
