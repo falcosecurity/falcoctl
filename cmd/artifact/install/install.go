@@ -405,7 +405,7 @@ func (o *artifactInstallOptions) prepareArtifactList(
 			return nil, fmt.Errorf("empty version for ref %q: config may be corrupted", ref)
 		}
 
-		ver, err := semver.Parse(config.Version)
+		ver, err := semver.ParseTolerant(config.Version)
 		if err != nil {
 			return nil, fmt.Errorf("invalid version %q for artifact %q: %w", config.Version, config.Name, err)
 		}

@@ -71,7 +71,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 			return fmt.Errorf("empty version for ref %q: config may be corrupted", ref)
 		}
 
-		ver, err := semver.Parse(config.Version)
+		ver, err := semver.ParseTolerant(config.Version)
 		if err != nil {
 			return fmt.Errorf("unable to parse version %q for ref %q, %w", config.Version, ref, err)
 		}
@@ -102,7 +102,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 			for _, required := range info.config.Dependencies {
 				// Does already exist in the map?
 				if existing, ok := depMap[required.Name]; ok {
-					requiredVer, err := semver.Parse(required.Version)
+					requiredVer, err := semver.ParseTolerant(required.Version)
 					if err != nil {
 						return nil, fmt.Errorf(`invalid artifact config: version %q is not semver compatible`, required.Version)
 					}
@@ -131,9 +131,9 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 
 					foundAlternative = true
 
-					alternativeVer, err := semver.Parse(alternative.Version)
+					alternativeVer, err := semver.ParseTolerant(alternative.Version)
 					if err != nil {
-						return nil, fmt.Errorf(`invalid artifact config: version %q is not semver compatible`, required.Version)
+						return nil, fmt.Errorf(`invalid artifact config: version %q is not semver compatible`, alternative.Version)
 					}
 
 					// Is the alternative specified by the user compatible?

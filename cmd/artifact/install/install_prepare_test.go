@@ -583,3 +583,66 @@ func TestPrepareArtifactList_WithDeps_ComplexDependencyGraph(t *testing.T) {
 		jsonRef070, // Should be 0.7.0, not 0.6.0
 	}, refs, "json-plugin should be bumped to 0.7.0, the highest compatible version")
 }
+
+func TestPrepareArtifactList_TolerantSemver_MultipleVersionsKeepsHighest(t *testing.T) {
+	// Verify that version comparison works correctly with tolerant versions
+	// "2" (parsed as 2.0.0) should be kept over "1.5.0"
+	idxCache := newTestIndexCache(
+		&index.Entry{Name: "rules", Registry: "ghcr.io", Repository: "example/rules"},
+	)
+
+	o := newTestInstallOptions(t, idxCache, false)
+
+	rulesRef150, err := idxCache.ResolveReference("rules:1.5.0")
+	require.NoError(t, err)
+	rulesRef2, err := idxCache.ResolveReference("rules:2")
+	require.NoError(t, err)
+
+	provider := &fakeConfigProvider{configs: map[string]*oci.ArtifactConfig{
+		rulesRef150: {
+			Name:    "rules",
+			Version: "1.5.0",
+		},
+		rulesRef2: {
+			Name:    "rules",
+			Version: "2",
+		},
+	}}
+
+	ctx := context.Background()
+
+	artifacts, err := o.prepareArtifactList(ctx, provider.ArtifactConfig, []string{
+		"rules:1.5.0",
+		"rules:2",
+	})
+	require.NoError(t, err)
+	assert.Len(t, artifacts, 1, "should keep only highest version")
+	assert.Equal(t, rulesRef2, artifacts["rules"].ref, "should keep version 2 (2.0.0) over 1.5.0")
+}
+
+func TestPrepareArtifactList_TolerantSemver_VersionZero(t *testing.T) {
+	// Test version "0" which is a common case for pre-1.0 software
+	idxCache := newTestIndexCache(
+		&index.Entry{Name: "falco-rules", Registry: "ghcr.io", Repository: "falcosecurity/rules/falco-rules"},
+	)
+
+	o := newTestInstallOptions(t, idxCache, false)
+
+	rulesRef, err := idxCache.ResolveReference("falco-rules:0")
+	require.NoError(t, err)
+
+	provider := &fakeConfigProvider{configs: map[string]*oci.ArtifactConfig{
+		rulesRef: {
+			Name:    "falco-rules",
+			Version: "0", // Major only - version 0.x.x series
+		},
+	}}
+
+	ctx := context.Background()
+
+	artifacts, err := o.prepareArtifactList(ctx, provider.ArtifactConfig, []string{
+		"falco-rules:0",
+	})
+	require.NoError(t, err, "should accept version '0' for pre-1.0 artifacts")
+	assert.Len(t, artifacts, 1)
+}
