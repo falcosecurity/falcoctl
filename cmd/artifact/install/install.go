@@ -318,12 +318,16 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 
 		result.Filename = filepath.Join(tmpDir, result.Filename)
 
-		err = func() error {
+		err = func() (err error) {
 			f, err := os.Open(result.Filename)
 			if err != nil {
 				return err
 			}
-			defer f.Close()
+			defer func() {
+				if cerr := f.Close(); cerr != nil && err == nil {
+					err = cerr
+				}
+			}()
 			// Extract artifact and move it to its destination directory
 			_, err = utils.ExtractTarGz(ctx, f, destDir, 0)
 			if err != nil {
