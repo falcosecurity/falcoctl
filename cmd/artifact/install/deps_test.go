@@ -24,6 +24,11 @@ import (
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
+const (
+	testRef1v1 = "ref1:1"
+	testRef2v2 = "ref2:2"
+)
+
 type testCase struct {
 	scenario       string
 	description    string
@@ -206,7 +211,7 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "tolerant semver - major only version",
 			description: "custom-rules:1 (major only) should work",
 			inRef:       []string{"ghcr.io/example/falco-test/custom-rules:1"},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+			configResolver: artifactConfigResolver(func(_ string) (*oci.ArtifactConfig, error) {
 				return &oci.ArtifactConfig{
 					Name:    "custom-rules",
 					Version: "1",
@@ -219,10 +224,10 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "tolerant semver - major.minor version",
 			description: "custom-rules:1.2 (major.minor) should work",
 			inRef:       []string{"ghcr.io/example/rules:1.2"},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+			configResolver: artifactConfigResolver(func(_ string) (*oci.ArtifactConfig, error) {
 				return &oci.ArtifactConfig{
 					Name:    "rules",
-					Version: "1.2", // Major.Minor only - should be parsed as 1.2.0
+					Version: "1.2",
 				}, nil
 			}),
 			expectedOutRef: []string{"ghcr.io/example/rules:1.2"},
@@ -232,10 +237,10 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "tolerant semver - version with v prefix",
 			description: "custom-rules:v1.2.3 (v prefix) should work",
 			inRef:       []string{"ghcr.io/example/rules:v1.2.3"},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+			configResolver: artifactConfigResolver(func(_ string) (*oci.ArtifactConfig, error) {
 				return &oci.ArtifactConfig{
 					Name:    "rules",
-					Version: "v1.2.3", // v prefix - should be parsed as 1.2.3
+					Version: "v1.2.3",
 				}, nil
 			}),
 			expectedOutRef: []string{"ghcr.io/example/rules:v1.2.3"},
@@ -264,19 +269,19 @@ func TestResolveDeps(t *testing.T) {
 		{
 			scenario:    "tolerant semver - compatible major versions with tolerant format",
 			description: "ref1:1 --> dep:1, ref2:2 --> dep:1.5 (compatible majors with tolerant)",
-			inRef:       []string{"ref1:1", "ref2:2"},
+			inRef:       []string{testRef1v1, testRef2v2},
 			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				switch ref {
-				case "ref1:1":
+				case testRef1v1:
 					return &oci.ArtifactConfig{
 						Name:         "ref1",
-						Version:      "1", // Major only
+						Version:      "1",
 						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1"}},
 					}, nil
-				case "ref2:2":
+				case testRef2v2:
 					return &oci.ArtifactConfig{
 						Name:         "ref2",
-						Version:      "2", // Major only
+						Version:      "2",
 						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1.5"}},
 					}, nil
 				default:
@@ -287,26 +292,26 @@ func TestResolveDeps(t *testing.T) {
 					}, nil
 				}
 			}),
-			expectedOutRef: []string{"ref1:1", "ref2:2", "dep:1.5"},
+			expectedOutRef: []string{testRef1v1, testRef2v2, "dep:1.5"},
 			expectedErr:    nil,
 		},
 		{
 			scenario:    "tolerant semver - incompatible major versions with tolerant format",
 			description: "ref1:1 --> dep:1, ref2:2 --> dep:2 (incompatible majors with tolerant)",
-			inRef:       []string{"ref1:1", "ref2:2"},
+			inRef:       []string{testRef1v1, testRef2v2},
 			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
 				switch ref {
-				case "ref1:1":
+				case testRef1v1:
 					return &oci.ArtifactConfig{
 						Name:         "ref1",
 						Version:      "1",
-						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1"}}, // Major 1
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "1"}},
 					}, nil
-				case "ref2:2":
+				case testRef2v2:
 					return &oci.ArtifactConfig{
 						Name:         "ref2",
 						Version:      "2",
-						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "2"}}, // Major 2
+						Dependencies: []oci.ArtifactDependency{{Name: "dep", Version: "2"}},
 					}, nil
 				default:
 					splittedRef := strings.Split(ref, ":")
@@ -349,7 +354,7 @@ func TestResolveDeps(t *testing.T) {
 			scenario:    "tolerant semver - version zero",
 			description: "rules:0 (version zero) should work for pre-1.0 software",
 			inRef:       []string{"ghcr.io/example/rules:0"},
-			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+			configResolver: artifactConfigResolver(func(_ string) (*oci.ArtifactConfig, error) {
 				return &oci.ArtifactConfig{
 					Name:    "rules",
 					Version: "0",
