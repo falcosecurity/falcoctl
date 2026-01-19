@@ -22,7 +22,7 @@ jobs:
           cache: "false"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@7119f3d5ddced62a10a044847a6c6bb0f7a5e76a # v7.0.0
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7.0.0
         with:
           only-new-issues: true
           version: v2.8.0
