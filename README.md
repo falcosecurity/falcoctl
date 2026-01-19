@@ -299,9 +299,16 @@ When **pushing** artifacts with `falcoctl registry push`:
 - The version is stored in the artifact's OCI config layer
 
 When **installing** artifacts with `falcoctl artifact install`:
+- The tool accepts **tolerant semver formats** for maximum flexibility:
+  - Full semver: `1.2.3`, `0.6.0`
+  - Major-only: `1`, `4`, `0` (normalized to `1.0.0`, `4.0.0`, `0.0.0`)
+  - Major.minor: `1.2`, `0.6` (normalized to `1.2.0`, `0.6.0`)
+  - With v-prefix: `v1.2.3` (normalized to `1.2.3`)
 - The version in the artifact's config layer is used for dependency resolution
 - If multiple artifacts depend on different versions of the same dependency, the highest compatible version is selected
 - Major version mismatches between dependencies will cause an error
+
+**Note:** This tolerant parsing allows you to pin to major versions (e.g., `falco-rules:0` or `custom-rules:1`) and the tool automatically handles version normalization.
 
 #### Examples
 
@@ -312,6 +319,10 @@ $ falcoctl artifact install cloudtrail
 
 # Installs specific version (tag)
 $ falcoctl artifact install cloudtrail:0.6.0
+
+# Installs using major-only version
+$ falcoctl artifact install falco-rules:0
+$ falcoctl artifact install cloudtrail:1
 ```
 
 **Install using full OCI reference (bypasses index):**
