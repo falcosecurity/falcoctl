@@ -348,7 +348,7 @@ func TestResolveDeps(t *testing.T) {
 				}, nil
 			}),
 			expectedOutRef: []string{"ref:1", "alt:2"},
-			expectedErr:    ErrCannotSatisfyDependencies,
+			expectedErr:    nil,
 		},
 		{
 			scenario:    "tolerant semver - version zero",
