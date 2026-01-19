@@ -252,6 +252,89 @@ The above command will remove the **falcosecurity** index from the local system.
 
 ## Falcoctl artifact
 The *falcoctl* tool provides different commands to interact with Falco **artifacts**. It makes easy to *seach*, *install* and get *info* for the **artifacts** provided by a given `index` file. For these commands to properly work we need to configure at least an `index` file in our system as shown in the previus section.
+
+### Artifact References and Versions
+
+Falcoctl supports multiple ways to reference artifacts. Understanding these formats is essential for installing, pushing, and managing artifacts.
+
+#### Reference Formats
+
+| Format | Example | Description |
+| ------ | ------- | ----------- |
+| Simple name | `cloudtrail` | Artifact name only. Requires an index to resolve the full OCI reference. Defaults to `latest` tag. |
+| Simple name with tag | `cloudtrail:0.6.0` | Artifact name with version tag. Requires an index to resolve the full OCI reference. |
+| Full OCI reference | `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:latest` | Complete registry/repository path with tag. Bypasses the index entirely. |
+| Full OCI reference with digest | `ghcr.io/falcosecurity/plugins/plugin/cloudtrail@sha256:abc123...` | Complete reference with content digest. Immutable reference to a specific artifact. |
+
+#### How Reference Resolution Works
+
+When you use a **simple name** (e.g., `cloudtrail` or `cloudtrail:0.6.0`), falcoctl:
+1. Searches configured index files for a matching artifact name
+2. Uses the index entry to build the full OCI reference (registry + repository)
+3. Appends the tag (or `latest` if not specified)
+
+When you use a **full OCI reference** (e.g., `ghcr.io/myregistry/myartifact:1.0.0`), falcoctl:
+1. Uses the reference directly without consulting any index
+2. Pulls directly from the specified registry and repository
+
+#### OCI Tags vs Artifact Version
+
+It's important to understand the difference between the **OCI tag** and the **artifact version**:
+
+| Concept | Example | Purpose |
+| ------- | ------- | ------- |
+| OCI Tag | `:latest`, `:0.6.0`, `:stable` | Identifies the artifact in the registry. Can be any string. Mutable (can be moved to different content). |
+| Artifact Version | `--version "1.0.0"` | Stored in the artifact's config layer metadata. Must be valid semver. Used for dependency resolution. |
+
+**Example:** An artifact pushed as `myregistry/myrules:latest` with `--version "2.0.0"` has:
+- OCI tag: `latest` (used to pull the artifact)
+- Artifact version: `2.0.0` (used for dependency resolution and compatibility checks)
+
+#### Version Requirements
+
+When **pushing** artifacts with `falcoctl registry push`:
+- The `--version` flag is **required**
+- Must be a valid [Semantic Version](https://semver.org/) (e.g., `1.0.0`, `2.1.3-rc1`)
+- Short versions like `1` or `1.0` are **not valid** and will be rejected
+- The version is stored in the artifact's OCI config layer
+
+When **installing** artifacts with `falcoctl artifact install`:
+- The version in the artifact's config layer is used for dependency resolution
+- If multiple artifacts depend on different versions of the same dependency, the highest compatible version is selected
+- Major version mismatches between dependencies will cause an error
+
+#### Examples
+
+**Install using simple name (uses index):**
+```bash
+# Installs latest version
+$ falcoctl artifact install cloudtrail
+
+# Installs specific version (tag)
+$ falcoctl artifact install cloudtrail:0.6.0
+```
+
+**Install using full OCI reference (bypasses index):**
+```bash
+# Using tag
+$ falcoctl artifact install ghcr.io/falcosecurity/plugins/plugin/cloudtrail:latest
+
+# Using digest (immutable)
+$ falcoctl artifact install ghcr.io/falcosecurity/plugins/plugin/cloudtrail@sha256:abc123...
+```
+
+**Push with proper versioning:**
+```bash
+# Push with semver version (stored in metadata) and OCI tag
+$ falcoctl registry push --type rulesfile --version "1.0.0" \
+    ghcr.io/myregistry/myrules:latest myrules.tar.gz
+
+# Push with floating tags for major/minor versions
+$ falcoctl registry push --type rulesfile --version "1.2.3" \
+    --add-floating-tags ghcr.io/myregistry/myrules:1.2.3 myrules.tar.gz
+# This creates tags: 1.2.3, 1.2, 1
+```
+
 #### Falcoctl artifact search
 The `artifact search` command allows to search for **artifacts** provided by the `index` files configured in *falcoctl*. The command supports searches by name or by keywords and displays all the **artifacts** that match the search. Assuming that we have already configured the `index` provided by the `falcosecurity` organization, the following command shows all the **artifacts** that work with **Kubernetes**:
 ```bash
@@ -344,15 +427,16 @@ Two typical use cases:
 ### Falcoctl registry push
 It pushes local files and references the artifact uniquely. The following command shows how to push a local file to a remote registry:
 ```bash
-$ falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
+$ falcoctl registry push --type=plugin --version "0.3.0" ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
 ```
 The type denotes the **artifact** type in this case *plugins*. The `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0` is the unique reference that points to the **artifact**.
 Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulesfile**. Based on **artifact type** the commands accepts different flags:
 * `--add-floating-tags`: add the floating tags for the major and minor versions
 * `--annotation-source`: set annotation source for the artifact;
 * `--depends-on`: set an artifact dependency (can be specified multiple times). Example: `--depends-on my-plugin:1.2.3`
-* `--tag`: additional artifact tag. Can be repeated multiple time 
+* `--tag`: additional artifact tag. Can be repeated multiple time
 * `--type`: type of artifact to be pushed. Allowed values: `rulesfile`, `plugin`, `asset`
+* `--version`: (**required**) artifact version in semver format (e.g., `1.0.0`, `0.1.2-rc1`). See [Artifact References and Versions](#artifact-references-and-versions) for details.
 
 ### Falcoctl registry pull
 Pulling **artifacts** involves specifying the reference. The type of **artifact** is not required since the tool will implicitly extract it from the OCI **artifact**:
