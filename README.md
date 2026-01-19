@@ -251,7 +251,7 @@ $ falcoctl index remove falcosecurity
 The above command will remove the **falcosecurity** index from the local system.
 
 ## Falcoctl artifact
-The *falcoctl* tool provides different commands to interact with Falco **artifacts**. It makes easy to *seach*, *install* and get *info* for the **artifacts** provided by a given `index` file. For these commands to properly work we need to configure at least an `index` file in our system as shown in the previus section.
+The *falcoctl* tool provides different commands to interact with Falco **artifacts**. It makes easy to *search*, *install* and get *info* for the **artifacts** provided by a given `index` file. For these commands to properly work we need to configure at least an `index` file in our system as shown in the previus section.
 
 ### Artifact References and Versions
 
