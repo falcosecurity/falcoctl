@@ -41,7 +41,7 @@ Flags:
   -r, --requires stringArray       set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
   -t, --tag stringArray            additional artifact tag. Can be repeated multiple times
       --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset" (default )
-      --version string             set the version of the artifact
+      --version string             set the artifact version (must be semver-compliant, e.g., "1.0.0")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
@@ -100,7 +100,7 @@ Flags:
   -r, --requires stringArray       set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
   -t, --tag stringArray            additional artifact tag. Can be repeated multiple times
       --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"
-      --version string             set the version of the artifact
+      --version string             set the artifact version (must be semver-compliant, e.g., "1.0.0")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
@@ -196,20 +196,22 @@ var _ = Describe("push", func() {
 				"registry \"noregistry\": Get \"http://noregistry/v2/\": dial tcp: lookup noregistry")
 		})
 
-		When("wrong semver for --version flag with --add-floating-tags", func() {
+		When("wrong semver for --version flag", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, rulesRepo, rulesfiletgz, "--config", configFile, "--type", "rulesfile",
-					"--version", "notSemVer", "--add-floating-tags", "--plain-http"}
+					"--version", "notSemVer", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERROR expected semver for the flag \"--version\": No Major.Minor.Patch elements found")
+			pushAssertFailedBehavior(registryPushUsage,
+				"ERROR invalid artifact version \"notSemVer\": invalid artifact version (must be a valid semver string)")
 		})
 
-		When("invalid character in semver for --version flag with --add-floating-tags", func() {
+		When("invalid character in semver for --version flag", func() {
 			BeforeEach(func() {
 				args = []string{registryCmd, pushCmd, rulesRepo, rulesfiletgz, "--config", configFile, "--type", "rulesfile",
-					"--version", "1.1.a", "--add-floating-tags", "--plain-http"}
+					"--version", "1.1.a", "--plain-http"}
 			})
-			pushAssertFailedBehavior(registryPushUsage, "ERROR expected semver for the flag \"--version\": Invalid character(s) found in patch number \"a\"")
+			pushAssertFailedBehavior(registryPushUsage,
+				"ERROR invalid artifact version \"1.1.a\": invalid artifact version (must be a valid semver string)")
 		})
 
 		When("missing repository", func() {

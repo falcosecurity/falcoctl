@@ -22,6 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/falcosecurity/falcoctl/pkg/artifact"
 	"github.com/falcosecurity/falcoctl/pkg/oci"
 )
 
@@ -50,6 +51,12 @@ func (art *Artifact) Validate() error {
 		}
 	}
 	// TODO: cannot check that len(platforms) matches len(filepaths) here
+
+	if art.Version != "" {
+		if err := artifact.ValidateVersion(art.Version); err != nil {
+			return fmt.Errorf("invalid artifact version %q: %w", art.Version, err)
+		}
+	}
 
 	return nil
 }
@@ -88,7 +95,7 @@ func (art *Artifact) AddFlags(cmd *cobra.Command) error {
 			`set the unique name of the artifact (if not set, the name is extracted from the reference)`)
 
 		cmd.Flags().StringVar(&art.Version, "version", "",
-			`set the version of the artifact`)
+			`set the artifact version (must be semver-compliant, e.g., "1.0.0")`)
 
 		// todo: remove this if we can extract the version from the ref tag
 		if err := cmd.MarkFlagRequired("version"); err != nil {
