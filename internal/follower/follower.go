@@ -397,15 +397,26 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	f.logger.Debug("Extracting artifact", f.logger.Args("followerName", f.ref))
 	res.Filename = filepath.Join(f.tmpDir, res.Filename)
 
-	file, err := os.Open(res.Filename)
-	if err != nil {
-		return filePaths, res, fmt.Errorf("unable to open file %q: %w", res.Filename, err)
-	}
-
 	// Extract artifact and move it to its destination directory
-	filePaths, err = utils.ExtractTarGz(ctx, file, f.tmpDir, 0)
+	err = func() (err error) {
+		file, err := os.Open(res.Filename)
+		if err != nil {
+			return fmt.Errorf("unable to open file %q: %w", res.Filename, err)
+		}
+		defer func() {
+			if cerr := file.Close(); cerr != nil && err == nil {
+				err = cerr
+			}
+		}()
+
+		filePaths, err = utils.ExtractTarGz(ctx, file, f.tmpDir, 0)
+		if err != nil {
+			return fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.tmpDir, err)
+		}
+		return nil
+	}()
 	if err != nil {
-		return filePaths, res, fmt.Errorf("unable to extract %q to %q: %w", res.Filename, f.tmpDir, err)
+		return filePaths, res, err
 	}
 
 	f.logger.Debug("Cleaning up leftovers files", f.logger.Args("followerName", f.ref))
