@@ -20,6 +20,44 @@ import (
 	"testing"
 )
 
+func TestValidateVersion(t *testing.T) {
+	// ValidateVersion enforces strict semver format (used on push).
+	// This is intentionally stricter than ParseTolerant (used on install).
+	tests := []struct {
+		version string
+		valid   bool
+		reason  string
+	}{
+		// Valid formats (full semver only)
+		{"1.0.0", true, "full semver"},
+		{"0.1.0", true, "full semver with major 0"},
+		{"2.3.4", true, "full semver"},
+		{"1.0.0-rc1", true, "full semver with pre-release"},
+		{"1.2.3-alpha.1", true, "full semver with pre-release"},
+
+		// Invalid formats (rejected on push, but accepted by ParseTolerant on install)
+		{"1", false, "major-only not allowed"},
+		{"1.0", false, "major.minor not allowed"},
+		{"v1.0.0", false, "v-prefix not allowed"},
+		{"v1", false, "v-prefix with major-only not allowed"},
+		{"1.0.0.0", false, "too many version components"},
+		{"invalid", false, "non-numeric version"},
+	}
+
+	for _, tt := range tests {
+		err := ValidateVersion(tt.version)
+		if tt.valid && err != nil {
+			t.Errorf("ValidateVersion(%q) = %v, want nil (%s)", tt.version, err, tt.reason)
+		}
+		if !tt.valid && err == nil {
+			t.Errorf("ValidateVersion(%q) = nil, want error (%s)", tt.version, tt.reason)
+		}
+		if !tt.valid && err != nil && !errors.Is(err, ErrInvalidVersion) {
+			t.Errorf("ValidateVersion(%q) error = %v, want ErrInvalidVersion", tt.version, err)
+		}
+	}
+}
+
 func TestParseRef(t *testing.T) {
 	a, err := ParseRef("my-plugin:1.2.3")
 	if err != nil {
