@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,16 +30,18 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
-	"github.com/sigstore/cosign/v2/cmd/cosign/cli/options"
-	"github.com/sigstore/cosign/v2/cmd/cosign/cli/rekor"
-	"github.com/sigstore/cosign/v2/cmd/cosign/cli/sign"
-	cosignError "github.com/sigstore/cosign/v2/cmd/cosign/errors"
-	"github.com/sigstore/cosign/v2/pkg/blob"
-	"github.com/sigstore/cosign/v2/pkg/cosign"
-	"github.com/sigstore/cosign/v2/pkg/cosign/pivkey"
-	"github.com/sigstore/cosign/v2/pkg/cosign/pkcs11key"
-	sigs "github.com/sigstore/cosign/v2/pkg/signature"
+	"github.com/sigstore/cosign/v3/cmd/cosign/cli/fulcio"
+	"github.com/sigstore/cosign/v3/cmd/cosign/cli/options"
+	"github.com/sigstore/cosign/v3/cmd/cosign/cli/rekor"
+	"github.com/sigstore/cosign/v3/cmd/cosign/cli/sign"
+	cosignError "github.com/sigstore/cosign/v3/cmd/cosign/errors"
+	"github.com/sigstore/cosign/v3/pkg/blob"
+	"github.com/sigstore/cosign/v3/pkg/cosign"
+	"github.com/sigstore/cosign/v3/pkg/cosign/pivkey"
+	"github.com/sigstore/cosign/v3/pkg/cosign/pkcs11key"
+	sigs "github.com/sigstore/cosign/v3/pkg/signature"
+	"github.com/sigstore/sigstore-go/pkg/root"
+	"github.com/sigstore/sigstore-go/pkg/tuf"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	// Register the provider-specific plugins.
@@ -81,7 +83,7 @@ type VerifyCommand struct {
 	IgnoreTlog                   bool
 }
 
-//nolint:gocyclo,revive // cosign v2 verification
+//nolint:gocyclo // cosign v3 verification with bundle format support
 func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err error) {
 	if len(images) == 0 {
 		return flag.ErrHelp
@@ -273,6 +275,28 @@ func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err erro
 				return fmt.Errorf("resolving attachment type %s for image %s: %w", c.Attachment, img, err)
 			}
 
+			// Try cosign v3 bundle format first, fallback to v2 if unavailable
+			co.NewBundleFormat = true
+
+			// Cosign v3 bundle format requires TrustedMaterial from Sigstore TUF
+			trustedRoot, err := root.NewLiveTrustedRoot(tuf.DefaultOptions())
+			if err != nil {
+				return fmt.Errorf("getting Sigstore trusted root: %w", err)
+			}
+			co.TrustedMaterial = trustedRoot
+
+			bundles, _, bundleErr := cosign.GetBundles(ctx, ref, ociremoteOpts, c.NameOptions...)
+			if bundleErr == nil && len(bundles) > 0 {
+				_, _, err = cosign.VerifyImageAttestations(ctx, ref, co, c.NameOptions...)
+				if err != nil {
+					return cosignError.WrapError(err)
+				}
+				continue
+			}
+			// bundleErr != nil or no bundles: fallback to old format
+
+			// Verify with cosign v2 format
+			co.NewBundleFormat = false
 			_, _, err = cosign.VerifyImageSignatures(ctx, ref, co)
 			if err != nil {
 				return cosignError.WrapError(err)
