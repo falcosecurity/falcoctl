@@ -259,11 +259,26 @@ func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err erro
 	// was performed so we don't need to use this fragile logic here.
 	// fulcioVerified := (co.SigVerifier == nil)
 
+	// Cosign v3 bundle format requires TrustedMaterial from Sigstore TUF
+	trustedRoot, err := root.NewLiveTrustedRoot(tuf.DefaultOptions())
+	if err != nil {
+		return fmt.Errorf("getting Sigstore trusted root: %w", err)
+	}
+
 	for _, img := range images {
 		if c.LocalImage {
-			_, _, err := cosign.VerifyLocalImageSignatures(ctx, img, co)
+			// Try cosign v3 bundle format first for local images
+			co.NewBundleFormat = true
+			co.TrustedMaterial = trustedRoot
+			_, _, err := cosign.VerifyLocalImageAttestations(ctx, img, co)
+			if err == nil {
+				continue
+			}
+			// Fallback to cosign v2 format
+			co.NewBundleFormat = false
+			_, _, err = cosign.VerifyLocalImageSignatures(ctx, img, co)
 			if err != nil {
-				return err
+				return cosignError.WrapError(err)
 			}
 		} else {
 			ref, err := name.ParseReference(img, c.NameOptions...)
@@ -277,12 +292,6 @@ func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err erro
 
 			// Try cosign v3 bundle format first, fallback to v2 if unavailable
 			co.NewBundleFormat = true
-
-			// Cosign v3 bundle format requires TrustedMaterial from Sigstore TUF
-			trustedRoot, err := root.NewLiveTrustedRoot(tuf.DefaultOptions())
-			if err != nil {
-				return fmt.Errorf("getting Sigstore trusted root: %w", err)
-			}
 			co.TrustedMaterial = trustedRoot
 
 			bundles, _, bundleErr := cosign.GetBundles(ctx, ref, ociremoteOpts, c.NameOptions...)
@@ -295,7 +304,7 @@ func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err erro
 			}
 			// bundleErr != nil or no bundles: fallback to old format
 
-			// Verify with cosign v2 format
+			// Fallback to cosign v2 format
 			co.NewBundleFormat = false
 			_, _, err = cosign.VerifyImageSignatures(ctx, ref, co)
 			if err != nil {
