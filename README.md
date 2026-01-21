@@ -125,12 +125,16 @@ artifact:
     refs:
     - falco-rules:0
     - my-rules:1
+    rulesfilesdir: /tmp/rules
+    pluginsdir: /tmp/plugins
+    statedir: /tmp/state
   install:
     refs:
       - cloudtrail-rules:latest
       - cloudtrail:latest
     rulesfilesdir: /tmp/rules
     pluginsdir: /tmp/plugins
+    statedir: /tmp/state
 indexes:
 - name: falcosecurity
   url: https://falcosecurity.github.io/falcoctl/index.yaml
@@ -478,10 +482,12 @@ This is the list of the environment variable that `falcoctl` will use:
 | `FALCOCTL_ARTIFACT_FOLLOW_FALCOVERSIONS`  | `falco-version-url`                                              |
 | `FALCOCTL_ARTIFACT_FOLLOW_RULESFILEDIR`   | `rules-directory-path`                                           |
 | `FALCOCTL_ARTIFACT_FOLLOW_PLUGINSDIR`     | `plugins-directory-path`                                         |
+| `FALCOCTL_ARTIFACT_FOLLOW_STATEDIR`       | `state-directory-path`                                           |
 | `FALCOCTL_ARTIFACT_FOLLOW_TMPDIR`         | `tmp-directory-path`                                             |
 | `FALCOCTL_ARTIFACT_INSTALL_REFS`          | `ref1;ref2`                                                      |
 | `FALCOCTL_ARTIFACT_INSTALL_RULESFILESDIR` | `rules-directory-path`                                           |
 | `FALCOCTL_ARTIFACT_INSTALL_PLUGINSDIR`    | `plugins-directory-path`                                         |
+| `FALCOCTL_ARTIFACT_INSTALL_STATEDIR`      | `state-directory-path`                                           |
 | `FALCOCTL_ARTIFACT_NOVERIFY`              |                                                                  | 
 
 Please note that when passing multiple arguments via an environment variable, they must be separated by a semicolon. Moreover, multiple fields of the same argument must be separated by a comma.
