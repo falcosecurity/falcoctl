@@ -188,6 +188,17 @@ func NewArtifactFollowCmd(ctx context.Context, opt *options.Common) *cobra.Comma
 				}
 			}
 
+			// Override "state-dir" flag with viper config if not set by user.
+			if f := cmd.Flags().Lookup(options.FlagStateDir); f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagStateDir)
+			} else if !f.Changed && viper.IsSet(config.ArtifactFollowStateDirKey) {
+				val := viper.Get(config.ArtifactFollowStateDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagStateDir, err)
+				}
+			}
+
 			// Override "tmp-dir" flag with viper config if not set by user.
 			if f := cmd.Flags().Lookup("tmp-dir"); f == nil {
 				// should never happen

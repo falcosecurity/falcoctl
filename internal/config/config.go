@@ -111,6 +111,8 @@ const (
 	ArtifactFollowPluginsDirKey = "artifact.follow.pluginsdir"
 	// ArtifactFollowAssetsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowAssetsDirKey = "artifact.follow.assetsdir"
+	// ArtifactFollowStateDirKey is the Viper key for follower "stateDir" configuration.
+	ArtifactFollowStateDirKey = "artifact.follow.statedir"
 	// ArtifactFollowTmpDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowTmpDirKey = "artifact.follow.tmpdir"
 
@@ -122,6 +124,8 @@ const (
 	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
 	// ArtifactInstallAssetsDirKey is the Viper key for installer "pluginsDir" configuration.
 	ArtifactInstallAssetsDirKey = "artifact.install.assetsdir"
+	// ArtifactInstallStateDirKey is the Viper key for installer "stateDir" configuration.
+	ArtifactInstallStateDirKey = "artifact.install.statedir"
 	// ArtifactInstallResolveDepsKey is the Viper key for installer "resolveDeps" configuration.
 	ArtifactInstallResolveDepsKey = "artifact.install.resolveDeps"
 
