@@ -138,6 +138,18 @@ func NewArtifactInstallCmd(ctx context.Context, opt *options.Common) *cobra.Comm
 				}
 			}
 
+			// Override "state-dir" flag with viper config if not set by user.
+			f = cmd.Flags().Lookup(options.FlagStateDir)
+			if f == nil {
+				// should never happen
+				return fmt.Errorf("unable to retrieve flag %q", options.FlagStateDir)
+			} else if !f.Changed && viper.IsSet(config.ArtifactInstallStateDirKey) {
+				val := viper.Get(config.ArtifactInstallStateDirKey)
+				if err := cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val)); err != nil {
+					return fmt.Errorf("unable to overwrite %q flag: %w", options.FlagStateDir, err)
+				}
+			}
+
 			// Override "allowed-types" flag with viper config if not set by user.
 			f = cmd.Flags().Lookup(FlagAllowedTypes)
 			if f == nil {
