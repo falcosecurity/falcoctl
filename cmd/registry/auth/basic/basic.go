@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/term"
-	"oras.land/oras-go/v2/registry/remote/credentials"
 
 	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/internal/login/basic"
@@ -110,11 +109,9 @@ func (o *loginOptions) RunBasic(ctx context.Context, args []string) error {
 	client := authn.NewClient()
 
 	// create credential store
-	credentialStore, err := credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
-		AllowPlaintextPut: true,
-	})
+	credentialStore, err := authn.NewCredentialStore()
 	if err != nil {
-		return fmt.Errorf("unable to create new store: %w", err)
+		return fmt.Errorf("unable to create credential store: %w", err)
 	}
 
 	if err := basic.Login(ctx, client, credentialStore, reg, o.username, o.password); err != nil {

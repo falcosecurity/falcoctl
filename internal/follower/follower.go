@@ -387,7 +387,8 @@ func (f *Follower) pull(ctx context.Context) (filePaths []string, res *oci.Regis
 	// Verify the signature if needed
 	if f.Config.Signature != nil {
 		f.logger.Debug("Verifying signature", f.logger.Args("followerName", f.ref, "digest", digestRef))
-		err = signature.Verify(ctx, digestRef, f.Config.Signature)
+		//nolint:staticcheck // Ignore QF1008: we want to keep embedded config.Signature field
+		err = signature.Verify(ctx, digestRef, f.Config.Signature, f.Config.PlainHTTP)
 		if err != nil {
 			return filePaths, res, fmt.Errorf("could not verify signature for %s: %w", res.RootDigest, err)
 		}
