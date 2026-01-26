@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import (
 
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
+
+	"github.com/falcosecurity/falcoctl/internal/config"
 )
 
 const (
@@ -150,4 +152,12 @@ func WithClientTokenCache(cache auth.Cache) func(c *Options) {
 	return func(c *Options) {
 		c.ClientTokenCache = cache
 	}
+}
+
+// NewCredentialStore creates a new credential store using falcoctl's configuration.
+// This is the single source of truth for creating credential stores in falcoctl.
+func NewCredentialStore() (credentials.Store, error) {
+	return credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
+		AllowPlaintextPut: true,
+	})
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2023 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import (
 
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
-	"oras.land/oras-go/v2/registry/remote/credentials"
 
-	"github.com/falcosecurity/falcoctl/internal/config"
 	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 	ocipuller "github.com/falcosecurity/falcoctl/pkg/oci/puller"
 	ocipusher "github.com/falcosecurity/falcoctl/pkg/oci/pusher"
@@ -53,11 +51,9 @@ func Pusher(plainHTTP bool, printer *output.Printer) (*ocipusher.Pusher, error) 
 // Client returns a new auth.Client.
 // It authenticates the client if credentials are found in the system.
 func Client(enableClientTokenCache bool) (remote.Client, error) {
-	credentialStore, err := credentials.NewStore(config.RegistryCredentialConfPath(), credentials.StoreOptions{
-		AllowPlaintextPut: true,
-	})
+	credentialStore, err := authn.NewCredentialStore()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create new store: %w", err)
+		return nil, fmt.Errorf("unable to create credential store: %w", err)
 	}
 
 	// create client that

@@ -112,6 +112,11 @@ func (c *VerifyCommand) DoVerify(ctx context.Context, images []string) (err erro
 		return fmt.Errorf("constructing client options: %w", err)
 	}
 
+	// Allow HTTP registries when configured
+	if c.AllowHTTPRegistry || c.AllowInsecure {
+		c.NameOptions = append(c.NameOptions, name.Insecure)
+	}
+
 	co := &cosign.CheckOpts{
 		Annotations:                  c.Annotations.Annotations,
 		RegistryClientOpts:           ociremoteOpts,

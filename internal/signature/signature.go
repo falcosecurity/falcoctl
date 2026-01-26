@@ -17,15 +17,18 @@ package signature
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sigstore/cosign/v3/cmd/cosign/cli/options"
 
 	"github.com/falcosecurity/falcoctl/internal/cosign"
 	"github.com/falcosecurity/falcoctl/pkg/index/index"
+	"github.com/falcosecurity/falcoctl/pkg/oci/authn"
 )
 
 // Verify checks that a fully qualified reference is signed according to the parameters.
-func Verify(ctx context.Context, ref string, signature *index.Signature) error {
+// It uses the same authentication sources as falcoctl's artifact operations.
+func Verify(ctx context.Context, ref string, signature *index.Signature, plainHTTP bool) error {
 	if signature == nil {
 		// nothing to do
 		return nil
@@ -36,7 +39,17 @@ func Verify(ctx context.Context, ref string, signature *index.Signature) error {
 		return nil
 	}
 
+	keychain, err := authn.NewKeychain()
+	if err != nil {
+		return fmt.Errorf("failed to create keychain: %w", err)
+	}
+
 	v := cosign.VerifyCommand{
+		RegistryOptions: options.RegistryOptions{
+			AllowHTTPRegistry: plainHTTP,
+			AllowInsecure:     plainHTTP,
+			Keychain:          keychain,
+		},
 		CertVerifyOptions: options.CertVerifyOptions{
 			CertIdentity:         signature.Cosign.CertificateIdentity,
 			CertIdentityRegexp:   signature.Cosign.CertificateIdentityRegexp,
