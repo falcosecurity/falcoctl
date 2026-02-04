@@ -200,7 +200,7 @@ var registryPullTests = Describe("pull", func() {
 				artName := tmp[0]
 				tag := tmp[1]
 				expectedError := fmt.Sprintf(
-					"ERROR unable to pull artifact generic-repo with %s tag from repo %s: failed to create file",
+					"ERROR unable to pull artifact generic-repo with %s tag from repo %s: failed to perform \"Push\" on destination: failed to create file",
 					tag, artName)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(registryPullUsage)))
@@ -233,8 +233,8 @@ var registryPullTests = Describe("pull", func() {
 			})
 
 			It("check that fails and the usage is not printed", func() {
-				expectedError := fmt.Sprintf("ERROR unable to pull artifact %s with tag %s from repo %s: failed to ensure directories of the target path: "+
-					"mkdir %s: permission denied", artifact, tag, artifact, destDir)
+				expectedError := fmt.Sprintf("ERROR unable to pull artifact %s with tag %s from repo %s: failed to perform \"Push\" on destination: "+
+					"failed to ensure directories of the target path: mkdir %s: permission denied", artifact, tag, artifact, destDir)
 				Expect(err).To(HaveOccurred())
 				Expect(output).ShouldNot(gbytes.Say(regexp.QuoteMeta(registryPullUsage)))
 				Expect(output).Should(gbytes.Say(regexp.QuoteMeta(expectedError)))
