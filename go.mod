@@ -3,7 +3,7 @@ module github.com/falcosecurity/falcoctl
 go 1.25.5
 
 require (
-	cloud.google.com/go/storage v1.57.1
+	cloud.google.com/go/storage v1.59.2
 	github.com/aws/aws-sdk-go-v2 v1.41.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.93.2
@@ -55,7 +55,7 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
-	cloud.google.com/go v0.121.6 // indirect
+	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/auth v0.18.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
