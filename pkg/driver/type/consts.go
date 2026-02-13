@@ -21,6 +21,4 @@ const (
 	TypeKmod = "kmod"
 	// TypeModernBpf is the string for the modern bpf driver type.
 	TypeModernBpf = "modern_ebpf"
-	// TypeBpf is the string for the bpf driver type.
-	TypeBpf = "ebpf"
 )

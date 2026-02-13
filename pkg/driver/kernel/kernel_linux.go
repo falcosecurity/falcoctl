@@ -50,8 +50,7 @@ func FetchInfo(enforcedKR, enforcedKV string) (kernelrelease.KernelRelease, erro
 	kernelRel := kernelrelease.FromString(kr)
 	kernelRel.KernelVersion = kv
 	kernelRel.Architecture = kernelrelease.Architecture(runtime.GOARCH)
-	// we don't use this, it is used by bpf build to customize the kernel config LOCALVERSION.
-	// Expected value is empty.
+	// We don't use this. Expected value is empty.
 	kernelRel.Extraversion = ""
 	return kernelRel, nil
 }
