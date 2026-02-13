@@ -16,23 +16,12 @@
 package driverdistro
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/blang/semver"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
 	"golang.org/x/net/context"
 	"gopkg.in/ini.v1"
 
-	"github.com/falcosecurity/falcoctl/internal/utils"
 	drivertype "github.com/falcosecurity/falcoctl/pkg/driver/type"
 	"github.com/falcosecurity/falcoctl/pkg/output"
-)
-
-const (
-	kbuildExtraCppFlagsEnv = "KBUILD_EXTRA_CPPFLAGS"
-	enableCos73Workaround  = "-DCOS_73_WORKAROUND"
 )
 
 func init() {
@@ -55,62 +44,12 @@ func (c *cos) init(kr kernelrelease.KernelRelease, id string, cfg *ini.File) err
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
-func (c *cos) customizeBuild(ctx context.Context,
-	printer *output.Printer,
-	driverType drivertype.DriverType,
-	kr kernelrelease.KernelRelease,
+func (c *cos) customizeBuild(_ context.Context,
+	_ *output.Printer,
+	_ drivertype.DriverType,
+	_ kernelrelease.KernelRelease,
 ) (map[string]string, error) {
-	switch driverType.String() {
-	case drivertype.TypeBpf:
-		break
-	default:
-		// nothing to do
-		return nil, nil
-	}
-	printer.Logger.Info("COS detected, using COS kernel headers.", printer.Logger.Args("build ID", c.buildID))
-	bpfKernelSrcURL := fmt.Sprintf("https://storage.googleapis.com/cos-tools/%s/kernel-headers.tgz", c.buildID)
-
-	env, err := downloadKernelSrc(ctx, printer, &kr, bpfKernelSrcURL, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	currKernelDir := env[drivertype.KernelDirEnv]
-
-	cosKernelDir := filepath.Join(currKernelDir, "usr", "src")
-	entries, err := os.ReadDir(cosKernelDir)
-	if err != nil {
-		return nil, err
-	}
-	if len(entries) == 0 {
-		return nil, fmt.Errorf("no COS kernel src found")
-	}
-	cosKernelDir = filepath.Join(cosKernelDir, entries[0].Name())
-	// Override env key
-	env[drivertype.KernelDirEnv] = cosKernelDir
-
-	clangCompilerHeader := fmt.Sprintf("%s/include/linux/compiler-clang.h", cosKernelDir)
-	err = utils.ReplaceLineInFile(clangCompilerHeader, "#define randomized_struct_fields_start", "", 1)
-	if err != nil {
-		return nil, err
-	}
-	err = utils.ReplaceLineInFile(clangCompilerHeader, "#define randomized_struct_fields_end", "", 1)
-	if err != nil {
-		return nil, err
-	}
-
-	baseVer, err := semver.Parse("11553.0.0")
-	if err != nil {
-		return nil, err
-	}
-	cosVer, err := semver.Parse(c.buildID)
-	if err != nil {
-		return nil, err
-	}
-	if cosVer.GT(baseVer) {
-		env[kbuildExtraCppFlagsEnv] = enableCos73Workaround
-	}
-	return env, nil
+	return nil, nil
 }
 
 // PreferredDriver is reimplemented since COS does not support kmod

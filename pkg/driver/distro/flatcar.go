@@ -115,7 +115,7 @@ func (f *flatcar) customizeBuild(ctx context.Context,
 	_ kernelrelease.KernelRelease,
 ) (map[string]string, error) {
 	switch driverType.String() {
-	case drivertype.TypeBpf, drivertype.TypeKmod:
+	case drivertype.TypeKmod:
 		break
 	default:
 		// nothing to do

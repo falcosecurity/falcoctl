@@ -77,29 +77,10 @@ func (m *minikube) FixupKernel(kr kernelrelease.KernelRelease) kernelrelease.Ker
 }
 
 //nolint:gocritic // the method shall not be able to modify kr
-func (m *minikube) customizeBuild(ctx context.Context,
-	printer *output.Printer,
-	driverType drivertype.DriverType,
-	kr kernelrelease.KernelRelease,
+func (m *minikube) customizeBuild(_ context.Context,
+	_ *output.Printer,
+	_ drivertype.DriverType,
+	_ kernelrelease.KernelRelease,
 ) (map[string]string, error) {
-	switch driverType.String() {
-	case drivertype.TypeBpf:
-		break
-	default:
-		// nothing to do
-		return nil, nil
-	}
-
-	printer.Logger.Info("Minikube detected, using linux kernel sources for minikube kernel",
-		printer.Logger.Args("version", m.version))
-	kernelVersionStr := fmt.Sprintf("%d.%d", kr.Major, kr.Minor)
-	if kr.Patch != 0 {
-		kernelVersionStr += fmt.Sprintf(".%d", kr.Patch)
-	}
-	bpfKernelSrcURL := fmt.Sprintf("http://mirrors.edge.kernel.org/pub/linux/kernel/v%d.x/linux-%s.tar.gz", kr.Major, kernelVersionStr)
-	env, err := downloadKernelSrc(ctx, printer, &kr, bpfKernelSrcURL, 1)
-	if err != nil {
-		return nil, err
-	}
-	return env, customizeDownloadKernelSrcBuild(printer, &kr)
+	return nil, nil
 }
