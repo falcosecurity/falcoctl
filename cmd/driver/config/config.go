@@ -38,7 +38,7 @@ import (
 const (
 	longConfig = `Configure a driver for future usages with other driver subcommands.
 It will also update local Falco configuration or k8s configmap depending on the environment where it is running, to let Falco use chosen driver.
-Only supports deployments of Falco that use a driver engine, ie: one between kmod, ebpf and modern-ebpf.
+Only supports deployments of Falco that use a driver engine, i.e.: one between kmod and modern-ebpf.
 If engine.kind key is set to a non-driver driven engine, Falco configuration won't be touched.
 `
 	falcoConfigFile       = "falco.yaml"
@@ -135,7 +135,7 @@ func (o *driverConfigOptions) RunDriverConfig(ctx context.Context) error {
 
 func checkFalcoRunsWithDrivers(engineKind string) bool {
 	// Modify the data in the ConfigMap/Falco config file ONLY if engine.kind is set to a known driver type.
-	// This ensures that we modify the config only for Falcos running with drivers, and not plugins/gvisor.
+	// This ensures that we modify the config only for Falcos running with drivers, and not plugins.
 	// Scenario: user has multiple Falco pods deployed in its cluster, one running with driver,
 	// other running with plugins. We must only touch the one running with driver.
 	if _, err := drivertype.Parse(engineKind); err != nil {

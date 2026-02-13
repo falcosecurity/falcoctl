@@ -28,7 +28,7 @@ import (
 //nolint:lll // no need to check for line length.
 var driverConfigHelp = `Configure a driver for future usages with other driver subcommands.
 It will also update local Falco configuration or k8s configmap depending on the environment where it is running, to let Falco use chosen driver.
-Only supports deployments of Falco that use a driver engine, ie: one between kmod, ebpf and modern-ebpf.
+Only supports deployments of Falco that use a driver engine, i.e.: one between kmod and modern-ebpf.
 If engine.kind key is set to a non-driver driven engine, Falco configuration won't be touched.
 
 Usage:
@@ -51,7 +51,7 @@ Global Flags:
       --log-level string       Set level for logs (info, warn, debug, trace) (default "info")
       --name string            Driver name to be used. (default "falco")
       --repo strings           Driver repo to be used. (default [https://download.falco.org/driver])
-      --type strings           Driver types allowed in descending priority order (ebpf, kmod, modern_ebpf) (default [modern_ebpf,kmod,ebpf])
+      --type strings           Driver types allowed in descending priority order (kmod, modern_ebpf) (default [modern_ebpf,kmod])
       --version string         Driver version to be used.
 `
 

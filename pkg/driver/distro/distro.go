@@ -17,14 +17,12 @@
 package driverdistro
 
 import (
-	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -223,10 +221,9 @@ func getDKRootOptions(d Distro,
 	ro.KernelRelease = kr.String()
 	ro.Target = d.String()
 	ro.Output = driverType.ToOutput(destPath)
-	// This should never happen since both kmod and bpf implement ToOutput;
-	// the only case this can happen is if a Build is requested for modern-bpf driver type,
-	// But "install" cmd is smart enough to avoid that situation
-	// by using HasArtifacts() method.
+	// This should never happen since kmod implements ToOutput; the only case this can happen is if a Build is requested
+	// for modern-bpf driver type, but "install" cmd is smart enough to avoid that situation by using HasArtifacts()
+	// method.
 	if !ro.Output.HasOutputs() {
 		return nil, errors.New("build on non-artifacts driver attempted")
 	}
@@ -287,126 +284,4 @@ func Download(ctx context.Context,
 		return destination, copyDataToLocalPath(destination, resp.Body)
 	}
 	return destination, fmt.Errorf("unable to find a prebuilt driver")
-}
-
-func customizeDownloadKernelSrcBuild(printer *output.Printer, kr *kernelrelease.KernelRelease) error {
-	printer.Logger.Info("Configuring kernel.")
-	if kr.Extraversion != "" {
-		err := utils.ReplaceLineInFile(".config", "LOCALVERSION=", "LOCALVERSION="+kr.Extraversion, 1)
-		if err != nil {
-			return err
-		}
-	}
-	_, err := exec.Command("bash", "-c", "make olddefconfig").Output()
-	if err == nil {
-		_, err = exec.Command("bash", "-c", "make modules_prepare").Output()
-	}
-	return err
-}
-
-func getKernelConfig(printer *output.Printer, kr *kernelrelease.KernelRelease) (string, error) {
-	bootConfig := fmt.Sprintf("/boot/config-%s", kr.String())
-	hrBootConfig := fmt.Sprintf("%s%s", hostRoot, bootConfig)
-	ostreeConfig := fmt.Sprintf("/usr/lib/ostree-boot/config-%s", kr.String())
-	hrostreeConfig := fmt.Sprintf("%s%s", hostRoot, ostreeConfig)
-	libModulesConfig := fmt.Sprintf("/lib/modules/%s/config", kr.String())
-
-	toBeChecked := []string{
-		"/proc/config.gz",
-		bootConfig,
-		hrBootConfig,
-		ostreeConfig,
-		hrostreeConfig,
-		libModulesConfig,
-	}
-
-	for _, path := range toBeChecked {
-		if exist, _ := utils.FileExists(path); exist {
-			printer.Logger.Info("Found kernel config.", printer.Logger.Args("path", path))
-			return path, nil
-		}
-	}
-	return "", fmt.Errorf("cannot find kernel config")
-}
-
-func downloadKernelSrc(ctx context.Context,
-	printer *output.Printer,
-	kr *kernelrelease.KernelRelease,
-	url string,
-	stripComponents int,
-) (map[string]string, error) {
-	env := make(map[string]string)
-
-	printer.Logger.Info("Downloading kernel sources.", printer.Logger.Args("url", url))
-	err := os.MkdirAll("/tmp/kernel", 0o750)
-	if err != nil {
-		return env, err
-	}
-	tempDir, err := os.MkdirTemp("/tmp/kernel", "")
-	if err != nil {
-		return env, err
-	}
-
-	// Download the url
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		return env, err
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return env, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return env, fmt.Errorf("non-200 http GET status code")
-	}
-
-	printer.Logger.Info("Extracting kernel sources.")
-
-	fullKernelDir := filepath.Join(tempDir, kernelSrcDownloadFolder)
-
-	err = os.Mkdir(fullKernelDir, 0o750)
-	if err != nil {
-		return env, err
-	}
-
-	_, err = utils.ExtractTarGz(ctx, resp.Body, fullKernelDir, stripComponents)
-	if err != nil {
-		return env, err
-	}
-
-	kernelConfigPath, err := getKernelConfig(printer, kr)
-	if err != nil {
-		return nil, err
-	}
-	dest, err := os.Create(".config")
-	if err != nil {
-		return nil, err
-	}
-	f, err := os.Open(filepath.Clean(kernelConfigPath))
-	if err != nil {
-		return nil, err
-	}
-	var src io.ReadCloser
-	if strings.HasSuffix(kernelConfigPath, ".gz") {
-		src, err = gzip.NewReader(f)
-		if err != nil {
-			return env, err
-		}
-	} else {
-		src = f
-	}
-	defer src.Close()
-
-	fStat, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.CopyN(dest, src, fStat.Size())
-	if err != nil {
-		return nil, err
-	}
-	env[drivertype.KernelDirEnv] = fullKernelDir
-	return env, nil
 }
