@@ -47,14 +47,14 @@ jobs:
           tar -czvf falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz falcoctl LICENSE
 
       - name: Upload falcoctl artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
           path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}
           retention-days: 1
 
       - name: Upload falcoctl archives
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
           path: ./falcoctl-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
