@@ -48,7 +48,6 @@ Available Commands:
   help        Help about any command
   index       Interact with index
   registry    Interact with OCI registries
-  tls         Generate and install TLS material for Falco
   version     Print the falcoctl version information
 
 Flags:
@@ -79,7 +78,6 @@ Available Commands:
   help        Help about any command
   index       Interact with index
   registry    Interact with OCI registries
-  tls         Generate and install TLS material for Falco
   version     Print the falcoctl version information
 
 Flags:

@@ -24,7 +24,6 @@ import (
 	"github.com/falcosecurity/falcoctl/cmd/driver"
 	"github.com/falcosecurity/falcoctl/cmd/index"
 	"github.com/falcosecurity/falcoctl/cmd/registry"
-	"github.com/falcosecurity/falcoctl/cmd/tls"
 	"github.com/falcosecurity/falcoctl/cmd/version"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
@@ -64,7 +63,6 @@ func New(ctx context.Context, opt *options.Common) *cobra.Command {
 	opt.AddFlags(rootCmd.PersistentFlags())
 
 	// Commands
-	rootCmd.AddCommand(tls.NewTLSCmd(opt))
 	rootCmd.AddCommand(version.NewVersionCmd(opt))
 	rootCmd.AddCommand(registry.NewRegistryCmd(ctx, opt))
 	rootCmd.AddCommand(index.NewIndexCmd(ctx, opt))
