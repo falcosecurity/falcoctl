@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/storage v1.62.1
 	github.com/aws/aws-sdk-go-v2 v1.41.6
 	github.com/aws/aws-sdk-go-v2/config v1.32.16
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.100.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cilium/ebpf v0.21.0
