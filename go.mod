@@ -11,16 +11,16 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cilium/ebpf v0.21.0
 	github.com/distribution/distribution/v3 v3.1.0
-	github.com/docker/cli v29.4.0+incompatible
+	github.com/docker/cli v29.4.1+incompatible
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/falcosecurity/driverkit v0.23.1
 	github.com/go-oauth2/oauth2/v4 v4.5.4
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-containerregistry v0.21.5
 	github.com/gookit/color v1.6.0
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
-	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/ginkgo/v2 v2.28.2
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/pterm/pterm v0.12.82
