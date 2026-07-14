@@ -28,19 +28,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-type link struct {
-	Name string
-	Path string
-}
-
 // ExtractTarGz extracts a *.tar.gz compressed archive and moves its content to destDir.
 // Returns a slice containing the full path of the extracted files.
 func ExtractTarGz(ctx context.Context, gzipStream io.Reader, destDir string, stripPathComponents int) ([]string, error) {
 	var (
-		files    []string
-		links    []link
-		symlinks []link
-		err      error
+		files []string
+		err   error
 	)
 
 	// We need an absolute path
@@ -106,46 +99,16 @@ func ExtractTarGz(ctx context.Context, gzipStream io.Reader, destDir string, str
 				return nil, err
 			}
 			files = append(files, path)
-		case tar.TypeLink:
-			name := header.Linkname
-			if stripPathComponents > 0 {
-				name = stripComponents(name, stripPathComponents)
-			}
-			if name == "" {
-				continue
-			}
-
-			name = filepath.Join(destDir, filepath.Clean(name))
-			links = append(links, link{Path: path, Name: name})
-		case tar.TypeSymlink:
-			symlinks = append(symlinks, link{Path: path, Name: header.Linkname})
+		case tar.TypeSymlink, tar.TypeLink:
+			// Artifacts do not need symlink or hardlink entries, and an unvalidated
+			// link target can point outside destDir: the ".." check above only
+			// inspects header.Name, never header.Linkname. Reject link entries.
+			return nil, fmt.Errorf("link entries are not allowed in artifact archives: %q -> %q", header.Name, header.Linkname)
 		default:
 			return nil, fmt.Errorf("extractTarGz: uknown type: %b in %s", header.Typeflag, header.Name)
 		}
 	}
 
-	// Now we make another pass creating the links
-	for i := range links {
-		select {
-		case <-ctx.Done():
-			return nil, errors.New("interrupted")
-		default:
-		}
-		if err = os.Link(links[i].Name, links[i].Path); err != nil {
-			return nil, err
-		}
-	}
-
-	for i := range symlinks {
-		select {
-		case <-ctx.Done():
-			return nil, errors.New("interrupted")
-		default:
-		}
-		if err = os.Symlink(symlinks[i].Name, symlinks[i].Path); err != nil {
-			return nil, err
-		}
-	}
 	return files, nil
 }
 

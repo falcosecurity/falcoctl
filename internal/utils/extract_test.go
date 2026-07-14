@@ -17,6 +17,7 @@ package utils
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"io"
 	"os"
@@ -206,5 +207,38 @@ func TestExtractTarGzStripComponents(t *testing.T) {
 		ff := strings.TrimPrefix(f, srcDir)
 		path := filepath.Join(absDestDirStrip, ff)
 		assert.Contains(t, list, path)
+	}
+}
+
+func TestExtractTarGz_RejectsLinkEntries(t *testing.T) {
+	build := func(h *tar.Header) io.Reader {
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		tw := tar.NewWriter(gz)
+		if err := tw.WriteHeader(h); err != nil {
+			t.Fatal(err)
+		}
+		if err := tw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := gz.Close(); err != nil {
+			t.Fatal(err)
+		}
+		return &buf
+	}
+	cases := []struct {
+		name  string
+		entry *tar.Header
+	}{
+		{"symlink", &tar.Header{Name: "evil", Typeflag: tar.TypeSymlink, Linkname: "/etc/passwd", Mode: 0o777}},
+		{"hardlink", &tar.Header{Name: "leak", Typeflag: tar.TypeLink, Linkname: "../secret", Mode: 0o644}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := ExtractTarGz(context.Background(), build(tc.entry), t.TempDir(), 0)
+			if err == nil || !strings.Contains(err.Error(), "link entries are not allowed") {
+				t.Fatalf("expected %s entry to be rejected, got err: %v", tc.name, err)
+			}
+		})
 	}
 }
