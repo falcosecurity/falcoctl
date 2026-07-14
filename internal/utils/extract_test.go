@@ -210,6 +210,78 @@ func TestExtractTarGzStripComponents(t *testing.T) {
 	}
 }
 
+// buildRegFileTarGz returns an in-memory .tar.gz with a single regular-file
+// entry (name, content). Used to drive ExtractTarGz against a pre-planted
+// symlink in the destination.
+func buildRegFileTarGz(t *testing.T, name, content string) io.Reader {
+	t.Helper()
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	hdr := &tar.Header{
+		Name:     name,
+		Typeflag: tar.TypeReg,
+		Mode:     0o644,
+		Size:     int64(len(content)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.WriteString(tw, content); err != nil {
+		t.Fatal(err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return &buf
+}
+
+func TestExtractTarGz_RejectsPreExistingSymlink(t *testing.T) {
+	// Case A: the final path component is a pre-existing symlink pointing outside
+	// destDir. safeConcat is lexical, so without the on-disk symlink guard the
+	// regular-file open would follow it and write to the canary outside dest.
+	t.Run("final-component", func(t *testing.T) {
+		dest := t.TempDir()
+		outside := t.TempDir()
+		canary := filepath.Join(outside, "target")
+
+		if err := os.Symlink(canary, filepath.Join(dest, "evil")); err != nil {
+			t.Skipf("cannot create symlink on this platform: %v", err)
+		}
+
+		_, err := ExtractTarGz(context.Background(), buildRegFileTarGz(t, "evil", "pwned"), dest, 0)
+		if err == nil {
+			t.Fatalf("expected extraction through pre-existing symlink to be rejected, got nil error")
+		}
+		if _, statErr := os.Stat(canary); !os.IsNotExist(statErr) {
+			t.Fatalf("canary %q was written through the symlink (stat err: %v)", canary, statErr)
+		}
+	})
+
+	// Case B: a parent path component is a pre-existing symlink pointing outside
+	// destDir. The write of evildir/payload would otherwise land in outside/payload.
+	t.Run("parent-component", func(t *testing.T) {
+		dest := t.TempDir()
+		outside := t.TempDir()
+		canary := filepath.Join(outside, "payload")
+
+		if err := os.Symlink(outside, filepath.Join(dest, "evildir")); err != nil {
+			t.Skipf("cannot create symlink on this platform: %v", err)
+		}
+
+		_, err := ExtractTarGz(context.Background(), buildRegFileTarGz(t, "evildir/payload", "pwned2"), dest, 0)
+		if err == nil {
+			t.Fatalf("expected extraction through pre-existing parent symlink to be rejected, got nil error")
+		}
+		if _, statErr := os.Stat(canary); !os.IsNotExist(statErr) {
+			t.Fatalf("canary %q was written through the parent symlink (stat err: %v)", canary, statErr)
+		}
+	})
+}
+
 func TestExtractTarGz_RejectsLinkEntries(t *testing.T) {
 	build := func(h *tar.Header) io.Reader {
 		var buf bytes.Buffer

@@ -86,7 +86,15 @@ func ExtractTarGz(ctx context.Context, gzipStream io.Reader, destDir string, str
 				return nil, err
 			}
 		case tar.TypeReg:
-			outFile, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, info.Mode())
+			// safeConcat is a lexical join, so it does not resolve symlinks that
+			// already exist on disk. Reject a write whose target, or any parent
+			// under destDir, is a pre-existing symlink, so extraction cannot be
+			// redirected outside destDir. On unix O_NOFOLLOW below also stops the
+			// final component from being followed race-free.
+			if err = checkNoSymlinkTraversal(destDir, path); err != nil {
+				return nil, err
+			}
+			outFile, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC|oNoFollow, info.Mode())
 			if err != nil {
 				return nil, err
 			}
@@ -134,4 +142,38 @@ func safeConcat(destDir, name string) (string, error) {
 		return res, fmt.Errorf("unsafe path concatenation: '%s' with '%s'", destDir, name)
 	}
 	return res, nil
+}
+
+// checkNoSymlinkTraversal verifies that no path component between destDir and
+// target is an existing symlink. safeConcat only joins strings, so a symlink
+// already present in a shared install dir would otherwise be followed when a
+// regular file is written through it. Both destDir and target must be absolute
+// and cleaned, with target inside destDir. This is a defense-in-depth check
+// with a small TOCTOU window; on unix the O_NOFOLLOW flag closes the window on
+// the final component.
+func checkNoSymlinkTraversal(destDir, target string) error {
+	rel, err := filepath.Rel(destDir, target)
+	if err != nil {
+		return err
+	}
+	current := destDir
+	for _, part := range strings.Split(rel, string(os.PathSeparator)) {
+		if part == "" || part == "." {
+			continue
+		}
+		current = filepath.Join(current, part)
+		fi, err := os.Lstat(current)
+		if err != nil {
+			if os.IsNotExist(err) {
+				// This component does not exist yet, so nothing below it can
+				// either. There is no symlink to follow.
+				return nil
+			}
+			return err
+		}
+		if fi.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("refusing to extract %q through a pre-existing symlink %q", target, current)
+		}
+	}
+	return nil
 }
