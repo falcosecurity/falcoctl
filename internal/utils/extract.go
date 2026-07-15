@@ -91,10 +91,10 @@ func ExtractTarGz(ctx context.Context, gzipStream io.Reader, destDir string, str
 			// under destDir, is a pre-existing symlink, so extraction cannot be
 			// redirected outside destDir. On unix O_NOFOLLOW below also stops the
 			// final component from being followed race-free.
-			if err = checkNoSymlinkTraversal(destDir, path); err != nil {
+			if err := checkNoSymlinkTraversal(destDir, path); err != nil {
 				return nil, err
 			}
-			outFile, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC|oNoFollow, info.Mode())
+			outFile, err := os.OpenFile(filepath.Clean(path), os.O_RDWR|os.O_CREATE|os.O_TRUNC|oNoFollow, info.Mode())
 			if err != nil {
 				return nil, err
 			}
