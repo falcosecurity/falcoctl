@@ -80,6 +80,8 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 	cmd.Flags().BoolVar(&o.Compile, "compile", true, "Whether to enable local compilation of drivers")
 	cmd.Flags().BoolVar(&o.DownloadHeaders, "download-headers", true, "Whether to enable automatic kernel headers download where supported")
 	cmd.Flags().BoolVar(&o.InsecureDownload, "http-insecure", false, "Whether you want to allow insecure downloads or not")
+	cmd.Flags().BoolVar(&o.HttpProxy, "http-proxy", false, "Whether to use an HTTP proxy for driver downloads")
+	cmd.Flags().BoolVar(&o.HttpsProxy, "https-proxy", false, "Whether to use an HTTPS proxy for driver downloads")
 	cmd.Flags().DurationVar(&o.HTTPTimeout, "http-timeout", 60*time.Second, "Timeout for each http try")
 	cmd.Flags().StringVar(&o.HTTPHeaders, "http-headers",
 		"",
@@ -94,6 +96,13 @@ func setDefaultHTTPClientOpts(downloadOptions driverDownloadOptions) {
 	if downloadOptions.InsecureDownload {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
+
+	// Download through a proxy
+	if downloadOptions.HttpProxy || downloadOptions.HttpsProxy {
+		// Use environment variables (HTTP_PROXY, HTTPS_PROXY, NO_PROXY)
+		tr.Proxy = http.ProxyFromEnvironment
+	}
+
 	http.DefaultClient.Timeout = downloadOptions.HTTPTimeout
 }
 
