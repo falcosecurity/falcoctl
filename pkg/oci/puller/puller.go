@@ -211,6 +211,11 @@ func (p *Puller) RawManifest(ctx context.Context, ref, os, arch string) ([]byte,
 
 		found := false
 		for _, manifest := range index.Manifests {
+			// platform is optional in the image index spec, so an entry may
+			// legitimately omit it (an attestation or referrers entry, say).
+			if manifest.Platform == nil {
+				continue
+			}
 			if manifest.Platform.OS == os &&
 				manifest.Platform.Architecture == arch {
 				desc = manifest
