@@ -13,7 +13,7 @@ require (
 	github.com/distribution/distribution/v3 v3.1.1
 	github.com/docker/cli v29.7.2+incompatible
 	github.com/docker/docker v28.5.2+incompatible
-	github.com/falcosecurity/driverkit v0.23.1
+	github.com/falcosecurity/driverkit v0.23.2
 	github.com/go-oauth2/oauth2/v4 v4.5.4
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-containerregistry v0.21.9
