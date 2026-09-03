@@ -26,7 +26,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/docker/pkg/homedir"
 	"github.com/falcosecurity/driverkit/cmd"
 	"github.com/falcosecurity/driverkit/pkg/driverbuilder"
 	"github.com/falcosecurity/driverkit/pkg/kernelrelease"
@@ -132,7 +131,7 @@ func toURL(repo, driverVer, fileName, arch string) string {
 }
 
 func toLocalPath(driverVer, fileName, arch string) string {
-	return fmt.Sprintf("%s/.falco/%s/%s/%s", homedir.Get(), driverVer, arch, fileName)
+	return fmt.Sprintf("%s/.falco/%s/%s/%s", utils.HomeDir(), driverVer, arch, fileName)
 }
 
 func toFilename(d Distro, kr *kernelrelease.KernelRelease, driverName string, driverType drivertype.DriverType) string {
