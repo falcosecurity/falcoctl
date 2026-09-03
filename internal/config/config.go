@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/docker/pkg/homedir"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 
@@ -207,7 +206,7 @@ type Driver struct {
 }
 
 func init() {
-	ConfigDir = filepath.Join(homedir.Get(), ".config")
+	ConfigDir = filepath.Join(utils.HomeDir(), ".config")
 	FalcoctlPath = filepath.Join(ConfigDir, "falcoctl")
 	IndexesFile = filepath.Join(FalcoctlPath, "indexes.yaml")
 	IndexesDir = filepath.Join(FalcoctlPath, "indexes")

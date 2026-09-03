@@ -19,7 +19,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"runtime"
 )
 
 // Move moves oldPath file to to newPath file. It works also on different file system types.
@@ -66,4 +68,18 @@ func ExistsAndIsWritable(path string) error {
 	}
 
 	return nil
+}
+
+// HomeDir returns the home directory of the current user.
+//
+// On non-Windows platforms, it falls back to nss lookups if the home directory
+// cannot be obtained from environment variables.
+func HomeDir() string {
+	home, _ := os.UserHomeDir()
+	if home == "" && runtime.GOOS != "windows" {
+		if u, err := user.Current(); err == nil {
+			return u.HomeDir
+		}
+	}
+	return home
 }
