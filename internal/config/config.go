@@ -113,7 +113,7 @@ const (
 	// ArtifactFollowAssetsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowAssetsDirKey = "artifact.follow.assetsdir"
 	// ArtifactFollowFalcoconfigDirKey is the Viper key for follower "falcoconfigDir" configuration.
-	ArtifactFollowFalcoconfigsDirKey = "artifact.follow.falcoconfigdir"
+	ArtifactFollowFalcoconfigDirKey = "artifact.follow.falcoconfigdir"
 	// ArtifactFollowStateDirKey is the Viper key for follower "stateDir" configuration.
 	ArtifactFollowStateDirKey = "artifact.follow.statedir"
 	// ArtifactFollowTmpDirKey is the Viper key for follower "pluginsDir" configuration.
