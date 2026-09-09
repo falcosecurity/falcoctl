@@ -71,6 +71,8 @@ const (
 	RulesfilesDir = "/etc/falco"
 	// AssetsDir default path where assets are installed.
 	AssetsDir = "/etc/falco/assets"
+	// FalcoconfigDir default path where falcoconfig are installed.
+	FalcoconfigDir = "/etc/falco/config.d"
 	// StateDir default path where artifact state is persisted.
 	StateDir = "/var/lib/falcoctl"
 	// FollowResync time interval how often it checks for newer version of the artifact.
@@ -110,6 +112,8 @@ const (
 	ArtifactFollowPluginsDirKey = "artifact.follow.pluginsdir"
 	// ArtifactFollowAssetsDirKey is the Viper key for follower "pluginsDir" configuration.
 	ArtifactFollowAssetsDirKey = "artifact.follow.assetsdir"
+	// ArtifactFollowFalcoconfigDirKey is the Viper key for follower "falcoconfigDir" configuration.
+	ArtifactFollowFalcoconfigDirKey = "artifact.follow.falcoconfigdir"
 	// ArtifactFollowStateDirKey is the Viper key for follower "stateDir" configuration.
 	ArtifactFollowStateDirKey = "artifact.follow.statedir"
 	// ArtifactFollowTmpDirKey is the Viper key for follower "pluginsDir" configuration.
@@ -123,6 +127,8 @@ const (
 	ArtifactInstallPluginsDirKey = "artifact.install.pluginsdir"
 	// ArtifactInstallAssetsDirKey is the Viper key for installer "pluginsDir" configuration.
 	ArtifactInstallAssetsDirKey = "artifact.install.assetsdir"
+	// ArtifactInstallFalcoconfigDirKey is the Viper key for installer "falcoconfigDir" configuration.
+	ArtifactInstallFalcoconfigDirKey = "artifact.install.falcoconfigdir"
 	// ArtifactInstallStateDirKey is the Viper key for installer "stateDir" configuration.
 	ArtifactInstallStateDirKey = "artifact.install.statedir"
 	// ArtifactInstallResolveDepsKey is the Viper key for installer "resolveDeps" configuration.
@@ -566,6 +572,7 @@ func Installer() (Install, error) {
 		Artifacts:     artifacts,
 		RulesfilesDir: viper.GetString(ArtifactInstallRulesfilesDirKey),
 		PluginsDir:    viper.GetString(ArtifactInstallPluginsDirKey),
+		FalcoconfigDir:viper.GetString(ArtifactInstallFalcoconfigDirKey),
 		ResolveDeps:   viper.GetBool(ArtifactInstallResolveDepsKey),
 		NoVerify:      viper.GetBool(ArtifactNoVerifyKey),
 	}, nil
