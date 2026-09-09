@@ -214,12 +214,12 @@ func StartOAuthServer(ctx context.Context, port int) error {
 
 	srv.SetClientInfoHandler(server.ClientFormHandler)
 
-	srv.SetInternalErrorHandler(func(err error) (re *oaerrors.Response) {
+	srv.SetInternalErrorHandler(func(_ context.Context, err error) (re *oaerrors.Response) {
 		log.Println("Internal Error:", err.Error())
 		return
 	})
 
-	srv.SetResponseErrorHandler(func(re *oaerrors.Response) {
+	srv.SetResponseErrorHandler(func(_ context.Context, re *oaerrors.Response) {
 		log.Println("Response Error:", re.Error.Error())
 	})
 
