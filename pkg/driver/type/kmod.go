@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2024 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,11 +44,8 @@ func (k *kmod) String() string {
 	return TypeKmod
 }
 
-// Cleanup does a cleanup of existing kernel modules.
-// First thing, it tries to rmmod the loaded kmod, if present.
-// Then, using dkms, it tries to fetch all
-// dkms-installed versions of the module to clean them up.
-func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
+// unload removes the loaded module without removing its DKMS installation.
+func (k *kmod) unload(printer *output.Printer, driverName string) error {
 	lsmod, err := exec.LookPath("lsmod")
 	if err != nil {
 		return err
@@ -84,6 +81,14 @@ func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
 	} else {
 		printer.Logger.Info("OK! There is no module loaded.")
 	}
+	return nil
+}
+
+// Cleanup unloads the module and removes all its DKMS installations.
+func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
+	if err := k.unload(printer, driverName); err != nil {
+		return err
+	}
 
 	dkms, err := exec.LookPath("dkms")
 	if err != nil {
@@ -91,6 +96,7 @@ func (k *kmod) Cleanup(printer *output.Printer, driverName string) error {
 		return nil
 	}
 
+	kmodName := strings.ReplaceAll(driverName, "-", "_")
 	printer.Logger.Info("Check all versions of kernel module in dkms.")
 	dkmsLsCmdArgs := fmt.Sprintf(`%s status -m %q | tr -d "," | tr -d ":" | tr "/" " " | cut -d' ' -f2`, dkms, kmodName)
 	out, err := exec.Command("bash", "-c", dkmsLsCmdArgs).Output() //nolint:gosec // false positive
@@ -132,13 +138,19 @@ func (k *kmod) Load(printer *output.Printer, src, driverName string, fallback bo
 		return err
 	}
 
+	// Keep the existing installation available until its replacement is ready.
+	// In particular, loading a cached driver must not remove it from DKMS.
+	if err := k.unload(printer, driverName); err != nil {
+		return err
+	}
+
 	chconCmdArgs := fmt.Sprintf(`chcon -t modules_object_t %q`, src)
 	// We don't want to catch any error from this call
 	// chcon(1): change file SELinux security context
 	_, _ = exec.Command("bash", "-c", chconCmdArgs).Output() //nolint:gosec // false positive
 	_, err := exec.Command("insmod", src).Output()
 	if err == nil {
-		printer.Logger.Info("Success: module found and loaded in dkms.", printer.Logger.Args("driver", src))
+		printer.Logger.Info("Success: module found and loaded with insmod.", printer.Logger.Args("driver", src))
 	} else {
 		printer.Logger.Warn("Unable to insmod module.", printer.Logger.Args("driver", src, "err", err))
 	}
