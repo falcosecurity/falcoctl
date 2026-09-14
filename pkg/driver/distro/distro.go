@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2024 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -171,8 +172,11 @@ func Build(ctx context.Context,
 	printer.Logger.Info("Trying to compile the requested driver")
 	driverFileName := toFilename(d, &kr, driverName, driverType)
 	destPath := toLocalPath(driverVer, driverFileName, kr.Architecture.ToNonDeb())
-	if exist, _ := utils.FileExists(destPath); exist {
-		return destPath, ErrAlreadyPresent
+	// The cached artifact does not imply that the module is installed in DKMS.
+	// Let DKMS reuse an existing build or restore its installation as needed.
+	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
+	if _, err := os.Stat(filepath.Join(srcPath, "dkms.conf")); err != nil {
+		return "", fmt.Errorf("driver sources for %s are not available in %s: %w", driverVer, srcPath, err)
 	}
 
 	env, err := d.customizeBuild(ctx, printer, driverType, kr)
@@ -191,9 +195,30 @@ func Build(ctx context.Context,
 	if _, ok := env[drivertype.KernelDirEnv]; ok {
 		downloadHeaders = false
 	}
-	srcPath := fmt.Sprintf("/usr/src/%s-%s", driverName, driverVer)
 	err = driverbuilder.NewLocalBuildProcessor(true, downloadHeaders, true, srcPath, env, 1000).Start(ro.ToBuild(printer))
-	return destPath, err
+	if err != nil {
+		return destPath, err
+	}
+	// The local builder can reuse a previously built artifact after its install
+	// script fails. Check the installation, not just the existence of that file.
+	return destPath, verifyDKMSInstallation(ctx, driverName, driverVer, kr)
+}
+
+//nolint:gocritic,gosec // Kernel metadata is read-only; DKMS arguments are passed without a shell.
+func verifyDKMSInstallation(ctx context.Context, driverName, driverVer string, kr kernelrelease.KernelRelease) error {
+	out, err := exec.CommandContext(ctx, "dkms", "status", "-m", driverName, "-v", driverVer,
+		"-k", kr.String(), "-a", kr.Architecture.ToNonDeb()).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("checking DKMS installation: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	for line := range strings.SplitSeq(string(out), "\n") {
+		_, status, ok := strings.Cut(line, ":")
+		if ok && strings.TrimSpace(status) == "installed" {
+			return nil
+		}
+	}
+	return fmt.Errorf("driver %s/%s is not installed in DKMS for kernel %s: %s",
+		driverName, driverVer, kr.String(), strings.TrimSpace(string(out)))
 }
 
 //nolint:gocritic // the method shall not be able to modify kr

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (C) 2024 The Falco Authors
+// Copyright (C) 2026 The Falco Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import (
 	"golang.org/x/net/context"
 
 	driverdistro "github.com/falcosecurity/falcoctl/pkg/driver/distro"
+	driverkernel "github.com/falcosecurity/falcoctl/pkg/driver/kernel"
 	"github.com/falcosecurity/falcoctl/pkg/options"
 )
 
@@ -62,15 +63,28 @@ func NewDriverInstallCmd(ctx context.Context, opt *options.Common, driver *optio
 		DisableFlagsInUseLine: true,
 		Short:                 "Install previously configured driver",
 		Long:                  `Install previously configured driver, either downloading it or attempting a build.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			dest, err := o.RunDriverInstall(ctx)
 			if dest != "" {
-				// We don't care about errors at this stage
+				// An explicitly selected kernel may not be the running kernel.
+				// Its artifact can be installed, but cannot be loaded here.
+				runningKernel, kernelErr := driverkernel.FetchInfo("", "")
+				if kernelErr != nil {
+					return errors.Join(err, kernelErr)
+				}
+				if o.Kr.String() != runningKernel.String() {
+					o.Printer.Logger.Info("Skipping driver load for a different kernel.",
+						o.Printer.Logger.Args("kernel release", o.Kr.String()))
+					return err
+				}
 				// Fallback: try to load any available driver if leaving with an error.
 				// It is only useful for kmod, as it will try to
 				// modprobe a pre-existent version of the driver,
 				// hoping it will be compatible.
-				_ = driver.Type.Load(o.Printer, dest, o.Driver.Name, err != nil)
+				loadErr := driver.Type.Load(o.Printer, dest, o.Name, err != nil)
+				if err == nil {
+					return loadErr
+				}
 			}
 			return err
 		},
@@ -133,27 +147,8 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 	var (
 		dest string
 		buf  bytes.Buffer
+		err  error
 	)
-
-	if !o.Printer.DisableStyling {
-		o.Printer.Spinner, _ = o.Printer.Spinner.Start("Cleaning up existing drivers")
-	}
-	err := o.Driver.Type.Cleanup(o.Printer.WithWriter(&buf), o.Driver.Name)
-	if o.Printer.Spinner != nil {
-		_ = o.Printer.Spinner.Stop()
-	}
-	if o.Printer.Logger.Formatter == pterm.LogFormatterJSON {
-		// Only print formatted text if we are formatting to json
-		out := strings.ReplaceAll(buf.String(), "\n", ";")
-		o.Printer.Logger.Info("Driver cleanup", o.Printer.Logger.Args("output", out))
-	} else {
-		// Print much more readable output as-is
-		o.Printer.DefaultText.Print(buf.String())
-	}
-	buf.Reset()
-	if err != nil {
-		return "", err
-	}
 
 	if o.Download {
 		setDefaultHTTPClientOpts(o.driverDownloadOptions)
@@ -207,10 +202,6 @@ func (o *driverInstallOptions) RunDriverInstall(ctx context.Context) (string, er
 		}
 		buf.Reset()
 		if err == nil {
-			return dest, nil
-		}
-		if errors.Is(err, driverdistro.ErrAlreadyPresent) {
-			o.Printer.Logger.Info("Skipping build, driver already present.", o.Printer.Logger.Args("path", dest))
 			return dest, nil
 		}
 	}
