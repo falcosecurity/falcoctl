@@ -76,7 +76,7 @@ func (art *Artifact) AddFlags(cmd *cobra.Command) error {
 			"add the floating tags for the major and minor versions")
 
 		cmd.Flags().Var(&art.ArtifactType, "type",
-			`type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"`)
+			`type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset", "falcoconfig"`)
 		if err := cmd.MarkFlagRequired("type"); err != nil {
 			// this should never happen.
 			return fmt.Errorf("unable to mark flag \"type\" as required: %w", err)
