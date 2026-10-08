@@ -499,6 +499,87 @@ $ export FALCOCTL_REGISTRY_AUTH_OAUTH="localhost:6000,000000,999999,http://local
 $ falcoctl registry oauth 
 ```
 
+# Artifact signature verification
+
+## Recent changes to signature verification
+
+This section documents recent changes to signature verification in *falcoctl* and provides guidance for users who may be affected, particularly those using mirror/cache registries. See [issue #893](https://github.com/falcosecurity/falcoctl/issues/893) for the full discussion.
+
+### What changed
+
+#### Cosign v3 signatures (OCI Referrers)
+
+Starting from **October 23, 2025** ([falcosecurity/plugins#1033](https://github.com/falcosecurity/plugins/pull/1033)), Falco plugins are now signed using **Cosign v3** which stores signatures as OCI Referrers instead of the legacy `.sig` tag format. This is the new standard adopted by the Sigstore ecosystem.
+
+#### Signature verification for all artifacts (PR #869)
+
+PR [#869](https://github.com/falcosecurity/falcoctl/pull/869) fixed a bug where signature verification was not being performed for:
+- Artifacts specified with a full registry reference (e.g., `myregistry.com/falcosecurity/plugins/...`)
+- Resolved dependencies
+
+This was unintended behavior - signatures should have always been verified. The fix ensures that **all artifacts are now properly verified**, regardless of how they are referenced.
+
+#### Authentication for private registries (PR #891)
+
+We also fixed an issue where signature verification failed on authenticated registries because credentials were not being passed to the verification component. Signature verification now correctly uses the same authentication methods already available in falcoctl for artifact pulls (basic auth, OAuth2, GCP Workload Identity).
+
+### Impact on mirror/cache registry users
+
+Users pulling artifacts through a **mirror or cache registry** may encounter signature verification failures. This happens because:
+
+1. Not all registries support pull-through for OCI Referrers (Cosign v3 signatures)
+2. Some registries only support pull-through for Cosign v2 (`.sig` tag) signatures
+3. Some registries don't support signature pull-through at all
+
+**This is not a falcoctl issue** — it depends on whether your registry is compliant with the OCI Referrers API specification.
+
+### Recommended actions
+
+#### If you're affected
+
+If you were using a previous version of falcoctl with full refs or a mirror registry, **signatures were already not being verified** due to the bug mentioned above. You can restore the previous behavior by explicitly using:
+
+```bash
+falcoctl artifact install --no-verify ...
+```
+
+Or in your configuration:
+```yaml
+artifact:
+  install:
+    noVerify: true
+```
+
+This maintains the same security posture you had before.
+
+#### If you want signature verification with a mirror
+
+Currently, signature verification requires that your mirror registry supports OCI Referrers pull-through. Check with your registry vendor for compatibility.
+
+### Next steps
+
+#### Dual signature format support
+
+To support the community and provide maximum compatibility, we will:
+
+1. **Maintain both Cosign v2 and v3 signatures** for an indefinite period
+2. **Retroactively publish Cosign v2 signatures** for recent artifacts that were only signed with v3 (from October 23, 2025)
+
+This ensures that registries supporting only v2 pull-through can still verify signatures.
+
+#### Out-of-band signature verification (under evaluation)
+
+We are evaluating the implementation of a new field in the falcoctl `index.yaml` that allows specifying an **alternative registry for signature retrieval**. This would enable scenarios like:
+
+- Pull artifact from: `myregistry.example.com/...`
+- Verify signature from: `ghcr.io/falcosecurity/...`
+
+This would allow users to benefit from signature verification even when their mirror registry doesn't support signature pull-through.
+
+---
+
+We appreciate the community's patience as we improve signature verification in falcoctl. If you have questions or are experiencing issues related to these changes, please comment on [issue #893](https://github.com/falcosecurity/falcoctl/issues/893).
+
 # Container image signature verification
 
 Official container images for Falcoctl, starting from version 0.5.0, are signed with [cosign](https://github.com/sigstore/cosign) v2. To verify the signature run:
