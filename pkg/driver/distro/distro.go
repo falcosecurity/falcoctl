@@ -286,12 +286,16 @@ func Download(ctx context.Context,
 		}
 		if httpHeaders != "" {
 			header := http.Header{}
-			for _, h := range strings.Split(httpHeaders, ",") {
-				key, value := func() (string, string) {
-					x := strings.Split(h, ":")
-					return x[0], x[1]
-				}()
-				header.Add(key, value)
+			for i, h := range strings.Split(httpHeaders, ",") {
+				key, value, ok := strings.Cut(h, ":")
+				if !ok {
+					// A token with no colon can still be a credential, so report
+					// where it is rather than what it holds.
+					printer.Logger.Warn("Skipping malformed http header.",
+						printer.Logger.Args("position", i+1, "expected", "key:value"))
+					continue
+				}
+				header.Add(strings.TrimSpace(key), strings.TrimSpace(value))
 			}
 			req.Header = header
 		}
