@@ -439,6 +439,8 @@ func (f *Follower) destinationDir(res *oci.RegistryResult) string {
 		dir = f.RulesfilesDir
 	case oci.Asset:
 		dir = f.AssetsDir
+	case oci.Falcoconfig:
+		dir = f.FalcoconfigDir
 	}
 	return dir
 }
