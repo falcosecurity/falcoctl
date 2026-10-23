@@ -77,7 +77,7 @@ lint: golangci-lint
 
 .PHONY: docker
 docker:
-	$(DOCKER) build -f ./build/Dockerfile . --build-arg RELEASE=${RELEASE} --build-arg COMMIT=${COMMIT} --build-arg BUILD_DATE=${BUILD_DATE}
+	$(DOCKER) build --pull -f ./build/Dockerfile . --build-arg RELEASE=${RELEASE} --build-arg COMMIT=${COMMIT} --build-arg BUILD_DATE=${BUILD_DATE}
 
 .PHONY: clean
 clean:
