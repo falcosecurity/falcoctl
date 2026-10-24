@@ -517,7 +517,7 @@ PR [#869](https://github.com/falcosecurity/falcoctl/pull/869) fixed a bug where 
 - Artifacts specified with a full registry reference (e.g., `myregistry.com/falcosecurity/plugins/...`)
 - Resolved dependencies
 
-This was unintended behavior - signatures should have always been verified. The fix ensures that **all artifacts are now properly verified**, regardless of how they are referenced.
+This was unintended behavior - signatures should have always been verified. The fix ensures that artifacts with applicable Cosign signature metadata in a configured index are now properly verified, regardless of how they are referenced. Installation looks up that metadata by the artifact name and skips verification when it is absent or `--no-verify` is set.
 
 #### Authentication for private registries (PR #891)
 
@@ -537,7 +537,7 @@ Users pulling artifacts through a **mirror or cache registry** may encounter sig
 
 #### If you're affected
 
-If you were using a previous version of falcoctl with full refs or a mirror registry, **signatures were already not being verified** due to the bug mentioned above. You can restore the previous behavior by explicitly using:
+If you were using a previous version of falcoctl with full refs, **signatures were already not being verified** for those affected pre-fix installations due to the bug mentioned above. (Using a mirror registry alone does not mean verification was previously skipped.) You can restore the previous behavior by explicitly using:
 
 ```bash
 falcoctl artifact install --no-verify ...
@@ -546,26 +546,25 @@ falcoctl artifact install --no-verify ...
 Or in your configuration:
 ```yaml
 artifact:
-  install:
-    noVerify: true
+  noVerify: true
 ```
 
-This maintains the same security posture you had before.
+Note that `--no-verify` disables verification — including for artifacts that were being verified — so use it only if you accept that trade-off.
 
 #### If you want signature verification with a mirror
 
-Currently, signature verification requires that your mirror registry supports OCI Referrers pull-through. Check with your registry vendor for compatibility.
+Signature verification falls back to legacy signatures when v3 bundles cannot be retrieved or none are found, so OCI Referrers pull-through is not mandatory when a valid legacy signature is available. Check with your registry vendor for compatibility if neither is available.
 
 ### Next steps
 
 #### Dual signature format support
 
-To support the community and provide maximum compatibility, we will:
+To support the community and provide maximum compatibility, dual publishing has been implemented ([falcosecurity/plugins#1211](https://github.com/falcosecurity/plugins/pull/1211)):
 
-1. **Maintain both Cosign v2 and v3 signatures** for an indefinite period
-2. **Retroactively publish Cosign v2 signatures** for recent artifacts that were only signed with v3 (from October 23, 2025)
+1. **Both Cosign v2 and v3 signatures are maintained** for an indefinite period
+2. **Cosign v2 signatures have been retroactively published** for recent artifacts that were only signed with v3 (from October 23, 2025)
 
-This ensures that registries supporting only v2 pull-through can still verify signatures.
+This ensures that registries supporting only v2 pull-through can still verify signatures. Historical artifacts that still need signatures remain a separate case.
 
 #### Out-of-band signature verification (under evaluation)
 
