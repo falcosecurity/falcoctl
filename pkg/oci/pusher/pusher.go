@@ -219,6 +219,8 @@ func (p *Pusher) storeMainLayer(ctx context.Context, fileStore *file.Store,
 		layerMediaType = oci.FalcoPluginLayerMediaType
 	case oci.Asset:
 		layerMediaType = oci.FalcoAssetLayerMediaType
+	case oci.Falcoconfig:
+		layerMediaType = oci.FalcoConfigLayerMediaType
 	default:
 		return nil, fmt.Errorf("unknown media type for main layer: %s", artifactType)
 	}
@@ -242,6 +244,8 @@ func (p *Pusher) storeConfigLayer(ctx context.Context, fileStore *file.Store,
 		layerMediaType = oci.FalcoPluginConfigMediaType
 	case oci.Asset:
 		layerMediaType = oci.FalcoAssetConfigMediaType
+	case oci.Falcoconfig:
+		layerMediaType = oci.FalcoConfigConfigMediaType
 	default:
 		return nil, fmt.Errorf("unknown media type for config layer: %s", artifactType)
 	}
