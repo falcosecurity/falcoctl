@@ -208,6 +208,40 @@ func TestResolveDeps(t *testing.T) {
 			expectedErr:    ErrCannotSatisfyDependencies,
 		},
 		{
+			scenario:    "resolve dependencies of upgraded alternative",
+			description: "ref1:0.1.2 --> dep1:1.2.3 | alt1:2.5.0, alt1:2.1.0, alt1:2.5.0 --> dep2:1.0.0",
+			inRef:       []string{ref1, "alt1:2.1.0"},
+			configResolver: artifactConfigResolver(func(ref string) (*oci.ArtifactConfig, error) {
+				switch ref {
+				case ref1:
+					return &oci.ArtifactConfig{
+						Name:    "ref1",
+						Version: "0.1.2",
+						Dependencies: []oci.ArtifactDependency{
+							{
+								Name:         "dep1",
+								Version:      "1.2.3",
+								Alternatives: []oci.Dependency{{Name: "alt1", Version: "2.5.0"}},
+							}},
+					}, nil
+				case alt1:
+					return &oci.ArtifactConfig{
+						Name:         "alt1",
+						Version:      "2.5.0",
+						Dependencies: []oci.ArtifactDependency{{Name: "dep2", Version: "1.0.0"}},
+					}, nil
+				}
+				splittedRef := strings.Split(ref, ":")
+				return &oci.ArtifactConfig{
+					Name:    splittedRef[0],
+					Version: splittedRef[1],
+					// no dependencies here
+				}, nil
+			}),
+			expectedOutRef: []string{ref1, alt1, "dep2:1.0.0"},
+			expectedErr:    nil,
+		},
+		{
 			scenario:    "tolerant semver - major only version",
 			description: "custom-rules:1 (major only) should work",
 			inRef:       []string{"ghcr.io/example/falco-test/custom-rules:1"},
