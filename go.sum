@@ -21,8 +21,8 @@ cloud.google.com/go/compute/metadata v0.10.0 h1:pyKMUQSwchgkIBBJGdILqQbs/BNJXqwS
 cloud.google.com/go/compute/metadata v0.10.0/go.mod h1:rGFHRrIif570kSibjFTMbt6/4/tzgJWFGI/HVol4GIk=
 cloud.google.com/go/iam v1.12.0 h1:Aki3bX9aHUDKPHfnRJfDcTdVedvy6quGBQcTqx3DRXk=
 cloud.google.com/go/iam v1.12.0/go.mod h1:FEZ4lXpADAC2AIpQY7LANNjjwyQ2jK439CI2VaD+sLY=
-cloud.google.com/go/kms v1.33.0 h1:pG0X78m212b2pv9N4fdMoUO69LuZGQ9kSvn8sHBOFAo=
-cloud.google.com/go/kms v1.33.0/go.mod h1:CSGvW6GnMQbY+1nOHcIzhMtHSbExXlOmCKjWtYVjcpA=
+cloud.google.com/go/kms v1.35.0 h1:nJ/ktaqspx1nPM9vIcO0SHbhqCAm8nvAxL1siuVgKm0=
+cloud.google.com/go/kms v1.35.0/go.mod h1:0++71pIHvJL+GmMa8K4jOWFq7gNOX3jm2PRMSJwTKJw=
 cloud.google.com/go/logging v1.19.0 h1:NCqhdVUg3wQ8Cobdf16FDSuTGi3+6+hdSBHrY5TsR6Q=
 cloud.google.com/go/logging v1.19.0/go.mod h1:i40NZCHC9Gqvod4yE+yQfDWwlgwW/SrshkkGibCHxcA=
 cloud.google.com/go/longrunning v1.2.0 h1:WjYH3YHBGCxGJP9M4dWGHBfXr/cFIjMkNgWcJj7/iMM=
@@ -807,8 +807,8 @@ github.com/sigstore/sigstore/pkg/signature/kms/aws v1.10.10 h1:C1+Re7cReA1d/7wIs
 github.com/sigstore/sigstore/pkg/signature/kms/aws v1.10.10/go.mod h1:3RH9KTY323sU0gYg6QGK7kblF8HX+AnGEqpTZaCPgLY=
 github.com/sigstore/sigstore/pkg/signature/kms/azure v1.11.1 h1:UfIJOml1Y9uJwTy8cDbP7a6x/0By+fXIV7dyUHvEZlA=
 github.com/sigstore/sigstore/pkg/signature/kms/azure v1.11.1/go.mod h1:xQ5RXq7EDorvH2+1cNQLXQUjXVlhz64q+CZf5Jol8FU=
-github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.10.10 h1:j0fFWLsM3/5jKTvrJQJU3l/YnO0idLMCg+gXrZX0MWo=
-github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.10.10/go.mod h1:3gngj4JSuMNXe0oxseFREX0T8dgh4SdxuhP9Wfgix7o=
+github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.11.2 h1:S1t28MpG12QmxxzlyNYPLrkzNReilXBOkJ35i2hb4SU=
+github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.11.2/go.mod h1:uJqXrPsnGjiSKl1IfI0eVq0gMEfLBaD8yzOQ1pKpG0E=
 github.com/sigstore/sigstore/pkg/signature/kms/hashivault v1.11.1 h1:WIgn5z+Wx9ZM8MPTZlMIJ5YXZq36VrcYXFfCCokMqGc=
 github.com/sigstore/sigstore/pkg/signature/kms/hashivault v1.11.1/go.mod h1:byZFStGl4JcpWux75DD7gmpYyYjyy2BmkjsJhdSA8UE=
 github.com/sigstore/timestamp-authority/v2 v2.1.2 h1:7DDhnknLL4w8VwomyvW2W8qblOS9LDR8oihna+jc7Ls=
