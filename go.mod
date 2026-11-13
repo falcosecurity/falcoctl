@@ -29,7 +29,7 @@ require (
 	github.com/sigstore/sigstore v1.11.3
 	github.com/sigstore/sigstore/pkg/signature/kms/aws v1.10.10
 	github.com/sigstore/sigstore/pkg/signature/kms/azure v1.11.3
-	github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.10.10
+	github.com/sigstore/sigstore/pkg/signature/kms/gcp v1.11.3
 	github.com/sigstore/sigstore/pkg/signature/kms/hashivault v1.11.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -60,7 +60,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.3.1 // indirect
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	cloud.google.com/go/iam v1.14.0 // indirect
-	cloud.google.com/go/kms v1.33.0 // indirect
+	cloud.google.com/go/kms v1.36.1 // indirect
 	cloud.google.com/go/longrunning v1.3.0 // indirect
 	cloud.google.com/go/monitoring v1.30.0 // indirect
 	github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0 // indirect
