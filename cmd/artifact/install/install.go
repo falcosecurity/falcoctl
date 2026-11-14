@@ -312,6 +312,8 @@ func (o *artifactInstallOptions) RunArtifactInstall(ctx context.Context, args []
 			destDir = o.RulesfilesDir
 		case oci.Asset:
 			destDir = o.AssetsDir
+		case oci.Falcoconfig:
+			destDir = o.FalcoconfigDir
 		default:
 			return fmt.Errorf("unrecognized result type %q while pulling artifact", result.Type)
 		}
