@@ -58,11 +58,25 @@ func Platforms(ctx context.Context, ref string, client remote.Client) (map[strin
 		return nil, fmt.Errorf("unable to unmarshal index: %w", err)
 	}
 
+	return platformsFromIndex(&index), nil
+}
+
+// platformsFromIndex collects the set of "os-arch" platforms declared by the
+// manifests of an image index. The platform field is optional in the OCI image
+// index schema and Descriptor.Platform is a pointer, so an entry may legitimately
+// omit it (an attestation or referrers entry, for example). Such entries are
+// skipped instead of being dereferenced, matching the guard already used when
+// resolving a manifest in the puller.
+func platformsFromIndex(index *v1.Index) map[string]struct{} {
 	platforms := make(map[string]struct{})
-	for _, manifest := range index.Manifests {
+	for i := range index.Manifests {
+		manifest := index.Manifests[i]
+		if manifest.Platform == nil {
+			continue
+		}
 		platform := manifest.Platform.OS + "-" + manifest.Platform.Architecture
 		platforms[platform] = struct{}{}
 	}
 
-	return platforms, nil
+	return platforms
 }
