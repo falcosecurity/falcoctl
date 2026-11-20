@@ -59,7 +59,7 @@ var registryAuthOAuthUsage = `Usage:
 Flags:
       --client-id string       client ID of the OAuth2.0 app
       --client-secret string   client secret of the OAuth2.0 app
-  -h, --help                   help for oauth
+  -h, --help[=true|false]      help for oauth
       --scopes strings         comma separeted list of scopes for which requesting access
       --token-url string       token URL used to get access and refresh tokens
 

@@ -52,7 +52,7 @@ Available Commands:
 
 Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-  -h, --help                help for falcoctl
+  -h, --help[=true|false]   help for falcoctl
       --log-format string   Set formatting for logs (color, text, json) (default "color")
       --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 
@@ -82,7 +82,7 @@ Available Commands:
 
 Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-  -h, --help                help for falcoctl
+  -h, --help[=true|false]   help for falcoctl
       --log-format string   Set formatting for logs (color, text, json) (default "color")
       --log-level string    Set level for logs (info, warn, debug, trace) (default "info")
 

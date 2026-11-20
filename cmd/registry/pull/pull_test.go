@@ -39,15 +39,15 @@ var registryPullUsage = `Usage:
   falcoctl registry pull hostname/repo[:tag|@digest] [flags]
 
 Flags:
-  -o, --dest-dir string        destination dir where to save the artifacts(default: current directory)
-  -h, --help                   help for pull
-      --plain-http             allows interacting with remote registry via plain http requests
-      --platform stringArray   os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
+  -o, --dest-dir string           destination dir where to save the artifacts(default: current directory)
+  -h, --help[=true|false]         help for pull
+      --plain-http[=true|false]   allows interacting with remote registry via plain http requests
+      --platform stringArray      os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
 
 Global Flags:
-      --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
+      --config string                  config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --disable-styling[=true|false]   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
+  -v, --verbose[=true|false]           Enable verbose logs (default false)
 
 `
 

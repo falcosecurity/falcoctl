@@ -31,17 +31,17 @@ var registryPushUsage = `Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
 Flags:
-      --add-floating-tags          add the floating tags for the major and minor versions
-      --annotation-source string   set annotation source for the artifact
-  -d, --depends-on stringArray     set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
-  -h, --help                       help for push
-      --name string                set the unique name of the artifact (if not set, the name is extracted from the reference)
-      --plain-http                 allows interacting with remote registry via plain http requests
-      --platform stringArray       os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
-  -r, --requires stringArray       set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
-  -t, --tag stringArray            additional artifact tag. Can be repeated multiple times
-      --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset" (default )
-      --version string             set the artifact version (must be semver-compliant, e.g., "1.0.0")
+      --add-floating-tags[=true|false]   add the floating tags for the major and minor versions
+      --annotation-source string         set annotation source for the artifact
+  -d, --depends-on stringArray           set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
+  -h, --help[=true|false]                help for push
+      --name string                      set the unique name of the artifact (if not set, the name is extracted from the reference)
+      --plain-http[=true|false]          allows interacting with remote registry via plain http requests
+      --platform stringArray             os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
+  -r, --requires stringArray             set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
+  -t, --tag stringArray                  additional artifact tag. Can be repeated multiple times
+      --type ArtifactType                type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset" (default )
+      --version string                   set the artifact version (must be semver-compliant, e.g., "1.0.0")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
@@ -90,17 +90,17 @@ Usage:
   falcoctl registry push hostname/repo[:tag|@digest] file [flags]
 
 Flags:
-      --add-floating-tags          add the floating tags for the major and minor versions
-      --annotation-source string   set annotation source for the artifact
-  -d, --depends-on stringArray     set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
-  -h, --help                       help for push
-      --name string                set the unique name of the artifact (if not set, the name is extracted from the reference)
-      --plain-http                 allows interacting with remote registry via plain http requests
-      --platform stringArray       os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
-  -r, --requires stringArray       set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
-  -t, --tag stringArray            additional artifact tag. Can be repeated multiple times
-      --type ArtifactType          type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"
-      --version string             set the artifact version (must be semver-compliant, e.g., "1.0.0")
+      --add-floating-tags[=true|false]   add the floating tags for the major and minor versions
+      --annotation-source string         set annotation source for the artifact
+  -d, --depends-on stringArray           set an artifact dependency (can be specified multiple times). Example: "--depends-on my-plugin:1.2.3"
+  -h, --help[=true|false]                help for push
+      --name string                      set the unique name of the artifact (if not set, the name is extracted from the reference)
+      --plain-http[=true|false]          allows interacting with remote registry via plain http requests
+      --platform stringArray             os and architecture of the artifact in OS/ARCH format (only for plugins artifacts)
+  -r, --requires stringArray             set an artifact requirement (can be specified multiple times). Example: "--requires plugin_api_version:1.2.3"
+  -t, --tag stringArray                  additional artifact tag. Can be repeated multiple times
+      --type ArtifactType                type of artifact to be pushed. Allowed values: "rulesfile", "plugin", "asset"
+      --version string                   set the artifact version (must be semver-compliant, e.g., "1.0.0")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
