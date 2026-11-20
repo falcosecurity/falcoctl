@@ -32,13 +32,13 @@ Usage:
   falcoctl driver install [flags]
 
 Flags:
-      --compile                 Whether to enable local compilation of drivers (default true)
-      --download                Whether to enable download of prebuilt drivers (default true)
-      --download-headers        Whether to enable automatic kernel headers download where supported (default true)
-  -h, --help                    help for install
-      --http-headers string     Optional comma-separated list of headers for the http GET request (e.g. --http-headers='x-emc-namespace: default,Proxy-Authenticate: Basic'). Not necessary if default repo is used
-      --http-insecure           Whether you want to allow insecure downloads or not
-      --http-timeout duration   Timeout for each http try (default 1m0s)
+      --compile[=true|false]            Whether to enable local compilation of drivers (default true)
+      --download[=true|false]           Whether to enable download of prebuilt drivers (default true)
+      --download-headers[=true|false]   Whether to enable automatic kernel headers download where supported (default true)
+  -h, --help[=true|false]               help for install
+      --http-headers string             Optional comma-separated list of headers for the http GET request (e.g. --http-headers='x-emc-namespace: default,Proxy-Authenticate: Basic'). Not necessary if default repo is used
+      --http-insecure[=true|false]      Whether you want to allow insecure downloads or not
+      --http-timeout duration           Timeout for each http try (default 1m0s)
 
 Global Flags:
       --config string          config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")

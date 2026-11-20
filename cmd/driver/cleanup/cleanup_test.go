@@ -32,7 +32,7 @@ Usage:
   falcoctl driver cleanup [flags]
 
 Flags:
-  -h, --help   help for cleanup
+  -h, --help[=true|false]   help for cleanup
 
 Global Flags:
       --config string          config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")

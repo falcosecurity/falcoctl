@@ -35,7 +35,7 @@ Usage:
   falcoctl driver printenv [flags]
 
 Flags:
-  -h, --help   help for printenv
+  -h, --help[=true|false]   help for printenv
 
 Global Flags:
       --config string          config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")

@@ -45,7 +45,7 @@ Usage:
   falcoctl index add [NAME] [URL] [BACKEND] [flags]
 
 Flags:
-  -h, --help   help for add
+  -h, --help[=true|false]   help for add
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")

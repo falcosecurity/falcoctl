@@ -50,12 +50,12 @@ var registryAuthBasicUsage = `Usage:
   falcoctl registry auth basic [hostname]
 
 Flags:
-  -h, --help   help for basic
+  -h, --help[=true|false]   help for basic
 
 Global Flags:
-      --config string     config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
-      --disable-styling   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
-  -v, --verbose           Enable verbose logs (default false)
+      --config string                  config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
+      --disable-styling[=true|false]   Disable output styling such as spinners, progress bars and colors. Styling is automatically disabled if not attacched to a tty (default false)
+  -v, --verbose[=true|false]           Enable verbose logs (default false)
 `
 
 //nolint:unused // false positive
@@ -77,10 +77,10 @@ Usage:
   falcoctl registry auth basic [hostname]
 
 Flags:
-  -h, --help              help for basic
-  -p, --password string   registry password
-      --password-stdin    read password from stdin
-  -u, --username string   registry username
+  -h, --help[=true|false]             help for basic
+  -p, --password string               registry password
+      --password-stdin[=true|false]   read password from stdin
+  -u, --username string               registry username
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")

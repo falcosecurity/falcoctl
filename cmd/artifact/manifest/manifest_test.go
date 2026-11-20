@@ -30,9 +30,9 @@ var usage = `Usage:
   falcoctl artifact manifest [ref] [flags]
 
 Flags:
-  -h, --help              help for manifest
-      --plain-http        allows interacting with remote registry via plain http requests
-      --platform string   os and architecture of the artifact in OS/ARCH format (default "linux/amd64")
+  -h, --help[=true|false]         help for manifest
+      --plain-http[=true|false]   allows interacting with remote registry via plain http requests
+      --platform string           os and architecture of the artifact in OS/ARCH format (default "linux/amd64")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
@@ -46,9 +46,9 @@ Usage:
   falcoctl artifact manifest [ref] [flags]
 
 Flags:
-  -h, --help              help for manifest
-      --plain-http        allows interacting with remote registry via plain http requests
-      --platform string   os and architecture of the artifact in OS/ARCH format (default "linux/amd64")
+  -h, --help[=true|false]         help for manifest
+      --plain-http[=true|false]   allows interacting with remote registry via plain http requests
+      --platform string           os and architecture of the artifact in OS/ARCH format (default "linux/amd64")
 
 Global Flags:
       --config string       config file to be used for falcoctl (default "/etc/falcoctl/falcoctl.yaml")
