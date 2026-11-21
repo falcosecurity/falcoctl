@@ -153,6 +153,7 @@ func ResolveDeps(configResolver artifactConfigResolver, resolver refResolver, in
 						if err := upsertMap(resolvedAlternative); err != nil {
 							return nil, err
 						}
+						allOk = false
 					}
 
 					break
