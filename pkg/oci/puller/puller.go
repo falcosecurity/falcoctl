@@ -109,6 +109,8 @@ func (p *Puller) Pull(ctx context.Context, ref, destDir, os, arch string) (*oci.
 		artifactType = oci.Rulesfile
 	case oci.FalcoAssetLayerMediaType:
 		artifactType = oci.Asset
+	case oci.FalcoConfigLayerMediaType:
+		artifactType = oci.Falcoconfig
 	default:
 		return nil, fmt.Errorf("unknown media type: %q", manifest.Layers[0].MediaType)
 	}
