@@ -190,6 +190,7 @@ func (f *Follower) Follow(ctx context.Context) {
 			delay := time.Duration(val.Int64())
 			f.logger.Debug("Delaying first check for new artifact version", f.logger.Args("followerName", f.ref, "delay", delay))
 			if err := sleepWithContext(ctx, delay); err != nil {
+				f.stop()
 				return
 			}
 		}
@@ -204,16 +205,21 @@ func (f *Follower) Follow(ctx context.Context) {
 		next := f.Resync.Next(now)
 		select {
 		case <-f.CloseChan:
-			f.cleanUp()
-			f.logger.Info("Follower stopped", f.logger.Args("followerName", f.ref))
-			// Notify that the follower is done.
-			f.WaitGroup.Done()
+			f.stop()
 			return
 		case <-time.After(next.Sub(now)):
 			// Start following the artifact.
 			f.follow(ctx)
 		}
 	}
+}
+
+// stop cleans up the follower and notifies that it is done.
+func (f *Follower) stop() {
+	f.cleanUp()
+	f.logger.Info("Follower stopped", f.logger.Args("followerName", f.ref))
+	// Notify that the follower is done.
+	f.WaitGroup.Done()
 }
 
 func sleepWithContext(ctx context.Context, d time.Duration) error {

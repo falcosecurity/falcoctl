@@ -19,6 +19,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -430,6 +431,42 @@ func TestSleepWithContext(t *testing.T) {
 		assert.Equal(t, context.DeadlineExceeded, err)
 		assert.Less(t, elapsed, duration, "should return early when context times out")
 	})
+}
+
+func TestFollowStopsWhenCanceledDuringStartupJitter(t *testing.T) {
+	printer := output.NewPrinter(pterm.LogLevelDebug, pterm.LogFormatterJSON, os.Stdout)
+
+	var wg sync.WaitGroup
+	config := Config{
+		WaitGroup:       &wg,
+		CloseChan:       make(chan bool),
+		StartupBehavior: StartupBehaviorJitter,
+		StartupMaxDelay: time.Hour,
+		StateDir:        t.TempDir(),
+		TmpDir:          t.TempDir(),
+	}
+	f, err := New("ghcr.io/falcosecurity/rules/my_rule:0.1.0", printer, &config)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	wg.Add(1)
+	go f.Follow(ctx)
+	cancel()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("follower did not notify the wait group when canceled during the startup jitter")
+	}
+
+	_, err = os.Stat(f.tmpDir)
+	assert.True(t, os.IsNotExist(err), "temporary directory should be removed")
 }
 
 func TestArtifactStateIntegration(t *testing.T) {
